@@ -1,184 +1,329 @@
-# De-Shop SDK: Blockchain-Powered In-Game Marketplace
+# De-Shop SDK
+### Blockchain-Powered In-Game Marketplace for True Digital Ownership
 
 ## 🎯 Overview
 
-*De-Shop SDK* is a revolutionary blockchain integration toolkit that enables game developers to embed secure, decentralized NFT marketplaces directly into their games. Built on *Algorand* for speed and efficiency, our SDK transforms in-game economies by giving players true ownership of digital assets while providing developers with powerful monetization tools.
+**De-Shop SDK** is a blockchain integration toolkit that enables game developers to embed secure, decentralized NFT marketplaces directly inside their games.
 
-## 🚀 The Problem We Solve
+Built on **Algorand** for high throughput and low transaction fees, the SDK allows players to **own, trade, and monetize in-game assets as NFTs** while giving developers new revenue streams through automated royalties.
 
-### Current Trading Pain Points:
-- *Fragmented Experience*: Players must exit games to use external platforms
-- *Security Risks*: Fraudulent trades, chargebacks, and item duplication
-- *No True Ownership*: Digital items remain developer-controlled
-- *Missed Revenue*: Developers lose out on secondary market opportunities
-- *Clunky Integration*: Manual gifting systems and third-party dependencies
+De-Shop removes the need for external trading platforms by enabling **native in-game digital asset marketplaces**.
 
-## 💡 Our Solution
+---
 
-De-Shop SDK provides a seamless, secure, and developer-friendly way to integrate blockchain-powered marketplaces directly into games.
+# 🚀 The Problem
 
-### Core Features
+Current in-game trading systems suffer from several major limitations.
 
-#### 🛡 Secure & Instant Transactions
-- *Algorand-Powered*: Leveraging Algorand's high-throughput, low-cost blockchain
-- *Instant Finality*: Transactions confirmed in seconds, not minutes
-- *Fraud Prevention*: Immutable ownership records eliminate scams
-- *Transparent History*: Complete provenance tracking for all items
+### Fragmented Trading Experience
+Players must leave the game to trade items on external platforms.
 
-#### 🎮 True Digital Ownership
-- *Verifiable NFTs*: Every item exists as a unique, player-owned asset
-- *Cross-Game Potential*: Assets that can potentially span multiple games
-- *Persistent Value*: Items retain value beyond game lifecycle
-- *Provable Scarcity*: Authentic rare items with transparent supply
+### Security Risks
+Fraudulent trades, duplication exploits, and chargebacks are common.
 
-#### 🛠 Developer-First Integration
-javascript
-// Example: Minting an in-game item as NFT
+### No True Ownership
+Digital items remain under developer control rather than player ownership.
+
+### Lost Revenue Opportunities
+Developers miss royalties from secondary market transactions.
+
+### Complex Integration
+Existing blockchain solutions require heavy custom implementation.
+
+---
+
+# 💡 Our Solution
+
+De-Shop SDK provides an **embedded blockchain marketplace infrastructure** designed specifically for games.
+
+It enables developers to:
+
+- Mint in-game items as NFTs  
+- Enable peer-to-peer trading inside the game  
+- Implement automated royalty systems  
+- Create player-driven economies  
+
+All powered by Algorand’s fast and low-cost blockchain.
+
+---
+
+# 🔥 Core Features
+
+## 🛡 Secure Blockchain Transactions
+- Algorand-powered asset management
+- Near-instant transaction finality
+- Immutable ownership verification
+- Transparent trading history
+
+## 🎮 True Digital Ownership
+- NFT-based in-game assets
+- Player-controlled ownership
+- Verifiable rarity and scarcity
+- Assets that persist beyond game lifecycle
+
+## 🛠 Developer-Friendly SDK
+- Simple API integration
+- Asset minting and trading functions
+- Wallet integration utilities
+- Royalty configuration
+
+Example:
+
+```javascript
 const nft = await deShop.mintNFT({
   assetName: "Dragon Slayer Sword",
   metadata: {
     rarity: "Legendary",
     damage: 150,
     element: "Fire",
-    gameAchievement: "Dragon Quest Complete"
+    achievement: "Dragon Quest Complete"
   },
-  royalty: 5.0 // 5% royalty on future sales
+  royalty: 5.0
 });
+```
 
+---
 
-#### 🏪 Advanced Marketplace Mechanics
-- *Fractional Ownership*: Players can co-own ultra-rare items
-- *Dynamic NFTs*: Items that evolve based on gameplay achievements
-- *Royalty System*: Automatic revenue sharing for creators
-- *Bundled Listings*: Sell item sets and collections
-- *Auction Support*: Dutch, English, and sealed-bid auctions
+# 🏪 Marketplace Features
 
-## 🎯 Use Cases
+### NFT Minting
+Convert in-game items into blockchain assets.
 
-### For Game Developers:
-- *New Revenue Streams*: Earn royalties from secondary market sales
-- *Player Retention*: Increased engagement through true ownership
-- *Community Building*: Foster player-driven economies
-- *Competitive Edge*: Cutting-edge blockchain integration
+### Player-to-Player Trading
+Secure item transfers through marketplace transactions.
 
-### For Players:
-- *Asset Liquidity*: Buy, sell, and trade items securely
-- *Investment Opportunities*: Rare items as collectible assets
-- *Achievement Verification*: Provably rare accomplishment items
-- *Cross-Platform Potential*: Future-proof digital collections
+### Auction Mechanisms
+Support for English auctions, Dutch auctions, and fixed listings.
 
-## 🔧 Technical Architecture
+### Royalty System
+Automatic revenue distribution for game developers.
 
-### SDK Components
+### Bundled Listings
+Trade collections or item sets.
 
-#### 1. *NFT Management Module*
+---
 
-- Minting & Burning
-- Metadata Management
-- Royalty Configuration
-- Batch Operations
+# 🔧 SDK Architecture
 
+## 1️⃣ NFT Management Module
 
-#### 2. *Marketplace Engine*
+Handles creation and lifecycle of game assets.
 
-- Order Book Management
-- Escrow Services
-- Multi-currency Support
-- Gas Optimization
+Capabilities
 
+- Minting and burning NFTs
+- Metadata management
+- Royalty configuration
+- Batch asset operations
 
-#### 3. *Wallet Integration*
+---
 
-- Secure Key Management
-- Multi-signature Support
-- Cross-platform Compatibility
-- Recovery Options
+## 2️⃣ Marketplace Engine
 
+Responsible for the trading infrastructure.
 
-#### 4. *Analytics Dashboard*
+Capabilities
 
-- Trading Volume Metrics
-- User Behavior Insights
-- Economic Health Monitoring
-- Royalty Tracking
+- Order book system
+- Escrow handling
+- Multi-currency support
+- Transaction optimization
 
+---
 
-## 🚀 Getting Started
+## 3️⃣ Wallet Integration
 
-### Prerequisites
-- Algorand Testnet account
-- Game development environment
-- Basic understanding of blockchain concepts
+Allows players to interact with blockchain assets.
 
-### Quick Integration
-bash
-npm install de-shop-sdk
+Capabilities
 
+- Wallet connection
+- Secure key handling
+- Multi-signature support
+- Cross-platform compatibility
 
-javascript
-import DeShop from 'de-shop-sdk';
+---
 
-const deShop = new DeShop({
-  network: 'algorand-testnet',
-  gameId: 'your-game-id',
-  apiKey: 'your-api-key'
-});
+## 4️⃣ Analytics & Insights
 
-// Initialize player wallet
-await deShop.connectWallet();
+Tools for developers to monitor marketplace activity.
 
-// Check player inventory
-const inventory = await deShop.getPlayerAssets();
+Capabilities
 
+- Trading volume metrics
+- Player behavior insights
+- Marketplace health monitoring
+- Royalty revenue tracking
 
-## 📈 Business Impact
+---
 
-### For Game Studios:
-- *5-15% Royalty Revenue* from secondary sales
-- *20-40% Increase* in player engagement
-- *Reduced Fraud* costs by 90%+
-- *New Monetization* without pay-to-win mechanics
+# 🎯 Use Cases
 
-### For Players:
-- *True Asset Ownership* beyond game lifecycle
-- *Global Marketplace* access 24/7
-- *Secure Trading* with blockchain verification
-- *Investment Potential* in digital collectibles
+## For Game Developers
 
-## 🔒 Security & Compliance
+- New revenue streams through secondary sales
+- Higher player engagement through asset ownership
+- Secure trading infrastructure
+- Reduced fraud and duplication exploits
 
-- *Non-Custodial*: Players control their private keys
-- *Regulatory Ready*: KYC/AML integration options
-- *Audit Trail*: Transparent transaction history
-- *Smart Contract Audits*: Regular security reviews
+## For Players
 
-## 🎮 Live Demo Scenario
+- True ownership of digital assets
+- Secure global marketplace access
+- Tradeable collectibles
+- Investment potential in rare items
 
-*Game: "Epic Quest RPG"*
+---
 
-1. *Player Achievement*: Player defeats final boss, earning "Phoenix Armor"
-2. *NFT Minting*: Game automatically mints armor as NFT with gameplay stats
-3. *Marketplace Listing*: Player lists item for 100 ALGO with 5% developer royalty
-4. *Secure Purchase*: Another player buys instantly, ownership transfers on-chain
-5. *Royalty Distribution*: Original developer automatically receives 5 ALGO
+# 🧩 Development Stages
 
-## 📊 Roadmap
+This project is being built in incremental stages.
 
-### Phase 1: Core SDK (Current)
-- Basic NFT minting/trading
-- Algorand integration
+---
+
+## Stage 1 — Prototype (Completed)
+
+Initial proof-of-concept demonstrating blockchain integration.
+
+Includes
+
+- Basic NFT minting
+- Algorand testnet connectivity
+- Simple wallet integration
+- Prototype marketplace listing
+
+Purpose
+
+Validate feasibility of **in-game NFT asset systems**.
+
+---
+
+## Stage 2 — MVP SDK (Current Stage)
+
+Developer-ready SDK with core functionality.
+
+Includes
+
+- NFT minting APIs
+- Player wallet connection
+- Asset inventory management
+- Basic marketplace trading
 - Developer documentation
 
-### Phase 2: Advanced Features
+Goal
+
+Allow **game developers to integrate De-Shop in experimental projects**.
+
+---
+
+## Stage 3 — Advanced Marketplace (Planned)
+
+Expanding economic mechanics and developer tools.
+
+Features planned
+
+- Auction systems
+- Bundled item listings
 - Fractional ownership
-- Dynamic NFTs
-- Cross-game asset compatibility
+- Dynamic NFTs (game progression updates)
 
-### Phase 3: Ecosystem Expansion
-- Multi-chain support
-- DAO governance
-- Mobile SDK
+---
 
-*Transform your game economy today with De-Shop SDK – where every item tells a story, and every player becomes a true owner.*
+## Stage 4 — Ecosystem Expansion (Future)
 
-Built on Algorand. Powered by Innovation.
+Scaling De-Shop into a multi-game economy layer.
+
+Features planned
+
+- Multi-chain compatibility
+- Cross-game asset interoperability
+- DAO governance for marketplace rules
+- Mobile SDK support
+
+---
+
+# ⚡ Installation
+
+```bash
+npm install de-shop-sdk
+```
+
+---
+
+# 🚀 Quick Start
+
+```javascript
+import DeShop from "de-shop-sdk";
+
+const deShop = new DeShop({
+  network: "algorand-testnet",
+  gameId: "your-game-id",
+  apiKey: "your-api-key"
+});
+
+await deShop.connectWallet();
+
+const inventory = await deShop.getPlayerAssets();
+```
+
+---
+
+# 📈 Business Impact
+
+### For Game Studios
+
+- 5–15% royalty revenue from secondary sales
+- 20–40% increase in player engagement
+- Reduced fraud and asset duplication
+- Player-driven game economies
+
+### For Players
+
+- True ownership of in-game items
+- Secure peer-to-peer trading
+- Persistent digital collectibles
+- Marketplace liquidity
+
+---
+
+# 🔒 Security
+
+- Non-custodial wallet system
+- Smart contract audits
+- Transparent transaction records
+- Optional KYC/AML integration
+
+---
+
+# 🗺 Roadmap
+
+**2026 Q1**  
+Core SDK MVP
+
+**2026 Q2**  
+Advanced marketplace mechanics
+
+**2026 Q3**  
+Cross-game asset compatibility
+
+**2026 Q4**  
+Multi-chain ecosystem expansion
+
+---
+
+# 🧱 Built With
+
+- Algorand Blockchain
+- JavaScript / TypeScript
+- Node.js
+- NFT Smart Contracts
+
+---
+
+# 📜 License
+
+MIT License
+
+---
+
+**Transform your game economy with De-Shop SDK — where players truly own their digital assets.**
