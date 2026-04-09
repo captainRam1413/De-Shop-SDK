@@ -91,7 +91,16 @@ function App() {
   };
 
   return (
-    <div className="app-container">
+    <div className="terminal-window">
+      <div className="terminal-header">
+        <div className="terminal-dots">
+          <div className="dot"></div>
+          <div className="dot"></div>
+          <div className="dot"></div>
+        </div>
+        <div style={{ marginLeft: 12, color: 'var(--muted)', fontSize: '0.9rem' }}>De-Shop SDK — Terminal View</div>
+      </div>
+      <div className="app-container">
       {/* Navbar common to both views */}
       <nav className="navbar fade-in">
         <div className="navbar-brand" style={{ cursor: 'pointer' }} onClick={() => setCurrentPage('home')}>
@@ -329,6 +338,7 @@ function App() {
         </div>
       )}
 
+      </div>
     </div>
   );
 }

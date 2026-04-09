@@ -1,11 +1,13 @@
 :root {
-  --bg-color: #0b0f19;
-  --glass-bg: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --accent-color: #00ffcc;
-  --accent-glow: rgba(0, 255, 204, 0.3);
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
+  --bg-color: #050608;
+  --term-bg: #030305;
+  --glass-bg: rgba(255, 255, 255, 0.02);
+  --glass-border: rgba(255, 255, 255, 0.04);
+  --accent-color: #39ff14; /* neon green terminal accent */
+  --accent-glow: rgba(57, 255, 20, 0.22);
+  --text-primary: #d7f7d7; /* soft greenish white */
+  --text-secondary: #66b266;
+  --muted: #3b3f3b;
 }
 
 * {
@@ -15,15 +17,14 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Fira Code', 'Consolas', 'Menlo', monospace;
   background-color: var(--bg-color);
   color: var(--text-primary);
-  background-image: 
-    radial-gradient(circle at 15% 40%, rgba(0, 255, 204, 0.1), transparent 30%),
-    radial-gradient(circle at 85% 60%, rgba(138, 43, 226, 0.1), transparent 30%),
-    radial-gradient(circle at 50% 0%, rgba(0, 153, 255, 0.05), transparent 40%);
+  background-image: radial-gradient(circle at 10% 10%, rgba(57,255,20,0.02), transparent 15%), linear-gradient(180deg, rgba(255,255,255,0.01), transparent 40%);
   background-attachment: fixed;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3, h4, p {
@@ -104,6 +105,74 @@ h1, h2, h3, h4, p {
   margin: 0 auto;
   padding: 0 24px 80px;
 }
+
+/* Terminal window wrapper */
+.terminal-window {
+  max-width: 1100px;
+  margin: 36px auto;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.03);
+  background: linear-gradient(180deg, var(--term-bg), rgba(0,0,0,0.6));
+}
+
+.terminal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+}
+
+.terminal-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #ff5f56;
+  box-shadow: 0 0 8px rgba(255,95,86,0.12);
+}
+.dot:nth-child(2) { background: #ffbd2e; box-shadow: 0 0 8px rgba(255,189,46,0.08); }
+.dot:nth-child(3) { background: #27c93f; box-shadow: 0 0 8px rgba(39,201,63,0.12); }
+
+/* Make panels feel terminal-like */
+.glass-panel, .code-block {
+  background: rgba(0,0,0,0.45);
+  border: 1px solid rgba(57,255,20,0.06);
+}
+
+.navbar-brand {
+  color: var(--accent-color);
+  -webkit-text-fill-color: initial;
+}
+
+/* Terminal text styles */
+.price-value, .badge-legendary, .badge-epic {
+  color: var(--accent-color);
+}
+
+.code-block {
+  background: #020202;
+  border-color: rgba(255,255,255,0.03);
+  color: #9fffb0;
+}
+
+/* Blinking cursor for fun in hero (if used) */
+.cursor {
+  display: inline-block;
+  width: 8px;
+  background: var(--accent-color);
+  margin-left: 6px;
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink { 50% { opacity: 0; } }
 
 /* Navbar */
 .navbar {
