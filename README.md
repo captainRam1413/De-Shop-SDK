@@ -322,7 +322,7 @@ This repository includes a Vite-powered frontend and a Flask API for minting and
 ## Frontend
 
 ```bash
-cd /home/runner/work/De-Shop-SDK/De-Shop-SDK
+cd De-Shop-SDK
 npm install
 npm run dev
 ```
@@ -336,7 +336,7 @@ VITE_API_BASE_URL=http://localhost:5000
 ## Backend
 
 ```bash
-cd /home/runner/work/De-Shop-SDK/De-Shop-SDK/backend
+cd De-Shop-SDK/backend
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -350,6 +350,8 @@ Algorand TestNet minting requires the following environment variables:
 - `ALGOD_TOKEN` — Algod token if required by the provider.
 
 If `CREATOR_MNEMONIC` is not provided, the API falls back to mock minting but still returns asset metadata.
+
+Note: the demo API stores assets in memory for quick iteration. Restarting the backend resets the list.
 
 ---
 

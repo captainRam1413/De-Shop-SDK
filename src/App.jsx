@@ -132,7 +132,17 @@ function App() {
   };
 
   const handleConnectMockWallet = () => {
-    const mockAddress = `MOCK-${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
+    let seed = `${Date.now()}`;
+    if (typeof crypto !== 'undefined') {
+      if (crypto.randomUUID) {
+        seed = crypto.randomUUID();
+      } else if (crypto.getRandomValues) {
+        const buffer = new Uint8Array(16);
+        crypto.getRandomValues(buffer);
+        seed = Array.from(buffer, (byte) => byte.toString(16).padStart(2, '0')).join('');
+      }
+    }
+    const mockAddress = `MOCK-${seed.slice(0, 8).toUpperCase()}`;
     setWallet({ address: mockAddress, mode: 'mock' });
     setWalletError('');
   };

@@ -116,6 +116,7 @@ def _try_mint_on_algorand(payload):
         confirmed = _wait_for_confirmation(client, txid)
         return confirmed.get("asset-index"), None
     except Exception as exc:  # pragma: no cover - defensive for API demo
+        app.logger.exception("Algorand mint failed")
         return None, str(exc)
 
 
@@ -160,4 +161,5 @@ def mint_asset():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")), debug=True)
+    debug_mode = os.getenv("FLASK_DEBUG", "false").lower() == "true"
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")), debug=debug_mode)
