@@ -63,6 +63,7 @@ const navItems = [
 ];
 
 const payments = ['ALGO', 'ETH', 'USDT'];
+let mockWalletCounter = 0;
 
 function App() {
   const [currentPage, setCurrentPage] = useState('login');
@@ -79,6 +80,7 @@ function App() {
 
   const accountAddress = wallet.address;
   const isConnected = Boolean(accountAddress);
+  const isMockWallet = Boolean(accountAddress && accountAddress.startsWith('MOCK-'));
 
   const handleDisconnectWallet = useCallback(() => {
     peraWallet.disconnect();
@@ -89,7 +91,7 @@ function App() {
     peraWallet
       .reconnectSession()
       .then((accounts) => {
-        if (accounts.length) {
+      if (accounts.length) {
           setWallet({ address: accounts[0], mode: 'pera' });
           setWalletError('');
         }
@@ -143,7 +145,8 @@ function App() {
           return Array.from(buffer, (byte) => byte.toString(16).padStart(2, '0')).join('');
         }
       }
-      return `${Date.now()}`;
+      mockWalletCounter += 1;
+      return `${Date.now()}-${mockWalletCounter}`;
     })();
     const mockAddress = `MOCK-${mockAddressSeed.slice(0, 8).toUpperCase()}`;
     setWallet({ address: mockAddress, mode: 'mock' });
@@ -157,12 +160,12 @@ function App() {
       return [];
     }
     return assets.filter((asset) => {
-      if (wallet.mode === 'mock') {
+      if (isMockWallet) {
         return asset.owner === 'demo-wallet' || asset.owner === accountAddress;
       }
       return asset.owner === accountAddress;
     });
-  }, [accountAddress, assets, isConnected, wallet.mode]);
+  }, [accountAddress, assets, isConnected, isMockWallet]);
 
   const marketplaceAssets = useMemo(
     () => assets.filter((asset) => asset.listed),
@@ -189,7 +192,7 @@ function App() {
         rarity: 'Legendary',
         price: 120,
         currency: paymentCurrency,
-        owner: wallet.mode === 'mock' ? 'demo-wallet' : accountAddress,
+        owner: isMockWallet ? 'demo-wallet' : accountAddress,
         listed: false,
         attributes: { attack: 150, element: 'Fire' },
       });

@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 import uuid
@@ -54,7 +55,7 @@ DEFAULT_ASSETS = [
     },
 ]
 
-ASSETS = list(DEFAULT_ASSETS)
+ASSETS = copy.deepcopy(DEFAULT_ASSETS)
 
 
 def _get_algod_client():
@@ -69,7 +70,7 @@ def _wait_for_confirmation(client, txid, timeout=12):
     if client is None:
         return None
     current_round = client.status().get("last-round", 0) + 1
-    for _ in range(timeout):
+    for attempt in range(timeout):
         pending = client.pending_transaction_info(txid)
         if pending.get("confirmed-round", 0) > 0:
             return pending
