@@ -75,7 +75,7 @@ def _wait_for_confirmation(client, txid, timeout=12):
             return pending
         client.status_after_block(current_round)
         current_round += 1
-    raise RuntimeError("Transaction confirmation timed out")
+    raise RuntimeError(f"Transaction {txid} confirmation timed out after {timeout} rounds")
 
 
 def _try_mint_on_algorand(payload):
@@ -153,7 +153,7 @@ def mint_asset():
     asset_id, error = _try_mint_on_algorand(payload)
     asset["mint_mode"] = "algorand" if asset_id else "mock"
     asset["asset_id"] = asset_id
-    if error and asset_id is None:
+    if error:
         asset["mint_error"] = error
 
     ASSETS.append(asset)
