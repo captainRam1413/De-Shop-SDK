@@ -1,334 +1,507 @@
-import React, { useState, useEffect } from 'react';
-import { PeraWalletConnect } from "@perawallet/connect";
-import { 
-  Gamepad2, 
-  Wallet, 
-  Sparkles, 
-  TrendingUp, 
-  ShieldCheck, 
-  Cpu, 
-  Store, 
-  Zap,
-  ChevronRight,
-  Code,
-  ArrowLeft,
-  CheckCircle2,
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { PeraWalletConnect } from '@perawallet/connect';
+import {
+  ArrowRightLeft,
   Box,
-  Fingerprint
+  Coins,
+  Gamepad2,
+  Layers,
+  Plus,
+  ShoppingCart,
+  ShieldCheck,
+  Sparkles,
+  Store,
+  Wallet,
 } from 'lucide-react';
+import { fetchAssets, mintAsset } from './api';
 import './index.css';
 
-// Initialize Pera Wallet Instance
 const peraWallet = new PeraWalletConnect({
-  shouldShowSignTxnToast: true
+  shouldShowSignTxnToast: true,
 });
 
+const demoAssets = [
+  {
+    id: 'asset-ember-01',
+    name: 'Ember Drake Blade',
+    image: '⚔️',
+    rarity: 'Legendary',
+    price: 120,
+    currency: 'ALGO',
+    owner: 'marketplace',
+    listed: true,
+    attributes: { element: 'Fire', attack: 150 },
+  },
+  {
+    id: 'asset-veil-02',
+    name: 'Spectral Veil',
+    image: '🛡️',
+    rarity: 'Epic',
+    price: 62,
+    currency: 'ALGO',
+    owner: 'marketplace',
+    listed: true,
+    attributes: { defense: 90, origin: 'Nightfall' },
+  },
+  {
+    id: 'asset-echo-03',
+    name: 'Echostep Boots',
+    image: '👢',
+    rarity: 'Rare',
+    price: 28,
+    currency: 'ALGO',
+    owner: 'demo-wallet',
+    listed: false,
+    attributes: { speed: '+18%', class: 'Rogue' },
+  },
+];
+
+const navItems = [
+  { id: 'login', label: 'Login', icon: Wallet },
+  { id: 'inventory', label: 'Inventory', icon: Box },
+  { id: 'marketplace', label: 'Marketplace', icon: Store },
+];
+
+const payments = ['ALGO', 'ETH', 'USDT'];
+let mockWalletCounter = 0;
+
 function App() {
-  // Navigation State
-  const [currentPage, setCurrentPage] = useState('home');
+  const [currentPage, setCurrentPage] = useState('login');
+  const [wallet, setWallet] = useState({ address: null, mode: 'none' });
+  const [walletError, setWalletError] = useState('');
+  const [assets, setAssets] = useState(demoAssets);
+  const [selectedAsset, setSelectedAsset] = useState(null);
+  const [paymentCurrency, setPaymentCurrency] = useState('ALGO');
+  const [loadingAssets, setLoadingAssets] = useState(false);
+  const [apiError, setApiError] = useState('');
+  const [minting, setMinting] = useState(false);
+  const [equippedAssetId, setEquippedAssetId] = useState(null);
+  const [actionMessage, setActionMessage] = useState('');
 
-  // Wallet State
-  const [accountAddress, setAccountAddress] = useState(null);
-  
-  // AI Pricing State
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [priceData, setPriceData] = useState(null);
-  
-  // Demo SDK States
-  const [isMinting, setIsMinting] = useState(false);
-  const [mintedItem, setMintedItem] = useState(null);
+  const accountAddress = wallet.address;
+  const isConnected = Boolean(accountAddress);
+  const isMockWallet = Boolean(accountAddress && accountAddress.startsWith('MOCK-'));
 
-  useEffect(() => {
-    // Check if there is a cached Pera Wallet session
-    peraWallet.reconnectSession().then((accounts) => {
-      peraWallet.connector?.on("disconnect", handleDisconnectWallet);
-      if (accounts.length) {
-        setAccountAddress(accounts[0]);
-      }
-    }).catch(e => console.error("Pera Wallet Session Error:", e));
+  const handleDisconnectWallet = useCallback(() => {
+    peraWallet.disconnect();
+    setWallet({ address: null, mode: 'none' });
   }, []);
 
+  useEffect(() => {
+    peraWallet
+      .reconnectSession()
+      .then((accounts) => {
+      if (accounts.length) {
+          setWallet({ address: accounts[0], mode: 'pera' });
+          setWalletError('');
+        }
+      })
+      .catch(() => {});
+    peraWallet.connector?.on('disconnect', handleDisconnectWallet);
+  }, [handleDisconnectWallet]);
+
+  const loadAssets = useCallback(async () => {
+    setLoadingAssets(true);
+    try {
+      const items = await fetchAssets();
+      if (items.length) {
+        setAssets(items);
+      } else {
+        setAssets(demoAssets);
+      }
+      setApiError('');
+    } catch {
+      setApiError('Backend unavailable — showing demo assets.');
+      setAssets(demoAssets);
+    } finally {
+      setLoadingAssets(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAssets();
+  }, [loadAssets]);
+
   const handleConnectWallet = async () => {
+    setWalletError('');
     try {
       const newAccounts = await peraWallet.connect();
-      peraWallet.connector?.on("disconnect", handleDisconnectWallet);
-      setAccountAddress(newAccounts[0]);
-    } catch (error) {
-      if (error?.data?.type !== "SESSION_CONNECT") {
-        console.error("Connection Failed:", error);
-      }
+      peraWallet.connector?.on('disconnect', handleDisconnectWallet);
+      setWallet({ address: newAccounts[0], mode: 'pera' });
+    } catch {
+      setWalletError('Pera Wallet unavailable. Use the mock wallet to continue.');
     }
   };
 
-  const handleDisconnectWallet = () => {
-    peraWallet.disconnect();
-    setAccountAddress(null);
+  const handleConnectMockWallet = () => {
+    const mockAddressSeed = (() => {
+      if (typeof crypto !== 'undefined') {
+        if (crypto.randomUUID) {
+          return crypto.randomUUID();
+        }
+        if (crypto.getRandomValues) {
+          const buffer = new Uint8Array(16);
+          crypto.getRandomValues(buffer);
+          return Array.from(buffer, (byte) => byte.toString(16).padStart(2, '0')).join('');
+        }
+      }
+      mockWalletCounter += 1;
+      return `${Date.now()}-${mockWalletCounter}`;
+    })();
+    const mockAddress = `MOCK-${mockAddressSeed.slice(0, 8).toUpperCase()}`;
+    setWallet({ address: mockAddress, mode: 'mock' });
+    setWalletError('');
   };
 
-  const runAIPricing = () => {
-    setIsAnalyzing(true);
-    setPriceData(null);
-    setTimeout(() => {
-      setIsAnalyzing(false);
-      setPriceData({ price: 120, currency: 'ALGO', confidence: 87, trend: 'Rising ↑' });
-    }, 1500);
+  const formatAddress = (address) => `${address.slice(0, 6)}...${address.slice(-4)}`;
+
+  const ownedAssets = useMemo(() => {
+    if (!isConnected) {
+      return [];
+    }
+    return assets.filter((asset) => {
+      if (isMockWallet) {
+        return asset.owner === 'demo-wallet' || asset.owner === accountAddress;
+      }
+      return asset.owner === accountAddress;
+    });
+  }, [accountAddress, assets, isConnected, isMockWallet]);
+
+  const marketplaceAssets = useMemo(
+    () => assets.filter((asset) => asset.listed),
+    [assets],
+  );
+
+  const handleSelectAsset = (asset) => {
+    setSelectedAsset(asset);
+    setCurrentPage('asset');
+    setActionMessage('');
   };
 
-  const simulateSDKMint = () => {
-    setIsMinting(true);
-    setTimeout(() => {
-      setIsMinting(false);
-      setMintedItem({
-        id: "nft_" + Math.random().toString(36).substr(2, 9),
-        name: "Dragon Slayer Sword",
-        rarity: "Legendary"
+  const handleMintAsset = async () => {
+    if (!isConnected) {
+      setWalletError('Connect a wallet to mint assets.');
+      return;
+    }
+    setMinting(true);
+    setActionMessage('');
+    try {
+      const minted = await mintAsset({
+        name: 'Dragon Slayer Sword',
+        image: '⚔️',
+        rarity: 'Legendary',
+        price: 120,
+        currency: paymentCurrency,
+        owner: isMockWallet ? 'demo-wallet' : accountAddress,
+        listed: false,
+        attributes: { attack: 150, element: 'Fire' },
       });
-    }, 2000);
+      setAssets((prev) => [...prev, minted]);
+      setSelectedAsset(minted);
+      setCurrentPage('asset');
+      setActionMessage(`Minted on ${minted.mint_mode === 'algorand' ? 'Algorand TestNet' : 'mock mode'}.`);
+    } catch {
+      setActionMessage('Minting failed — backend unavailable.');
+    } finally {
+      setMinting(false);
+    }
   };
 
-  const formatAddress = (address) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  const handleToggleListing = (asset) => {
+    setAssets((prev) =>
+      prev.map((item) =>
+        item.id === asset.id ? { ...item, listed: !item.listed } : item,
+      ),
+    );
+    setActionMessage(
+      asset.listed ? 'Listing removed from marketplace.' : 'Item listed in marketplace.',
+    );
+  };
+
+  const handleEquipAsset = (asset) => {
+    setEquippedAssetId(asset.id);
+    setActionMessage(`${asset.name} equipped.`);
+  };
+
+  const handleTransferAsset = (asset) => {
+    setActionMessage(`${asset.name} transfer request queued.`);
+  };
+
+  const handleBuyAsset = (asset) => {
+    setActionMessage(`Purchase initiated in ${paymentCurrency}.`);
+    setAssets((prev) =>
+      prev.map((item) =>
+        item.id === asset.id
+          ? { ...item, owner: accountAddress || 'demo-wallet', listed: false }
+          : item,
+      ),
+    );
+  };
+
+  const renderAssetImage = (asset) => {
+    if (!asset.image) {
+      return '🎮';
+    }
+    if (asset.image.startsWith('http')) {
+      return <img src={asset.image} alt={asset.name} />;
+    }
+    return <span>{asset.image}</span>;
   };
 
   return (
     <div className="app-container">
-      {/* Navbar common to both views */}
       <nav className="navbar fade-in">
-        <div className="navbar-brand" style={{ cursor: 'pointer' }} onClick={() => setCurrentPage('home')}>
+        <div className="navbar-brand" onClick={() => setCurrentPage('login')}>
           <Gamepad2 className="logo-icon" />
           De-Shop SDK
         </div>
-        <div>
-          {!accountAddress ? (
+        <div className="nav-links">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.id}
+                className={`nav-link ${currentPage === item.id ? 'active' : ''}`}
+                onClick={() => setCurrentPage(item.id)}
+              >
+                <Icon size={16} />
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="wallet-display">
+          {!isConnected ? (
             <button className="btn-secondary" onClick={handleConnectWallet}>
-              <Wallet size={18} style={{ marginRight: '8px', verticalAlign: 'text-bottom' }} />
+              <Wallet size={18} />
               Connect Pera Wallet
             </button>
           ) : (
-            <div className="badge badge-legendary tooltip-container" style={{ padding: '8px 16px', fontSize: '0.9rem', cursor: 'pointer' }} onClick={handleDisconnectWallet}>
-              <span style={{ marginRight: '8px', display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#00ffcc', boxShadow: '0 0 8px #00ffcc' }}></span>
+            <button className="badge badge-legendary wallet-pill" onClick={handleDisconnectWallet}>
+              <span className="wallet-indicator" />
               {formatAddress(accountAddress)}
-              <span className="tooltip-text" style={{ fontSize: '0.7rem' }}>Click to disconnect</span>
-            </div>
+              <span className="wallet-mode">{wallet.mode.toUpperCase()}</span>
+            </button>
           )}
         </div>
       </nav>
 
-      {/* HOME PAGE VIEW */}
-      {currentPage === 'home' && (
-        <>
-          <section className="hero fade-in delay-1">
-            <h1>AI + Blockchain Powered<br/>In-Game Marketplace</h1>
-            <p>
-              De-Shop SDK enables game developers to embed autonomous, truly decentralized, 
-              and AI-driven NFT marketplaces directly into their games.
-            </p>
-            <div className="hero-buttons">
-              <button className="btn-primary" onClick={() => setCurrentPage('demo')}>
-                Get Started & Demo <ChevronRight size={18} />
-              </button>
-              <button className="btn-secondary">
-                <Code size={18} style={{ marginRight: '8px', verticalAlign: 'text-bottom' }} />
-                View Documentation
-              </button>
-            </div>
-          </section>
+      {apiError && <div className="status-banner">{apiError}</div>}
 
-          <div className="dashboard-grid fade-in delay-2">
-            
-            {/* AI Smart Pricing Demo */}
-            <div className="glass-panel">
-              <div className="card-header">
-                <Sparkles color="#00ffcc" />
-                <h2 className="card-title">AI Smart Pricing Engine</h2>
-              </div>
-              <div className="card-body">
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: '1.5' }}>
-                  Our AI intelligence layer continuously analyzes marketplace activity, item demand, 
-                  and trade history to suggest optimal pricing and maintain economic balance.
-                </p>
-
-                <div className="item-preview">
-                  <div className="item-image">⚔️</div>
-                  <div className="item-info">
-                    <h3>Dragon Slayer Sword</h3>
-                    <span className="badge badge-legendary">Legendary</span>
-                    <div className="item-stats">
-                      <div className="stat-box"><TrendingUp size={14} /> <strong>ATK:</strong> 150</div>
-                      <div className="stat-box"><Zap size={14} /> <strong>Fire</strong></div>
-                    </div>
-                  </div>
-                </div>
-
-                {priceData ? (
-                  <div className="ai-results fade-in">
-                    <div className="price-display">
-                      <div>
-                        <div className="price-label">Recommended Price</div>
-                        <div className="price-value">
-                          {priceData.price} <span className="price-currency">{priceData.currency}</span>
-                        </div>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div className="price-label">Market Trend</div>
-                        <div style={{ color: '#00ffcc', fontWeight: 'bold' }}>{priceData.trend}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="confidence-bar-container">
-                      <div className="confidence-bar" style={{ width: `${priceData.confidence}%` }}></div>
-                    </div>
-                    <div className="confidence-text">
-                      <span>AI Confidence Score</span>
-                      <span>{priceData.confidence}%</span>
-                    </div>
-                  </div>
-                ) : (
-                  <button 
-                    className={`btn-primary ${isAnalyzing ? 'pulse-anim' : ''}`} 
-                    style={{ width: '100%', justifyContent: 'center' }}
-                    onClick={runAIPricing}
-                    disabled={isAnalyzing}
-                  >
-                    {isAnalyzing ? <><Cpu className="pulse-anim" /> Analyzing Market Data...</> : <><Cpu /> Run AI Price Analysis</>}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Features/Marketplace Capabilities */}
-            <div className="glass-panel">
-              <div className="card-header">
-                <Store color="#d18cff" />
-                <h2 className="card-title">SDK Capabilities</h2>
-              </div>
-              <div className="card-body">
-                <div className="feature-list">
-                  <div className="feature-item">
-                    <div className="feature-icon" style={{ color: '#00ffcc', background: 'rgba(0,255,204,0.1)' }}><TrendingUp size={24} /></div>
-                    <div className="feature-content">
-                      <h4>True Digital Ownership</h4>
-                      <p>Players gain permanent, transferable ownership of their in-game items as NFTs with instant Algorand finality.</p>
-                    </div>
-                  </div>
-                  <div className="feature-item">
-                    <div className="feature-icon"><ShieldCheck size={24} /></div>
-                    <div className="feature-content">
-                      <h4>AI Fraud Detection</h4>
-                      <p>Real-time monitoring detects wash trading, bot manipulation, and maintains a balanced game economy.</p>
-                    </div>
-                  </div>
-                  <div className="feature-item">
-                    <div className="feature-icon" style={{ color: '#ff9900', background: 'rgba(255,153,0,0.1)' }}><Zap size={24} /></div>
-                    <div className="feature-content">
-                      <h4>Developer Royalties</h4>
-                      <p>Automated, seamless distribution of creator royalties on all secondary P2P trading directly through smart contracts.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+      {currentPage === 'login' && (
+        <section className="page-section fade-in">
+          <div className="page-header">
+            <h1>Connect your wallet</h1>
+            <p>Authenticate players, mint NFTs, and trade assets on Algorand TestNet.</p>
           </div>
-        </>
-      )}
-
-      {/* DEMO PAGE VIEW */}
-      {currentPage === 'demo' && (
-        <div className="fade-in">
-          <button className="btn-secondary" style={{ marginBottom: '32px', border: 'none', background: 'transparent' }} onClick={() => setCurrentPage('home')}>
-            <ArrowLeft size={18} style={{ marginRight: '8px' }}/> Back to Home
-          </button>
-          
-          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <h1 style={{ fontSize: '3rem', marginBottom: '16px' }}>SDK Interactive Lab</h1>
-            <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto' }}>
-              Experience exactly how game developers interact with De-Shop SDK to build robust in-game economies using Algorand.
-            </p>
-          </div>
-
           <div className="dashboard-grid">
-            
-            {/* Step 1: Wallet Connection */}
             <div className="glass-panel">
               <div className="card-header">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: accountAddress ? 'rgba(0,255,204,0.2)' : 'rgba(255,255,255,0.1)', color: accountAddress ? '#00ffcc' : 'white', fontWeight: 'bold', marginRight: '16px' }}>1</div>
-                <h2 className="card-title">Authenticate Player</h2>
+                <Wallet />
+                <h2 className="card-title">Pera Wallet</h2>
               </div>
               <div className="card-body">
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>
-                  The SDK handles seamless connections to the Algorand blockchain. We've integrated the official Pera Wallet here.
+                <p className="muted-text">
+                  Use Pera Wallet to connect to Algorand TestNet with production-like flows.
                 </p>
-                
-                {accountAddress ? (
-                  <div className="feature-item" style={{ borderColor: '#00ffcc', background: 'rgba(0,255,204,0.05)' }}>
-                    <div className="feature-icon" style={{ background: 'transparent', color: '#00ffcc' }}><CheckCircle2 size={32} /></div>
-                    <div className="feature-content">
-                      <h4 style={{ color: '#00ffcc' }}>Pera Wallet Connected</h4>
-                      <p>Active Address: <strong style={{color: 'white'}}>{formatAddress(accountAddress)}</strong></p>
-                    </div>
-                  </div>
-                ) : (
-                  <button className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleConnectWallet}>
-                    <Fingerprint /> Connect Pera Wallet
-                  </button>
-                )}
-
-                <div className="code-block" style={{ marginTop: '24px' }}>
-                  <span className="code-comment">// Connect to player wallet securely</span><br />
-                  <span className="code-keyword">const</span> deShop = <span className="code-keyword">new</span> DeShop({'{'} network: <span className="code-string">"testnet"</span> {'}'});<br/>
-                  <span className="code-keyword">await</span> deShop.<span className="code-function">connectWallet</span>();
+                <button className="btn-primary full-width" onClick={handleConnectWallet}>
+                  <Wallet size={18} /> Connect Pera Wallet
+                </button>
+                <div className="info-card">
+                  <ShieldCheck size={18} />
+                  Non-custodial wallet authentication with on-chain signing.
                 </div>
               </div>
             </div>
-
-            {/* Step 2: Minting Engine */}
-            <div className="glass-panel" style={{ opacity: accountAddress ? 1 : 0.5, pointerEvents: accountAddress ? 'auto' : 'none' }}>
+            <div className="glass-panel">
               <div className="card-header">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: mintedItem ? 'rgba(138,43,226,0.2)' : 'rgba(255,255,255,0.1)', color: mintedItem ? '#d18cff' : 'white', fontWeight: 'bold', marginRight: '16px' }}>2</div>
-                <h2 className="card-title">Mint In-Game Item as NFT</h2>
+                <Layers />
+                <h2 className="card-title">Mock Wallet</h2>
               </div>
               <div className="card-body">
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>
-                  Once a player completes a quest or buys an item, game developers can easily mint the item directly to the player's wallet.
+                <p className="muted-text">
+                  Keep the demo running even without a wallet extension or mobile device.
                 </p>
-
-                {mintedItem ? (
-                  <div className="feature-item fade-in" style={{ borderColor: '#d18cff', background: 'rgba(138,43,226,0.05)' }}>
-                    <div className="item-image" style={{ width: '60px', height: '60px', fontSize: '1.5rem', margin: '0 16px 0 0' }}>⚔️</div>
-                    <div className="feature-content" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                      <h4 style={{ color: '#d18cff', marginBottom: '4px' }}>Minting Successful!</h4>
-                      <p>Asset ID: <span style={{ color: 'white', fontFamily: 'monospace' }}>{mintedItem.id}</span></p>
-                      <span className="badge badge-epic" style={{ alignSelf: 'flex-start', marginTop: '8px' }}>{mintedItem.rarity}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <button 
-                    className={`btn-primary ${isMinting ? 'pulse-anim' : ''}`} 
-                    style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #d18cff, #8a2be2)' }} 
-                    onClick={simulateSDKMint}
-                    disabled={isMinting || !accountAddress}
-                  >
-                    {isMinting ? <><Box className="pulse-anim" /> Minting Asset on Algorand...</> : <><Box /> Mint "Dragon Slayer Sword"</>}
-                  </button>
-                )}
-
-                {!accountAddress && <p style={{ color: '#ffb8b8', fontSize: '0.85rem', marginTop: '12px', textAlign: 'center' }}>⚠️ Connect wallet first to mint an item</p>}
-
-                <div className="code-block" style={{ marginTop: '24px' }}>
-                  <span className="code-comment">// Mint NFT with zero friction</span><br />
-                  <span className="code-keyword">const</span> nft = <span className="code-keyword">await</span> deShop.<span className="code-function">mintNFT</span>({'{'}<br/>
-                  &nbsp;&nbsp;assetName: <span className="code-string">"Dragon Slayer Sword"</span>,<br/>
-                  &nbsp;&nbsp;metadata: {'{'} rarity: <span className="code-string">"Legendary"</span>, damage: <span className="code-keyword">150</span> {'}'},<br/>
-                  &nbsp;&nbsp;royalty: <span className="code-keyword">5.0</span><br/>
-                  {'}'});
-                </div>
+                <button className="btn-secondary full-width" onClick={handleConnectMockWallet}>
+                  <Sparkles size={18} /> Connect Mock Wallet
+                </button>
+                {walletError && <p className="error-text">{walletError}</p>}
               </div>
             </div>
-
           </div>
-        </div>
+        </section>
       )}
 
+      {currentPage === 'inventory' && (
+        <section className="page-section fade-in">
+          <div className="page-header">
+            <h1>Your Inventory</h1>
+            <p>Mint, equip, and manage the assets tied to your wallet.</p>
+          </div>
+          <div className="inventory-actions">
+            <button className="btn-primary" onClick={handleMintAsset} disabled={!isConnected || minting}>
+              <Plus size={18} />
+              {minting ? 'Minting on Algorand...' : 'Mint Asset'}
+            </button>
+            <div className="inline-note">
+              <Coins size={16} />
+              Minted items land directly in your wallet.
+            </div>
+          </div>
+          {!isConnected && (
+            <div className="info-banner">
+              Connect a wallet to view inventory assets.
+            </div>
+          )}
+          <div className="nft-grid">
+            {loadingAssets && <div className="glass-panel nft-card">Loading assets...</div>}
+            {!loadingAssets && ownedAssets.length === 0 && isConnected && (
+              <div className="glass-panel empty-card">
+                <p>No items yet. Mint your first NFT to get started.</p>
+              </div>
+            )}
+            {ownedAssets.map((asset) => (
+              <div key={asset.id} className="glass-panel nft-card">
+                <div className="nft-card-media">{renderAssetImage(asset)}</div>
+                <div className="nft-card-body">
+                  <h3>{asset.name}</h3>
+                  <div className="nft-card-meta">
+                    <span className={`badge badge-${asset.rarity.toLowerCase()}`}>{asset.rarity}</span>
+                    {equippedAssetId === asset.id && <span className="badge badge-equipped">Equipped</span>}
+                  </div>
+                  <div className="nft-card-footer">
+                    <button className="btn-secondary small" onClick={() => handleEquipAsset(asset)}>
+                      Equip
+                    </button>
+                    <button className="btn-secondary small" onClick={() => handleSelectAsset(asset)}>
+                      View
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {currentPage === 'marketplace' && (
+        <section className="page-section fade-in">
+          <div className="page-header">
+            <h1>Marketplace</h1>
+            <p>Browse and trade rare assets listed by other players.</p>
+          </div>
+          <div className="payment-selector">
+            <span>Pay with</span>
+            <div className="pill-group">
+              {payments.map((currency) => (
+                <button
+                  key={currency}
+                  className={`pill ${paymentCurrency === currency ? 'active' : ''}`}
+                  onClick={() => setPaymentCurrency(currency)}
+                >
+                  {currency}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="nft-grid">
+            {marketplaceAssets.map((asset) => (
+              <div key={asset.id} className="glass-panel nft-card">
+                <div className="nft-card-media">{renderAssetImage(asset)}</div>
+                <div className="nft-card-body">
+                  <h3>{asset.name}</h3>
+                  <div className="nft-card-meta">
+                    <span className={`badge badge-${asset.rarity.toLowerCase()}`}>{asset.rarity}</span>
+                    <span className="price-tag">
+                      {asset.price} {asset.currency}
+                    </span>
+                  </div>
+                  <div className="nft-card-footer">
+                    <button className="btn-primary small" onClick={() => handleBuyAsset(asset)}>
+                      <ShoppingCart size={16} /> Buy
+                    </button>
+                    <button className="btn-secondary small" onClick={() => handleSelectAsset(asset)}>
+                      Details
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {currentPage === 'asset' && (
+        <section className="page-section fade-in">
+          <div className="page-header">
+            <h1>Asset Detail</h1>
+            <p>Preview, equip, or trade this NFT.</p>
+          </div>
+          {!selectedAsset ? (
+            <div className="glass-panel empty-card">
+              <p>Select an asset from inventory or marketplace.</p>
+            </div>
+          ) : (
+            <div className="asset-detail">
+              <div className="glass-panel asset-preview">
+                <div className="asset-preview-media">{renderAssetImage(selectedAsset)}</div>
+                <div className="asset-preview-info">
+                  <h2>{selectedAsset.name}</h2>
+                  <div className="asset-tags">
+                    <span className={`badge badge-${selectedAsset.rarity.toLowerCase()}`}>
+                      {selectedAsset.rarity}
+                    </span>
+                    {selectedAsset.listed && <span className="badge badge-listed">Listed</span>}
+                  </div>
+                  <p className="muted-text">
+                    Owned by: {selectedAsset.owner}
+                  </p>
+                  <div className="attribute-grid">
+                    {Object.entries(selectedAsset.attributes || {}).map(([key, value]) => (
+                      <div key={key} className="attribute-card">
+                        <span>{key}</span>
+                        <strong>{String(value)}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="glass-panel asset-actions">
+                <h3>Actions</h3>
+                <div className="payment-selector">
+                  <span>Payment</span>
+                  <div className="pill-group">
+                    {payments.map((currency) => (
+                      <button
+                        key={currency}
+                        className={`pill ${paymentCurrency === currency ? 'active' : ''}`}
+                        onClick={() => setPaymentCurrency(currency)}
+                      >
+                        {currency}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="action-grid">
+                  <button className="btn-primary" onClick={() => handleBuyAsset(selectedAsset)}>
+                    <ShoppingCart size={18} /> Buy
+                  </button>
+                  <button className="btn-secondary" onClick={() => handleToggleListing(selectedAsset)}>
+                    <Store size={18} /> {selectedAsset.listed ? 'Unlist' : 'Sell'}
+                  </button>
+                  <button className="btn-secondary" onClick={() => handleTransferAsset(selectedAsset)}>
+                    <ArrowRightLeft size={18} /> Transfer
+                  </button>
+                  <button className="btn-secondary" onClick={() => handleEquipAsset(selectedAsset)}>
+                    <Box size={18} /> Equip
+                  </button>
+                </div>
+                {actionMessage && <p className="action-message">{actionMessage}</p>}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }

@@ -315,6 +315,46 @@ npm install de-shop-sdk
 
 ---
 
+# 🧪 Demo App (Frontend + Backend)
+
+This repository includes a Vite-powered frontend and a Flask API for minting and listing NFT assets on Algorand TestNet.
+
+## Frontend
+
+```bash
+cd De-Shop-SDK
+npm install
+npm run dev
+```
+
+Optional environment variable:
+
+```
+VITE_API_BASE_URL=http://localhost:5000
+```
+
+## Backend
+
+```bash
+cd De-Shop-SDK/backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python app.py
+```
+
+Algorand TestNet minting requires the following environment variables:
+
+- `CREATOR_MNEMONIC` — Algorand account mnemonic to sign asset creation.
+- `ALGOD_ADDRESS` — Algod endpoint (defaults to Algonode TestNet).
+- `ALGOD_TOKEN` — Algod token if required by the provider.
+
+If `CREATOR_MNEMONIC` is not provided, the API falls back to mock minting but still returns asset metadata.
+
+Note: the demo API stores assets in memory for quick iteration. Restarting the backend resets the list.
+
+---
+
 # 🚀 Quick Start
 
 ```javascript
