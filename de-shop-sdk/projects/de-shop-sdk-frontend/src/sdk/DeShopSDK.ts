@@ -210,20 +210,116 @@ export class DeShopSDK {
   // ── Inventory & Marketplace ───────────────────────────────────────────
 
   async getPlayerAssets(wallet: string): Promise<Asset[]> {
-    const response = await fetch(`${this.baseUrl}/assets/${encodeURIComponent(wallet)}`)
-    if (!response.ok) throw new Error(await this.errorText(response))
-    const body = (await response.json()) as AssetsResponse
-    return body.assets.map((a) => ({
-      ...a,
-      metadata: {
-        ...a.metadata,
-        image_url: SKIN_IMAGES[a.rarity] || SKIN_IMAGES.common,
-      },
-    }))
+    try {
+      // 1. Fetch on-chain assets from Algorand TestNet
+      const accountInfo = await this.algorand.account.getInformation(wallet)
+      const onChainAssets = (accountInfo.assets || []).filter(a => a.amount > 0)
+      
+      // 2. Fetch backend records for metadata synchronization
+      const response = await fetch(`${this.baseUrl}/assets/${encodeURIComponent(wallet)}`)
+      const backendAssets: Asset[] = response.ok ? ((await response.json()) as AssetsResponse).assets : []
+      
+      // 3. Resolve metadata for all on-chain assets (Parallelize network calls)
+      const assetPromises = onChainAssets.map(async (onChain) => {
+        const asaId = Number(onChain.assetId)
+        const bMatch = backendAssets.find(a => a.asa_id === asaId)
+        
+        if (bMatch) {
+          return {
+            ...bMatch,
+            metadata: {
+              ...bMatch.metadata,
+              image_url: SKIN_IMAGES[bMatch.rarity] || SKIN_IMAGES.common,
+            }
+          }
+        }
+        
+        // RECOVERY: If not in backend, fetch directly from ASA config on-chain
+        try {
+          const asaInfo = await this.algorand.asset.getById(BigInt(asaId))
+          const name = asaInfo.assetName || `Skin #${asaId}`
+          const unit = (asaInfo.unitName || 'common').toLowerCase()
+          
+          return {
+            id: asaId,
+            asa_id: asaId,
+            name: name,
+            rarity: unit,
+            owner: wallet,
+            creator: asaInfo.creator,
+            royalty_bps: 500,
+            listed: false,
+            list_price: null,
+            created_at: new Date().toISOString(),
+            suggested_price: { price: 0, confidence: 0, trend: 'stable' },
+            metadata: {
+              skin_name: name,
+              rarity: unit,
+              ipfs_uri: '',
+              image_url: SKIN_IMAGES[unit] || SKIN_IMAGES.common
+            }
+          }
+        } catch (e) {
+          // Absolute fallback
+          return null
+        }
+      })
+
+      const resolvedAssets = (await Promise.all(assetPromises)).filter(a => a !== null) as Asset[]
+      
+      // Also add items from backend that are "listed" (since they won't be in user's wallet!)
+      backendAssets.filter(a => a.listed).forEach(a => {
+          if (!resolvedAssets.find(existing => existing.asa_id === a.asa_id)) {
+            resolvedAssets.push({
+                  ...a,
+                  metadata: {
+                      ...a.metadata,
+                      image_url: SKIN_IMAGES[a.rarity] || SKIN_IMAGES.common,
+                  }
+              })
+          }
+      })
+
+      return resolvedAssets
+    } catch (e) {
+      console.error("Failed to fetch on-chain inventory, falling back to backend", e)
+      const response = await fetch(`${this.baseUrl}/assets/${encodeURIComponent(wallet)}`)
+      if (!response.ok) return []
+      const body = (await response.json()) as AssetsResponse
+      return body.assets.map(a => ({ ...a, metadata: { ...a.metadata, image_url: SKIN_IMAGES[a.rarity] || SKIN_IMAGES.common } }))
+    }
   }
 
   async listAsset(wallet: string, asset_id: number, price: number): Promise<Asset> {
     if (this.isWalletConnected && this.appClient && this._activeAddress) {
+      // 1. Ensure the contract is opted-in to this ASA
+      try {
+        const contractInfo = await this.algorand.account.getInformation(this.appClient.appAddress)
+        const hasAsset = contractInfo.assets?.some(a => BigInt(a.assetId) === BigInt(asset_id))
+        if (!hasAsset) {
+          // Contract needs to opt-in first
+          const setupComposer = this.appClient.newGroup()
+          const mbrPayTxn = await this.algorand.createTransaction.payment({
+            sender: this._activeAddress,
+            receiver: this.appClient.appAddress,
+            amount: microAlgo(100_000),
+          })
+          await setupComposer.setupAsset({
+            args: {
+              asset: BigInt(asset_id),
+              mbrPay: { txn: mbrPayTxn, signer: this._transactionSigner! }
+            },
+            signer: this._transactionSigner!,
+            validityWindow: 100,
+            extraFee: microAlgo(2000)
+          })
+          await setupComposer.send()
+        }
+      } catch (e) {
+        console.warn('Setup check/opt-in failed, attempting list anyway:', e)
+      }
+
+      // 2. Now list the asset
       const composer = this.appClient.newGroup()
       
       const axferTxn = await this.algorand.createTransaction.assetTransfer({
@@ -317,16 +413,69 @@ export class DeShopSDK {
   }
 
   async getMarketplace(): Promise<Asset[]> {
-    const response = await fetch(`${this.baseUrl}/marketplace`)
-    if (!response.ok) throw new Error(await this.errorText(response))
-    const body = (await response.json()) as MarketData
-    return body.marketplace.map((a) => ({
-      ...a,
-      metadata: {
-        ...a.metadata,
-        image_url: SKIN_IMAGES[a.rarity] || SKIN_IMAGES.common,
-      },
-    }))
+    try {
+      // 1. Source of Truth: Assets held by the smart contract
+      const contractInfo = await this.algorand.account.getInformation(this.appClient!.appAddress)
+      const escrowAssets = (contractInfo.assets || []).filter(a => a.amount > 0)
+      
+      // 2. Fetch backend records for pricing and owner metadata
+      const response = await fetch(`${this.baseUrl}/marketplace`)
+      const backendMarket: Asset[] = response.ok ? ((await response.json()) as MarketData).marketplace : []
+      
+      // 3. Resolve metadata for all escrowed assets
+      const marketPromises = escrowAssets.map(async (escrow) => {
+          const asaId = Number(escrow.assetId)
+          const bMatch = backendMarket.find(a => a.asa_id === asaId)
+          
+          if (bMatch) {
+              return {
+                  ...bMatch,
+                  metadata: {
+                      ...bMatch.metadata,
+                      image_url: SKIN_IMAGES[bMatch.rarity] || SKIN_IMAGES.common,
+                  }
+              }
+          }
+          
+          // RECOVERY: If not in backend, fetch directly from ASA config on-chain
+          try {
+              const asaInfo = await this.algorand.asset.getById(BigInt(asaId))
+              const name = asaInfo.assetName || `Listed Asset #${asaId}`
+              const unit = (asaInfo.unitName || 'rare').toLowerCase()
+              
+              return {
+                  id: asaId,
+                  asa_id: asaId,
+                  name: name,
+                  rarity: unit,
+                  owner: this.appClient!.appAddress.toString(),
+                  creator: asaInfo.creator,
+                  royalty_bps: 500,
+                  listed: true,
+                  list_price: 0, 
+                  created_at: new Date().toISOString(),
+                  suggested_price: { price: 0, confidence: 0, trend: 'stable' },
+                  metadata: {
+                      skin_name: name,
+                      rarity: unit,
+                      ipfs_uri: '',
+                      image_url: SKIN_IMAGES[unit] || SKIN_IMAGES.rare
+                  }
+              }
+          } catch (e) {
+              return null
+          }
+      })
+
+      const marketplace = (await Promise.all(marketPromises)).filter(a => a !== null) as Asset[]
+      return marketplace
+    } catch (e) {
+      console.error("Marketplace on-chain fetch failed", e)
+      const response = await fetch(`${this.baseUrl}/marketplace`)
+      if (!response.ok) return []
+      const body = (await response.json()) as MarketData
+      return body.marketplace.map(a => ({ ...a, metadata: { ...a.metadata, image_url: SKIN_IMAGES[a.rarity] || SKIN_IMAGES.common } }))
+    }
   }
 
   // ── Utils & Legacy Handlers ──────────────────────────────────────────
