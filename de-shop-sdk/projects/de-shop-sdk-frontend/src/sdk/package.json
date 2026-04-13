@@ -1,0 +1,53 @@
+{
+  "name": "de-shop-sdk",
+  "version": "1.0.0",
+  "description": "AI-Powered Decentralized Game Marketplace SDK for Algorand — Mint, trade, and manage NFT game skins with on-chain escrow",
+  "author": {
+    "name": "captainRam1413",
+    "email": "captain.ram1413@gmail.com"
+  },
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "algorand",
+    "nft",
+    "blockchain",
+    "gaming",
+    "marketplace",
+    "smart-contract",
+    "web3",
+    "sdk",
+    "escrow",
+    "defi"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/captainRam1413/De-Shop-SDK"
+  },
+  "peerDependencies": {
+    "@algorandfoundation/algokit-utils": ">=9.0.0",
+    "algosdk": ">=3.0.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.1.6"
+  }
+}

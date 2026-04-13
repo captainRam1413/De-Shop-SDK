@@ -1,6 +1,6 @@
 import { AlgorandClient, microAlgo } from '@algorandfoundation/algokit-utils'
 import algosdk from 'algosdk'
-import { DeshopsdkClient } from '../contracts/Deshopsdk'
+import { DeshopsdkClient } from './DeshopsdkClient'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
