@@ -1,0 +1,451 @@
+#pragma version 11
+#pragma typetrack false
+
+
+main:
+    intcblock 1 0 8 4
+    bytecblock 0x6c6973745f
+
+
+    txn NumAppArgs
+    bz main___algopy_default_create@13
+    txn OnCompletion
+    !
+    assert
+    txn ApplicationID
+    assert
+    pushbytess 0xbb240e97 0x17d5a832 0x34be79d2 0xb639d4bc
+    txna ApplicationArgs 0
+    match setupAsset listAsset buyAsset cancelListing
+    err
+
+main___algopy_default_create@13:
+    txn OnCompletion
+    !
+    txn ApplicationID
+    !
+    &&
+    return
+
+
+
+setupAsset:
+
+
+    txna ApplicationArgs 1
+    dup
+    len
+    intc_2
+    ==
+    assert
+    btoi
+    txn GroupIndex
+    intc_0
+    -
+    dup
+    gtxns TypeEnum
+    intc_0
+    ==
+    assert
+
+
+
+    dup
+    gtxns Receiver
+    global CurrentApplicationAddress
+    ==
+    assert
+
+
+    gtxns Amount
+    pushint 100000
+    ==
+    assert
+
+
+
+
+
+
+
+    itxn_begin
+
+
+    global CurrentApplicationAddress
+
+
+    intc_1
+    itxn_field AssetAmount
+    itxn_field AssetReceiver
+    itxn_field XferAsset
+
+
+    intc_3
+    itxn_field TypeEnum
+
+
+    intc_1
+    itxn_field Fee
+
+
+
+
+
+
+
+    itxn_submit
+
+
+    intc_0
+    return
+
+
+
+listAsset:
+
+
+    txn GroupIndex
+    intc_0
+    -
+    dup
+    gtxns TypeEnum
+    intc_3
+    ==
+    assert
+    txna ApplicationArgs 1
+    dup
+    len
+    intc_2
+    ==
+    assert
+    txna ApplicationArgs 2
+    dup
+    len
+    pushint 32
+    ==
+    assert
+    txna ApplicationArgs 3
+    dup
+    len
+    intc_2
+    ==
+    assert
+
+
+    dig 3
+    gtxns AssetReceiver
+    global CurrentApplicationAddress
+    ==
+    assert
+
+
+    dig 3
+    gtxns AssetAmount
+    intc_0
+    ==
+    assert
+
+
+    dig 3
+    gtxns Sender
+    txn Sender
+    ==
+    assert
+
+
+    dig 2
+    btoi
+    assert
+
+
+    uncover 3
+    gtxns XferAsset
+
+
+    itob
+    bytec_0
+    swap
+    concat
+    dup
+    box_len
+    bury 1
+    !
+    assert
+
+
+    txn Sender
+
+
+
+
+
+
+
+    uncover 4
+    concat
+    uncover 3
+    concat
+    uncover 2
+    concat
+    box_put
+
+
+    intc_0
+    return
+
+
+
+buyAsset:
+
+
+    txna ApplicationArgs 1
+    dup
+    len
+    intc_2
+    ==
+    assert
+    btoi
+    dup
+    txn GroupIndex
+    intc_0
+    -
+    dup
+    gtxns TypeEnum
+    intc_0
+    ==
+    assert
+
+
+    swap
+    itob
+    bytec_0
+    swap
+    concat
+    dup
+    cover 2
+    dup
+    box_len
+    bury 1
+    assert
+
+
+    box_get
+    pop
+
+
+    dup
+    pushint 32
+    extract_uint64
+
+
+    dig 1
+    extract 0 32
+    cover 3
+
+
+    dig 1
+    extract 40 32
+    cover 3
+
+
+    swap
+    pushint 72
+    extract_uint64
+
+
+    dig 2
+    gtxns Receiver
+    global CurrentApplicationAddress
+    ==
+    assert
+
+
+    dig 2
+    gtxns Amount
+    dig 2
+    >=
+    assert
+
+
+    uncover 2
+    gtxns Sender
+    txn Sender
+    ==
+    assert
+
+
+    dig 1
+    *
+    pushint 10000
+    /
+    dup
+    cover 2
+
+
+    -
+    dup
+
+
+    bz buyAsset_after_if_else@4
+
+
+    itxn_begin
+    dup
+    itxn_field Amount
+    dig 3
+    itxn_field Receiver
+    intc_0
+    itxn_field TypeEnum
+    intc_1
+    itxn_field Fee
+    itxn_submit
+
+buyAsset_after_if_else@4:
+
+
+    dig 1
+    bz buyAsset_after_if_else@7
+
+
+    itxn_begin
+    dig 1
+    itxn_field Amount
+    dig 2
+    itxn_field Receiver
+    intc_0
+    itxn_field TypeEnum
+    intc_1
+    itxn_field Fee
+    itxn_submit
+
+buyAsset_after_if_else@7:
+
+
+
+
+
+
+
+
+    itxn_begin
+
+
+    txn Sender
+    dig 4
+    itxn_field AssetCloseTo
+
+
+    intc_0
+    itxn_field AssetAmount
+    itxn_field AssetReceiver
+    dig 5
+    itxn_field XferAsset
+
+
+    intc_3
+    itxn_field TypeEnum
+
+
+    intc_1
+    itxn_field Fee
+
+
+
+
+
+
+
+
+    itxn_submit
+
+
+    dig 4
+    box_del
+    pop
+
+
+    intc_0
+    return
+
+
+
+cancelListing:
+
+
+    txna ApplicationArgs 1
+    dup
+    len
+    intc_2
+    ==
+    assert
+    btoi
+
+
+    dup
+    itob
+    bytec_0
+    swap
+    concat
+    dup
+    box_len
+    bury 1
+    assert
+
+
+    dup
+    box_get
+    pop
+
+
+    extract 0 32
+    txn Sender
+    ==
+    assert
+
+
+
+
+
+
+
+
+    itxn_begin
+
+
+    txn Sender
+
+
+    dup
+    itxn_field AssetCloseTo
+
+
+    intc_0
+    itxn_field AssetAmount
+    itxn_field AssetReceiver
+    swap
+    itxn_field XferAsset
+
+
+    intc_3
+    itxn_field TypeEnum
+
+
+    intc_1
+    itxn_field Fee
+
+
+
+
+
+
+
+
+    itxn_submit
+
+
+    box_del
+    pop
+
+
+    intc_0
+    return

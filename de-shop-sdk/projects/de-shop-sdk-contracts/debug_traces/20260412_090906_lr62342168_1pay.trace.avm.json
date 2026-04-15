@@ -1,0 +1,46 @@
+{
+  "eval-overrides": {
+    "allow-empty-signatures": true,
+    "allow-unnamed-resources": true,
+    "max-log-calls": 2048,
+    "max-log-size": 65536
+  },
+  "exec-trace-config": {
+    "enable": true,
+    "scratch-change": true,
+    "stack-change": true,
+    "state-change": true
+  },
+  "initial-states": {},
+  "last-round": 62342168,
+  "txn-groups": [
+    {
+      "failed-at": [
+        0
+      ],
+      "failure-message": "transaction BHWPNS4UNRE457D2QGIDSA3R7B4JNF3PWBSOIKIOUPEYPVLZAUMA: overspend (account QOOBYQ3EKUJ62POFYK2ERQCF3MIY25SOSIAGKSM6EIQDGGJLAVS32AVIXM, data {AccountBaseData:{Status:Offline MicroAlgos:{Raw:995000} RewardsBase:27521 RewardedMicroAlgos:{Raw:0} AuthAddr:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ IncentiveEligible:false TotalAppSchema:{NumUint:1 NumByteSlice:0} TotalExtraAppPages:0 TotalAppParams:2 TotalAppLocalStates:0 TotalAssetParams:0 TotalAssets:0 TotalBoxes:0 TotalBoxBytes:0 LastProposed:0 LastHeartbeat:0} VotingData:{VoteID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] SelectionID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] StateProofID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] VoteFirstValid:0 VoteLastValid:0 VoteKeyDilution:0}}, tried to spend {1000000})",
+      "txn-results": [
+        {
+          "txn-result": {
+            "pool-error": "",
+            "txn": {
+              "sig": "rrmi30uNT2go+8ocFLzvq2WFDpcj+Ufv07A/6jEuSxRETqisF20vnbmXkQMFW/0rVXjUJwwZ4iTQyJdvP13kDg==",
+              "txn": {
+                "amt": 1000000,
+                "fee": 1000,
+                "fv": 62342168,
+                "gen": "testnet-v1.0",
+                "gh": "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=",
+                "lv": 62343168,
+                "rcv": "ASXQPD7RIEJJJKQV6G5H2H34AUGV2CAWPKNWUT4ZITHJJMVBMIJYVMIA2E",
+                "snd": "QOOBYQ3EKUJ62POFYK2ERQCF3MIY25SOSIAGKSM6EIQDGGJLAVS32AVIXM",
+                "type": "pay"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "version": 2
+}

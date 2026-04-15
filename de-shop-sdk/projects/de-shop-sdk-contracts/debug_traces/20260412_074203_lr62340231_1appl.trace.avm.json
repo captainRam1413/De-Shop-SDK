@@ -1,0 +1,153 @@
+{
+  "eval-overrides": {
+    "allow-empty-signatures": true,
+    "allow-unnamed-resources": true,
+    "max-log-calls": 2048,
+    "max-log-size": 65536
+  },
+  "exec-trace-config": {
+    "enable": true,
+    "scratch-change": true,
+    "stack-change": true,
+    "state-change": true
+  },
+  "initial-states": {},
+  "last-round": 62340231,
+  "txn-groups": [
+    {
+      "app-budget-added": 700,
+      "app-budget-consumed": 12,
+      "failed-at": [
+        0
+      ],
+      "failure-message": "transaction 7CWOLLXFW4AZCVT664EY37X5QXQROB57PU6SKTFKY6MULWUINBFA: logic eval error: invalid ApplicationArgs index 0. Details: app=758708020, pc=86, opcodes=assert; pushbytes 0x87ac4b16 // 0x87ac4b16; txna ApplicationArgs 0",
+      "txn-results": [
+        {
+          "app-budget-consumed": 12,
+          "exec-trace": {
+            "approval-program-hash": "n3W7o58/IfwvMuI8H83JWsce1aBiScSG1szy9Q+mBrk=",
+            "approval-program-trace": [
+              {
+                "pc": 1
+              },
+              {
+                "pc": 7
+              },
+              {
+                "pc": 68,
+                "stack-additions": [
+                  {
+                    "type": 2
+                  }
+                ]
+              },
+              {
+                "pc": 70,
+                "stack-pop-count": 1
+              },
+              {
+                "pc": 73,
+                "stack-additions": [
+                  {
+                    "bytes": "bmV4dF9hc3NldF9pZA==",
+                    "type": 1
+                  }
+                ]
+              },
+              {
+                "pc": 74,
+                "stack-additions": [
+                  {
+                    "type": 2,
+                    "uint": 1
+                  }
+                ]
+              },
+              {
+                "pc": 75,
+                "stack-pop-count": 2,
+                "state-changes": [
+                  {
+                    "app-state-type": "g",
+                    "key": "bmV4dF9hc3NldF9pZA==",
+                    "new-value": {
+                      "type": 2,
+                      "uint": 1
+                    },
+                    "operation": "w"
+                  }
+                ]
+              },
+              {
+                "pc": 76,
+                "stack-additions": [
+                  {
+                    "type": 2
+                  }
+                ]
+              },
+              {
+                "pc": 78,
+                "stack-additions": [
+                  {
+                    "type": 2,
+                    "uint": 1
+                  }
+                ],
+                "stack-pop-count": 1
+              },
+              {
+                "pc": 79,
+                "stack-pop-count": 1
+              },
+              {
+                "pc": 80,
+                "stack-additions": [
+                  {
+                    "bytes": "h6xLFg==",
+                    "type": 1
+                  }
+                ]
+              },
+              {
+                "pc": 86
+              }
+            ]
+          },
+          "txn-result": {
+            "application-index": 758708020,
+            "global-state-delta": [
+              {
+                "key": "bmV4dF9hc3NldF9pZA==",
+                "value": {
+                  "action": 2,
+                  "uint": 1
+                }
+              }
+            ],
+            "pool-error": "",
+            "txn": {
+              "sig": "ohWG4bU7M3lWZpjZ7x31ti9/vUXHPZH+JSH7kHdBWIK1uUsxrYJ1UK/QWCvJiF3XXCc2Gj3Mn6IeWg1TakQFCQ==",
+              "txn": {
+                "apap": "CyAEAQAIICYHBm93bmVyXwZwcmljZV8HbGlzdGVkXw1uZXh0X2Fzc2V0X2lkCGNyZWF0b3JfCHJveWFsdHlfBBUffHUxGEAAAysiZzEZFESABIesSxY2GgCOAQAuMRhEggUEJqeTaARsLCjVBDS+edIEtjnUvARBF73vNhoAjgUAbQClANoBhgGxADYaAUkjWYECCEsBFRJENhoCSRUkEkQXSYHoBw5EIytlRDEASwEWKEsBUE8CvzEAJwRLAlBMv4AFbWV0YV9LAVBJvEhPBL8nBUsBUE8DFr8pSwFQIxZMSwG/KksCUEy/TCIIK0xnJwZMULAiQzYaAUkVJBJENhoCSRUlEkRMFxYoSwFQSb1FAURJvkgxABJETwK/KksBUCMWTEsBvylPAlBMvyJDNhoBSRUkEkQ2GgJJFSQSREwXFihLAVBJvUUBRL5IMQASREwXSUQpSwJQTBa/KkxQIha/IkM2GgFJFSQSRDEWIglJOBAiEkRMFxYoSwFQSU4DSb1FAUQqSwJQSU4EvkQXIhJESwI4ADEAEkRLAjgHMgoSRClLAlBJTgS+RBdPAzgISwEPREy+SE4CJwRLAlC+TE4DRCcFTwJQvkQXSwELgZBOCklOAglJQQAPsUmyCEsDsgcishAjsgGzSwFBABCxSwGyCEsCsgcishAjsgGzSwYxAL8jFksGSwG/SwVMvyJDNhoBSRUkEkQXFihLAVBJvUUBRL5IMQASRCpLAVAjFkxLAb8pTwJQTL8iQyM2GgFJFSUSRCNJK2VEI0lLAgxBACpJQQAeSRYoTFBJRQa9RQFBABBLBL5ESwQSQQAGSwIiCEUDSSIIRQFC/89LAhYnBkxQsCJD",
+                "apgs": {
+                  "nui": 1
+                },
+                "apsu": "C4EBQw==",
+                "fee": 1000,
+                "fv": 62340230,
+                "gen": "testnet-v1.0",
+                "gh": "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=",
+                "lv": 62341230,
+                "note": "QUxHT0tJVF9ERVBMT1lFUjpqeyJuYW1lIjogIkRlc2hvcHNkayIsICJ2ZXJzaW9uIjogIjEuMCJ9",
+                "snd": "QOOBYQ3EKUJ62POFYK2ERQCF3MIY25SOSIAGKSM6EIQDGGJLAVS32AVIXM",
+                "type": "appl"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "version": 2
+}

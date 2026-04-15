@@ -1,0 +1,51 @@
+{
+  "eval-overrides": {
+    "allow-empty-signatures": true,
+    "allow-unnamed-resources": true,
+    "max-log-calls": 2048,
+    "max-log-size": 65536
+  },
+  "exec-trace-config": {
+    "enable": true,
+    "scratch-change": true,
+    "stack-change": true,
+    "state-change": true
+  },
+  "initial-states": {},
+  "last-round": 62340112,
+  "txn-groups": [
+    {
+      "app-budget-added": 700,
+      "failed-at": [
+        0
+      ],
+      "failure-message": "transaction 4UBK6GHO7L3YAQFS2WIHMQZZ4SSPZZ4CNXM6WDXBGTIFHDX2TH2A: overspend (account QOOBYQ3EKUJ62POFYK2ERQCF3MIY25SOSIAGKSM6EIQDGGJLAVS32AVIXM, data {AccountBaseData:{Status:Offline MicroAlgos:{Raw:0} RewardsBase:0 RewardedMicroAlgos:{Raw:0} AuthAddr:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ IncentiveEligible:false TotalAppSchema:{NumUint:0 NumByteSlice:0} TotalExtraAppPages:0 TotalAppParams:0 TotalAppLocalStates:0 TotalAssetParams:0 TotalAssets:0 TotalBoxes:0 TotalBoxBytes:0 LastProposed:0 LastHeartbeat:0} VotingData:{VoteID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] SelectionID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] StateProofID:[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0] VoteFirstValid:0 VoteLastValid:0 VoteKeyDilution:0}}, tried to spend {1000})",
+      "txn-results": [
+        {
+          "txn-result": {
+            "pool-error": "",
+            "txn": {
+              "sig": "M0Vgs5NWKU3qs1mFlidoahiDarjWnjlfX6ltqCNa1o/w/kKMAY6vIOedKpEqEMwVdjJMPvtQoq0jyFaWMLw1AA==",
+              "txn": {
+                "apap": "CyAEAQAIICYHBm93bmVyXwZwcmljZV8HbGlzdGVkXw1uZXh0X2Fzc2V0X2lkCGNyZWF0b3JfCHJveWFsdHlfBBUffHUxGEAAAysiZzEZFESABIesSxY2GgCOAQAuMRhEggUEJqeTaARsLCjVBDS+edIEtjnUvARBF73vNhoAjgUAbQClANoBhgGxADYaAUkjWYECCEsBFRJENhoCSRUkEkQXSYHoBw5EIytlRDEASwEWKEsBUE8CvzEAJwRLAlBMv4AFbWV0YV9LAVBJvEhPBL8nBUsBUE8DFr8pSwFQIxZMSwG/KksCUEy/TCIIK0xnJwZMULAiQzYaAUkVJBJENhoCSRUlEkRMFxYoSwFQSb1FAURJvkgxABJETwK/KksBUCMWTEsBvylPAlBMvyJDNhoBSRUkEkQ2GgJJFSQSREwXFihLAVBJvUUBRL5IMQASREwXSUQpSwJQTBa/KkxQIha/IkM2GgFJFSQSRDEWIglJOBAiEkRMFxYoSwFQSU4DSb1FAUQqSwJQSU4EvkQXIhJESwI4ADEAEkRLAjgHMgoSRClLAlBJTgS+RBdPAzgISwEPREy+SE4CJwRLAlC+TE4DRCcFTwJQvkQXSwELgZBOCklOAglJQQAPsUmyCEsDsgcishAjsgGzSwFBABCxSwGyCEsCsgcishAjsgGzSwYxAL8jFksGSwG/SwVMvyJDNhoBSRUkEkQXFihLAVBJvUUBRL5IMQASRCpLAVAjFkxLAb8pTwJQTL8iQyM2GgFJFSUSRCNJK2VEI0lLAgxBACpJQQAeSRYoTFBJRQa9RQFBABBLBL5ESwQSQQAGSwIiCEUDSSIIRQFC/89LAhYnBkxQsCJD",
+                "apgs": {
+                  "nui": 1
+                },
+                "apsu": "C4EBQw==",
+                "fee": 1000,
+                "fv": 62340112,
+                "gen": "testnet-v1.0",
+                "gh": "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=",
+                "lv": 62341112,
+                "note": "QUxHT0tJVF9ERVBMT1lFUjpqeyJuYW1lIjogIkRlc2hvcHNkayIsICJ2ZXJzaW9uIjogIjEuMCJ9",
+                "snd": "QOOBYQ3EKUJ62POFYK2ERQCF3MIY25SOSIAGKSM6EIQDGGJLAVS32AVIXM",
+                "type": "appl"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "version": 2
+}
