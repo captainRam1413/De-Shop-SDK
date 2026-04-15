@@ -18,7 +18,7 @@ class InMemoryStore:
     assets: dict[int, dict[str, Any]] = field(default_factory=dict)
     sales: list[dict[str, Any]] = field(default_factory=list)
 
-    def mint(self, wallet: str, skin_name: str, rarity: str, royalty_bps: int) -> dict[str, Any]:
+    def mint(self, wallet: str, skin_name: str, rarity: str, royalty_bps: int, skin_type: str = "weapon") -> dict[str, Any]:
         suggestion = self.ai.suggest_price(skin_name=skin_name, rarity=rarity)
         asset_id = self.next_asset_id
         self.next_asset_id += 1
@@ -30,6 +30,7 @@ class InMemoryStore:
             "metadata": {
                 "skin_name": skin_name,
                 "rarity": rarity,
+                "skin_type": skin_type,
                 "ipfs_uri": f"ipfs://mock/{asset_id:04d}-{skin_name.replace(' ', '-').lower()}",
             },
             "owner": wallet,

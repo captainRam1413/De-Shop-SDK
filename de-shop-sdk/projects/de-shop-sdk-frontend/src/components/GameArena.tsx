@@ -2,104 +2,157 @@ import { useEffect, useRef, useCallback } from 'react'
 import type { Asset } from '../sdk/DeShopSDK'
 
 type GameArenaProps = {
-  activeSkin: Asset | null
+  activeGunSkin: Asset | null
+  activeCharSkin: Asset | null
 }
 
-// ─── Rarity Palette ──────────────────────────────────────────────────────────
-const RARITY_CONFIG: Record<string, {
-  main: string; glow: string; accent: string
-  body: string; bodyLight: string; outline: string
-  weapon: string; weaponAccent: string; weaponGlow: string
-  trail: string; gridTint: string
-  particleCount: number; auraSize: number; glowIntensity: number
+// ─── Rarity Skin Palette ─────────────────────────────────────────────────────
+const SKIN_PALETTE: Record<string, {
+  helmet: string; helmetLight: string; visor: string
+  body: string; bodyLight: string; bodyDark: string
+  legs: string; legsDark: string
+  sword: string; swordLight: string; swordGlow: string; swordTrail: string
+  aura: string; particleColor: string
+  dmgMulti: number
 }> = {
   common: {
-    main: '#9ca3af', glow: '#6b7280', accent: '#d1d5db',
-    body: '#6b7280', bodyLight: '#9ca3af', outline: '#4b5563',
-    weapon: '#9ca3af', weaponAccent: '#d1d5db', weaponGlow: 'rgba(156,163,175,0.3)',
-    trail: 'rgba(156,163,175,', gridTint: 'rgba(107,114,128,0.03)',
-    particleCount: 3, auraSize: 22, glowIntensity: 8,
+    helmet: '#6b7280', helmetLight: '#9ca3af', visor: '#374151',
+    body: '#4b5563', bodyLight: '#6b7280', bodyDark: '#374151',
+    legs: '#4b5563', legsDark: '#374151',
+    sword: '#9ca3af', swordLight: '#d1d5db', swordGlow: 'rgba(156,163,175,0)', swordTrail: 'rgba(156,163,175,0.15)',
+    aura: 'rgba(156,163,175,0.05)', particleColor: '#9ca3af',
+    dmgMulti: 1,
   },
   rare: {
-    main: '#60a5fa', glow: '#3b82f6', accent: '#93c5fd',
-    body: '#2563eb', bodyLight: '#60a5fa', outline: '#1d4ed8',
-    weapon: '#60a5fa', weaponAccent: '#93c5fd', weaponGlow: 'rgba(59,130,246,0.4)',
-    trail: 'rgba(59,130,246,', gridTint: 'rgba(59,130,246,0.03)',
-    particleCount: 5, auraSize: 26, glowIntensity: 12,
+    helmet: '#2563eb', helmetLight: '#60a5fa', visor: '#1e3a5f',
+    body: '#1d4ed8', bodyLight: '#3b82f6', bodyDark: '#1e40af',
+    legs: '#1e3a8a', legsDark: '#1e3070',
+    sword: '#60a5fa', swordLight: '#93c5fd', swordGlow: 'rgba(59,130,246,0.4)', swordTrail: 'rgba(59,130,246,0.3)',
+    aura: 'rgba(59,130,246,0.08)', particleColor: '#60a5fa',
+    dmgMulti: 1.5,
   },
   epic: {
-    main: '#c084fc', glow: '#a855f7', accent: '#e9d5ff',
-    body: '#7c3aed', bodyLight: '#c084fc', outline: '#6d28d9',
-    weapon: '#c084fc', weaponAccent: '#e9d5ff', weaponGlow: 'rgba(168,85,247,0.5)',
-    trail: 'rgba(168,85,247,', gridTint: 'rgba(168,85,247,0.04)',
-    particleCount: 8, auraSize: 30, glowIntensity: 18,
+    helmet: '#7c3aed', helmetLight: '#a78bfa', visor: '#4c1d95',
+    body: '#6d28d9', bodyLight: '#8b5cf6', bodyDark: '#5b21b6',
+    legs: '#4c1d95', legsDark: '#3b0f80',
+    sword: '#c084fc', swordLight: '#e9d5ff', swordGlow: 'rgba(168,85,247,0.5)', swordTrail: 'rgba(168,85,247,0.35)',
+    aura: 'rgba(168,85,247,0.1)', particleColor: '#a78bfa',
+    dmgMulti: 2,
   },
   legendary: {
-    main: '#fbbf24', glow: '#f59e0b', accent: '#fef3c7',
-    body: '#d97706', bodyLight: '#fbbf24', outline: '#b45309',
-    weapon: '#fbbf24', weaponAccent: '#fef3c7', weaponGlow: 'rgba(245,158,11,0.6)',
-    trail: 'rgba(245,158,11,', gridTint: 'rgba(245,158,11,0.05)',
-    particleCount: 12, auraSize: 35, glowIntensity: 25,
+    helmet: '#d97706', helmetLight: '#fbbf24', visor: '#92400e',
+    body: '#b45309', bodyLight: '#f59e0b', bodyDark: '#92400e',
+    legs: '#78350f', legsDark: '#5c2a0a',
+    sword: '#fbbf24', swordLight: '#fef3c7', swordGlow: 'rgba(245,158,11,0.6)', swordTrail: 'rgba(245,158,11,0.4)',
+    aura: 'rgba(245,158,11,0.12)', particleColor: '#fbbf24',
+    dmgMulti: 3,
   },
+}
+
+// ─── Block tiles ─────────────────────────────────────────────────────────────
+const TILE = { GRASS: 0, DIRT: 1, STONE: 2, WATER: 3, SAND: 4, WOOD: 5, LEAVES: 6, FLOWER: 7, PATH: 8 }
+const TILE_COLORS: Record<number, { base: string; shade: string; detail?: string }> = {
+  [TILE.GRASS]:  { base: '#4a8c2a', shade: '#3d7522', detail: '#5da035' },
+  [TILE.DIRT]:   { base: '#8b6b3d', shade: '#7a5c32' },
+  [TILE.STONE]:  { base: '#787878', shade: '#606060', detail: '#6a6a6a' },
+  [TILE.WATER]:  { base: '#2878c8', shade: '#2060a8', detail: '#3090e0' },
+  [TILE.SAND]:   { base: '#e0c878', shade: '#c8b060' },
+  [TILE.WOOD]:   { base: '#6e4e28', shade: '#5a3e1e', detail: '#7e5e38' },
+  [TILE.LEAVES]: { base: '#2d7a1a', shade: '#246812', detail: '#3a9025' },
+  [TILE.FLOWER]: { base: '#4a8c2a', shade: '#3d7522', detail: '#e04060' },
+  [TILE.PATH]:   { base: '#a08858', shade: '#907848' },
+}
+
+const MAP_W = 40, MAP_H = 30, TILE_S = 32
+
+// ─── World Generation ────────────────────────────────────────────────────────
+function generateMap(): number[][] {
+  const map: number[][] = []
+  for (let y = 0; y < MAP_H; y++) {
+    map[y] = []
+    for (let x = 0; x < MAP_W; x++) {
+      // Base terrain
+      const n = Math.sin(x * 0.2) * Math.cos(y * 0.15) + Math.sin(x * 0.08 + y * 0.06) * 2
+      if (n > 1.5) map[y][x] = TILE.STONE
+      else if (n > 0.5) map[y][x] = TILE.DIRT
+      else if (n < -1.5) map[y][x] = TILE.WATER
+      else if (n < -1) map[y][x] = TILE.SAND
+      else map[y][x] = TILE.GRASS
+    }
+  }
+
+  // Place trees (trunk + leaves)
+  for (let i = 0; i < 15; i++) {
+    const tx = 3 + Math.floor(Math.random() * (MAP_W - 6))
+    const ty = 3 + Math.floor(Math.random() * (MAP_H - 6))
+    if (map[ty][tx] === TILE.GRASS) {
+      map[ty][tx] = TILE.WOOD
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          if (map[ty + dy] && map[ty + dy][tx + dx] === TILE.GRASS && !(dx === 0 && dy === 0)) {
+            map[ty + dy][tx + dx] = TILE.LEAVES
+          }
+        }
+      }
+    }
+  }
+
+  // Flowers
+  for (let i = 0; i < 20; i++) {
+    const fx = Math.floor(Math.random() * MAP_W)
+    const fy = Math.floor(Math.random() * MAP_H)
+    if (map[fy][fx] === TILE.GRASS) map[fy][fx] = TILE.FLOWER
+  }
+
+  // Paths
+  let px = Math.floor(MAP_W / 2), py = 0
+  while (py < MAP_H) {
+    if (map[py] && map[py][px] !== TILE.WATER) map[py][px] = TILE.PATH
+    py++
+    px += Math.floor(Math.random() * 3) - 1
+    px = Math.max(1, Math.min(MAP_W - 2, px))
+  }
+
+  return map
+}
+
+// ─── Mob Types ───────────────────────────────────────────────────────────────
+type Mob = {
+  x: number; y: number; type: 'zombie' | 'creeper' | 'skeleton'
+  hp: number; maxHp: number; hit: number; facing: number
+  attackCd: number; phase: number; knockX: number; knockY: number
 }
 
 type Particle = {
   x: number; y: number; vx: number; vy: number
   life: number; maxLife: number; color: string; size: number
-  type: 'hit' | 'death' | 'ambient' | 'dash' | 'xp'
 }
 
-type Enemy = {
-  x: number; y: number; hp: number; maxHp: number
-  speed: number; angle: number; hit: number
-  type: 'orb' | 'skull' | 'phantom'
-  size: number; phase: number
+type DmgText = {
+  x: number; y: number; text: string; color: string; life: number
 }
 
-type FloatingText = {
-  x: number; y: number; text: string; color: string
-  life: number; vy: number
-}
-
-export default function GameArena({ activeSkin }: GameArenaProps) {
+export default function GameArena({ activeGunSkin, activeCharSkin }: GameArenaProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const animRef = useRef<number>(0)
-  const keysRef = useRef<Set<string>>(new Set())
-  const mouseRef = useRef({ x: 0, y: 0 })
-  const playerRef = useRef({
-    x: 300, y: 250,
-    angle: 0,
-    attacking: false, attackFrame: 0,
-    score: 0, combo: 0, maxCombo: 0,
-    hp: 100, maxHp: 100,
-    dashCooldown: 0, isDashing: false, dashFrame: 0,
-    level: 1, xp: 0, xpNeeded: 50,
-    invincible: 0,
+  const stateRef = useRef({
+    px: 20, py: 15, facing: 0, // 0=down,1=left,2=up,3=right
+    swingT: -1, swingDir: 0,
+    hp: 20, maxHp: 20, invT: 0,
+    score: 0, combo: 0, xp: 0, level: 1,
+    mobs: [] as Mob[], particles: [] as Particle[], texts: [] as DmgText[],
+    map: null as null | number[][],
+    frame: 0, moveT: 0,
+    camX: 0, camY: 0,
   })
-  const particlesRef = useRef<Particle[]>([])
-  const enemiesRef = useRef<Enemy[]>([])
-  const trailRef = useRef<Array<{ x: number; y: number; alpha: number; color: string }>>([])
-  const floatingTexts = useRef<FloatingText[]>([])
-  const screenShakeRef = useRef(0)
-  const waveRef = useRef(1)
+  const keysRef = useRef<Set<string>>(new Set())
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     keysRef.current.add(e.key.toLowerCase())
-    const player = playerRef.current
-    if ((e.key === ' ' || e.key === 'Enter') && !player.attacking) {
+    if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault()
-      player.attacking = true
-      player.attackFrame = 0
-    }
-    if (e.key === 'Shift' && player.dashCooldown <= 0 && !player.isDashing) {
-      e.preventDefault()
-      player.isDashing = true
-      player.dashFrame = 0
-      player.dashCooldown = 60
-      player.invincible = 12
+      if (stateRef.current.swingT < 0) stateRef.current.swingT = 0
     }
   }, [])
-
   const handleKeyUp = useCallback((e: KeyboardEvent) => {
     keysRef.current.delete(e.key.toLowerCase())
   }, [])
@@ -107,719 +160,690 @@ export default function GameArena({ activeSkin }: GameArenaProps) {
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
-    }
+    return () => { window.removeEventListener('keydown', handleKeyDown); window.removeEventListener('keyup', handleKeyUp) }
   }, [handleKeyDown, handleKeyUp])
 
+  // Click to attack
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect()
-      mouseRef.current.x = e.clientX - rect.left
-      mouseRef.current.y = e.clientY - rect.top
+    const cvs = canvasRef.current; if (!cvs) return
+    const onClick = () => {
+      if (stateRef.current.swingT < 0) stateRef.current.swingT = 0
     }
-    const handleClick = () => {
-      const player = playerRef.current
-      if (!player.attacking) {
-        player.attacking = true
-        player.attackFrame = 0
-      }
-    }
-    canvas.addEventListener('mousemove', handleMouseMove)
-    canvas.addEventListener('click', handleClick)
-    return () => {
-      canvas.removeEventListener('mousemove', handleMouseMove)
-      canvas.removeEventListener('click', handleClick)
-    }
+    cvs.addEventListener('click', onClick)
+    return () => cvs.removeEventListener('click', onClick)
   }, [])
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+    const canvas = canvasRef.current; if (!canvas) return
+    const ctx = canvas.getContext('2d'); if (!ctx) return
 
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
+    const W = canvas.offsetWidth, H = canvas.offsetHeight
+    canvas.width = W; canvas.height = H
 
-    const W = canvas.offsetWidth
-    const H = canvas.offsetHeight
-    canvas.width = W
-    canvas.height = H
+    const st = stateRef.current
+    if (!st.map) {
+      st.map = generateMap()
+      // Spawn mobs
+      for (let i = 0; i < 10; i++) {
+        const mx = 3 + Math.random() * (MAP_W - 6)
+        const my = 3 + Math.random() * (MAP_H - 6)
+        const types: Mob['type'][] = ['zombie', 'creeper', 'skeleton']
+        const t = types[Math.floor(Math.random() * 3)]
+        st.mobs.push({
+          x: mx, y: my, type: t,
+          hp: t === 'creeper' ? 12 : t === 'skeleton' ? 8 : 10,
+          maxHp: t === 'creeper' ? 12 : t === 'skeleton' ? 8 : 10,
+          hit: 0, facing: Math.floor(Math.random() * 4),
+          attackCd: 0, phase: Math.random() * 100,
+          knockX: 0, knockY: 0,
+        })
+      }
+    }
+    const map = st.map!
+    const charSkin = SKIN_PALETTE[(activeCharSkin?.rarity?.toLowerCase() as any)] || SKIN_PALETTE.common
+    const gunSkin = SKIN_PALETTE[(activeGunSkin?.rarity?.toLowerCase() as any)] || SKIN_PALETTE.common
 
-    const rarity = activeSkin?.rarity?.toLowerCase() ?? 'common'
-    const cfg = RARITY_CONFIG[rarity] ?? RARITY_CONFIG.common
-    const player = playerRef.current
-    const particles = particlesRef.current
-    const enemies = enemiesRef.current
-    const trail = trailRef.current
-    const texts = floatingTexts.current
-
-    const addText = (x: number, y: number, text: string, color: string) => {
-      texts.push({ x, y, text, color, life: 50, vy: -1.5 })
+    const isSolid = (tx: number, ty: number) => {
+      const t = map[Math.floor(ty)]?.[Math.floor(tx)]
+      return t === TILE.WATER || t === TILE.WOOD || t === TILE.LEAVES || t === undefined
     }
 
-    const spawnEnemy = () => {
-      const side = Math.floor(Math.random() * 4)
-      let x = 0, y = 0
-      if (side === 0) { x = Math.random() * W; y = -30 }
-      else if (side === 1) { x = W + 30; y = Math.random() * H }
-      else if (side === 2) { x = Math.random() * W; y = H + 30 }
-      else { x = -30; y = Math.random() * H }
+    let animId: number
 
-      const types: Array<Enemy['type']> = ['orb', 'skull', 'phantom']
-      const type = types[Math.floor(Math.random() * Math.min(types.length, waveRef.current))]
-      const hpBase = type === 'orb' ? 2 : type === 'skull' ? 4 : 3
-      const hp = hpBase + Math.floor(waveRef.current * 0.5)
-      const speed = type === 'phantom' ? 1.2 : type === 'skull' ? 0.6 : 0.8
-      enemies.push({ x, y, hp, maxHp: hp, speed: speed + waveRef.current * 0.05, angle: 0, hit: 0, type, size: type === 'skull' ? 18 : 14, phase: Math.random() * Math.PI * 2 })
-    }
-
-    const SPEED = 3
-    const DASH_SPEED = 12
-
-    // ─── Draw Character ──────────────────────────────────────────────────
-    const drawCharacter = (x: number, y: number, angle: number, isMoving: boolean) => {
-      ctx.save()
-      ctx.translate(x, y)
-
-      // Rarity aura ring
-      const auraPulse = Math.sin(frame * 0.04) * 3
-      ctx.shadowColor = cfg.weaponGlow
-      ctx.shadowBlur = cfg.glowIntensity
-      ctx.beginPath()
-      ctx.arc(0, 0, cfg.auraSize + auraPulse, 0, Math.PI * 2)
-      ctx.strokeStyle = cfg.trail + '0.15)'
-      ctx.lineWidth = 1.5
-      ctx.stroke()
-
-      // Inner aura
-      const auraGrad = ctx.createRadialGradient(0, 0, 4, 0, 0, cfg.auraSize)
-      auraGrad.addColorStop(0, cfg.trail + '0.2)')
-      auraGrad.addColorStop(1, 'transparent')
-      ctx.fillStyle = auraGrad
-      ctx.fill()
-
-      ctx.shadowBlur = 0
-
-      // Body — armored figure
-      const bobY = isMoving ? Math.sin(frame * 0.15) * 2 : 0
-
-      // Legs
-      if (isMoving) {
-        const legSwing = Math.sin(frame * 0.15) * 6
-        ctx.strokeStyle = cfg.outline
-        ctx.lineWidth = 3
-        ctx.lineCap = 'round'
-        // Left leg
-        ctx.beginPath()
-        ctx.moveTo(-3, 6 + bobY)
-        ctx.lineTo(-5 + legSwing * 0.5, 16)
-        ctx.stroke()
-        // Right leg
-        ctx.beginPath()
-        ctx.moveTo(3, 6 + bobY)
-        ctx.lineTo(5 - legSwing * 0.5, 16)
-        ctx.stroke()
-      } else {
-        ctx.strokeStyle = cfg.outline
-        ctx.lineWidth = 3
-        ctx.lineCap = 'round'
-        ctx.beginPath(); ctx.moveTo(-3, 6); ctx.lineTo(-4, 15); ctx.stroke()
-        ctx.beginPath(); ctx.moveTo(3, 6); ctx.lineTo(4, 15); ctx.stroke()
-      }
-
-      // Torso (armor plate)
-      ctx.shadowColor = cfg.glow
-      ctx.shadowBlur = cfg.glowIntensity * 0.5
-      const torsoGrad = ctx.createLinearGradient(0, -10 + bobY, 0, 8 + bobY)
-      torsoGrad.addColorStop(0, cfg.bodyLight)
-      torsoGrad.addColorStop(0.5, cfg.body)
-      torsoGrad.addColorStop(1, cfg.outline)
-      ctx.beginPath()
-      ctx.ellipse(0, -2 + bobY, 8, 10, 0, 0, Math.PI * 2)
-      ctx.fillStyle = torsoGrad
-      ctx.fill()
-      ctx.strokeStyle = cfg.outline
-      ctx.lineWidth = 1
-      ctx.stroke()
-
-      // Armor detail line
-      ctx.beginPath()
-      ctx.moveTo(0, -10 + bobY)
-      ctx.lineTo(0, 6 + bobY)
-      ctx.strokeStyle = cfg.accent + '40'
-      ctx.lineWidth = 1
-      ctx.stroke()
-
-      // Shoulder pads
-      ctx.fillStyle = cfg.body
-      ctx.beginPath()
-      ctx.ellipse(-9, -5 + bobY, 4, 3, -0.3, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.stroke()
-      ctx.beginPath()
-      ctx.ellipse(9, -5 + bobY, 4, 3, 0.3, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.stroke()
-
-      // Arms
-      ctx.strokeStyle = cfg.outline
-      ctx.lineWidth = 2.5
-      ctx.lineCap = 'round'
-      const armAngle = isMoving ? Math.sin(frame * 0.15) * 0.3 : 0
-      // Left arm (non-weapon)
-      ctx.beginPath()
-      ctx.moveTo(-9, -4 + bobY)
-      ctx.lineTo(-12 - Math.sin(armAngle) * 3, 6 + bobY)
-      ctx.stroke()
-      // Right arm (weapon arm — points towards aim)
-      const weaponArmAngle = angle
-      ctx.beginPath()
-      ctx.moveTo(9, -4 + bobY)
-      ctx.lineTo(9 + Math.cos(weaponArmAngle) * 8, -4 + bobY + Math.sin(weaponArmAngle) * 8)
-      ctx.stroke()
-
-      // Head
-      ctx.shadowBlur = cfg.glowIntensity * 0.3
-      const headGrad = ctx.createRadialGradient(0, -14 + bobY, 1, 0, -14 + bobY, 7)
-      headGrad.addColorStop(0, cfg.accent)
-      headGrad.addColorStop(0.5, cfg.bodyLight)
-      headGrad.addColorStop(1, cfg.body)
-      ctx.beginPath()
-      ctx.arc(0, -14 + bobY, 6, 0, Math.PI * 2)
-      ctx.fillStyle = headGrad
-      ctx.fill()
-      ctx.strokeStyle = cfg.outline
-      ctx.lineWidth = 1
-      ctx.stroke()
-
-      // Visor / eyes (looking toward mouse)
-      const eyeDirX = Math.cos(angle) * 2.5
-      const eyeDirY = Math.sin(angle) * 1.5
-      // Eye glow
-      ctx.fillStyle = cfg.main
-      ctx.shadowColor = cfg.main
-      ctx.shadowBlur = 6
-      ctx.beginPath()
-      ctx.arc(-2 + eyeDirX, -15 + bobY + eyeDirY, 1.2, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.beginPath()
-      ctx.arc(2 + eyeDirX, -15 + bobY + eyeDirY, 1.2, 0, Math.PI * 2)
-      ctx.fill()
-
-      ctx.shadowBlur = 0
-      ctx.restore()
-    }
-
-    // ─── Draw Weapon ─────────────────────────────────────────────────────
-    const drawWeapon = (x: number, y: number, angle: number, swingProgress: number) => {
-      ctx.save()
-      ctx.translate(x, y)
-
-      const isSwinging = swingProgress >= 0
-      const swingAngle = isSwinging
-        ? angle - 1.2 + swingProgress * 2.4
-        : angle
-
-      const weaponLen = rarity === 'legendary' ? 42 : rarity === 'epic' ? 38 : rarity === 'rare' ? 35 : 30
-      const bladeWidth = rarity === 'legendary' ? 5 : rarity === 'epic' ? 4 : 3
-
-      // Weapon handle origin
-      const hx = Math.cos(swingAngle) * 12
-      const hy = Math.sin(swingAngle) * 12
-
-      // Blade tip
-      const tx = Math.cos(swingAngle) * weaponLen
-      const ty = Math.sin(swingAngle) * weaponLen
-
-      // Blade glow trail (when swinging)
-      if (isSwinging) {
-        ctx.shadowColor = cfg.weaponGlow
-        ctx.shadowBlur = cfg.glowIntensity
-
-        // Swing arc trail
-        ctx.beginPath()
-        ctx.arc(0, 0, weaponLen * 0.9, angle - 1.2, angle - 1.2 + swingProgress * 2.4)
-        ctx.strokeStyle = cfg.trail + (0.5 * (1 - swingProgress)).toFixed(2) + ')'
-        ctx.lineWidth = bladeWidth + 2
-        ctx.lineCap = 'round'
-        ctx.stroke()
-      }
-
-      // Blade body (gradient)
-      ctx.shadowColor = cfg.weaponGlow
-      ctx.shadowBlur = isSwinging ? cfg.glowIntensity * 1.5 : cfg.glowIntensity * 0.5
-      const bladeGrad = ctx.createLinearGradient(hx, hy, tx, ty)
-      bladeGrad.addColorStop(0, cfg.weapon)
-      bladeGrad.addColorStop(0.5, cfg.weaponAccent)
-      bladeGrad.addColorStop(1, cfg.weapon)
-
-      ctx.beginPath()
-      ctx.moveTo(hx, hy)
-      ctx.lineTo(tx, ty)
-      ctx.strokeStyle = bladeGrad
-      ctx.lineWidth = bladeWidth
-      ctx.lineCap = 'round'
-      ctx.stroke()
-
-      // Blade edge highlight
-      const perpX = Math.cos(swingAngle + Math.PI / 2)
-      const perpY = Math.sin(swingAngle + Math.PI / 2)
-      ctx.beginPath()
-      ctx.moveTo(hx + perpX, hy + perpY)
-      ctx.lineTo(tx + perpX, ty + perpY)
-      ctx.strokeStyle = cfg.accent + '60'
-      ctx.lineWidth = 1
-      ctx.stroke()
-
-      // Cross-guard / hilt
-      const gx = Math.cos(swingAngle) * 13
-      const gy = Math.sin(swingAngle) * 13
-      const gperpX = Math.cos(swingAngle + Math.PI / 2) * 5
-      const gperpY = Math.sin(swingAngle + Math.PI / 2) * 5
-      ctx.beginPath()
-      ctx.moveTo(gx - gperpX, gy - gperpY)
-      ctx.lineTo(gx + gperpX, gy + gperpY)
-      ctx.strokeStyle = cfg.body
-      ctx.lineWidth = 3
-      ctx.lineCap = 'round'
-      ctx.stroke()
-
-      // Gem on cross-guard
-      if (rarity !== 'common') {
-        ctx.shadowBlur = 8
-        ctx.beginPath()
-        ctx.arc(gx, gy, 2, 0, Math.PI * 2)
-        ctx.fillStyle = cfg.accent
-        ctx.fill()
-      }
-
-      // Legendary: Flame effect on blade
-      if (rarity === 'legendary' && isSwinging) {
-        for (let i = 0; i < 4; i++) {
-          const t = 0.3 + Math.random() * 0.6
-          const fx = hx + (tx - hx) * t + (Math.random() - 0.5) * 8
-          const fy = hy + (ty - hy) * t + (Math.random() - 0.5) * 8
-          ctx.beginPath()
-          ctx.arc(fx, fy, 1.5 + Math.random() * 2, 0, Math.PI * 2)
-          ctx.fillStyle = Math.random() > 0.5 ? '#fef3c7' : '#fbbf24'
-          ctx.fill()
-        }
-      }
-
-      // Epic: Electric sparks
-      if (rarity === 'epic' && isSwinging) {
-        for (let i = 0; i < 3; i++) {
-          const t = Math.random()
-          const sx = hx + (tx - hx) * t
-          const sy = hy + (ty - hy) * t
-          ctx.beginPath()
-          ctx.moveTo(sx, sy)
-          ctx.lineTo(sx + (Math.random() - 0.5) * 12, sy + (Math.random() - 0.5) * 12)
-          ctx.strokeStyle = '#e9d5ff'
-          ctx.lineWidth = 0.8
-          ctx.stroke()
-        }
-      }
-
-      ctx.shadowBlur = 0
-      ctx.restore()
-    }
-
-    // ─── Draw Enemy ──────────────────────────────────────────────────────
-    const drawEnemy = (e: Enemy) => {
-      const shake = e.hit > 0 ? (Math.random() - 0.5) * 4 : 0
-      ctx.save()
-      ctx.translate(e.x + shake, e.y + shake)
-
-      if (e.type === 'skull') {
-        // Skull enemy: larger, darker
-        ctx.shadowColor = 'rgba(239,68,68,0.5)'
-        ctx.shadowBlur = 12
-        const sg = ctx.createRadialGradient(0, 0, 2, 0, 0, e.size)
-        sg.addColorStop(0, '#dc2626')
-        sg.addColorStop(0.6, '#991b1b')
-        sg.addColorStop(1, 'rgba(127,29,29,0)')
-        ctx.beginPath()
-        ctx.arc(0, 0, e.size, 0, Math.PI * 2)
-        ctx.fillStyle = sg
-        ctx.fill()
-
-        // Skull face
-        ctx.shadowBlur = 0
-        ctx.fillStyle = '#000'
-        ctx.beginPath(); ctx.arc(-3, -2, 2.5, 0, Math.PI * 2); ctx.fill()
-        ctx.beginPath(); ctx.arc(3, -2, 2.5, 0, Math.PI * 2); ctx.fill()
-        // Nose
-        ctx.beginPath()
-        ctx.moveTo(-1, 2); ctx.lineTo(1, 2); ctx.lineTo(0, 4); ctx.closePath()
-        ctx.fill()
-        // Red eye glow
-        ctx.fillStyle = '#ef4444'
-        ctx.beginPath(); ctx.arc(-3, -2, 1.2, 0, Math.PI * 2); ctx.fill()
-        ctx.beginPath(); ctx.arc(3, -2, 1.2, 0, Math.PI * 2); ctx.fill()
-      } else if (e.type === 'phantom') {
-        // Phantom: ghostly, moves in sine pattern
-        const drift = Math.sin(frame * 0.06 + e.phase) * 6
-        ctx.shadowColor = 'rgba(147,51,234,0.4)'
-        ctx.shadowBlur = 15
-        ctx.globalAlpha = 0.7 + Math.sin(frame * 0.08 + e.phase) * 0.2
-        const pg = ctx.createRadialGradient(0, drift, 2, 0, drift, e.size + 4)
-        pg.addColorStop(0, 'rgba(192,132,252,0.8)')
-        pg.addColorStop(0.5, 'rgba(147,51,234,0.5)')
-        pg.addColorStop(1, 'rgba(107,33,168,0)')
-        ctx.beginPath()
-        ctx.arc(0, drift, e.size + 2, 0, Math.PI * 2)
-        ctx.fillStyle = pg
-        ctx.fill()
-        // Ghost tail
-        ctx.beginPath()
-        ctx.moveTo(-6, drift + 8)
-        ctx.quadraticCurveTo(-3, drift + 16 + Math.sin(frame * 0.1) * 3, 0, drift + 10)
-        ctx.quadraticCurveTo(3, drift + 16 + Math.sin(frame * 0.1 + 1) * 3, 6, drift + 8)
-        ctx.fillStyle = 'rgba(147,51,234,0.3)'
-        ctx.fill()
-        // Eyes
-        ctx.fillStyle = '#fff'
-        ctx.beginPath(); ctx.arc(-3, drift - 1, 2, 0, Math.PI * 2); ctx.fill()
-        ctx.beginPath(); ctx.arc(3, drift - 1, 2, 0, Math.PI * 2); ctx.fill()
-        ctx.globalAlpha = 1
-      } else {
-        // Default orb
-        ctx.shadowColor = 'rgba(239,68,68,0.4)'
-        ctx.shadowBlur = 10
-        const eg = ctx.createRadialGradient(0, 0, 2, 0, 0, e.size)
-        eg.addColorStop(0, 'rgba(239,68,68,0.9)')
-        eg.addColorStop(0.6, 'rgba(185,28,28,0.7)')
-        eg.addColorStop(1, 'rgba(127,29,29,0)')
-        ctx.beginPath()
-        ctx.arc(0, 0, e.size, 0, Math.PI * 2)
-        ctx.fillStyle = eg
-        ctx.fill()
-        // Eyes
-        ctx.shadowBlur = 0
-        ctx.fillStyle = '#fff'
-        ctx.beginPath(); ctx.arc(Math.cos(e.angle - 0.4) * 4, Math.sin(e.angle - 0.4) * 3 - 1, 1.8, 0, Math.PI * 2); ctx.fill()
-        ctx.beginPath(); ctx.arc(Math.cos(e.angle + 0.4) * 4, Math.sin(e.angle + 0.4) * 3 - 1, 1.8, 0, Math.PI * 2); ctx.fill()
-      }
-
-      // HP bar
-      if (e.hp < e.maxHp) {
-        ctx.shadowBlur = 0
-        const barW = e.size * 2
-        ctx.fillStyle = 'rgba(0,0,0,0.6)'
-        ctx.fillRect(-barW / 2, -e.size - 8, barW, 3)
-        ctx.fillStyle = e.hp / e.maxHp > 0.5 ? '#22c55e' : e.hp / e.maxHp > 0.25 ? '#eab308' : '#ef4444'
-        ctx.fillRect(-barW / 2, -e.size - 8, barW * (e.hp / e.maxHp), 3)
-      }
-
-      ctx.restore()
-    }
-
-    let frame = 0
-
-    const draw = () => {
-      frame++
-      ctx.clearRect(0, 0, W, H)
-
-      // Screen shake
-      if (screenShakeRef.current > 0) {
-        const intensity = screenShakeRef.current * 0.3
-        ctx.save()
-        ctx.translate((Math.random() - 0.5) * intensity, (Math.random() - 0.5) * intensity)
-        screenShakeRef.current--
-      }
-
-      // Grid background with rarity tint
-      ctx.strokeStyle = cfg.gridTint
-      ctx.lineWidth = 1
-      const gridOffset = (frame * 0.3) % 40
-      for (let x = -40 + gridOffset; x < W + 40; x += 40) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke()
-      }
-      for (let y = -40 + gridOffset; y < H + 40; y += 40) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke()
-      }
-
-      // Center vignette
-      const vig = ctx.createRadialGradient(W / 2, H / 2, W * 0.1, W / 2, H / 2, W * 0.6)
-      vig.addColorStop(0, cfg.trail + '0.03)')
-      vig.addColorStop(1, 'transparent')
-      ctx.fillStyle = vig
-      ctx.fillRect(0, 0, W, H)
-
-      // ── Player Input ─────────────────────────────────────────────────
+    const loop = () => {
+      st.frame++
       const keys = keysRef.current
+      const spd = 0.06
+
+      // ── Player Movement ─────────────────────────────────────────────
       let dx = 0, dy = 0
-      const curSpeed = player.isDashing ? DASH_SPEED : SPEED
-      if (keys.has('w') || keys.has('arrowup')) dy -= curSpeed
-      if (keys.has('s') || keys.has('arrowdown')) dy += curSpeed
-      if (keys.has('a') || keys.has('arrowleft')) dx -= curSpeed
-      if (keys.has('d') || keys.has('arrowright')) dx += curSpeed
+      if (keys.has('w') || keys.has('arrowup'))    { dy = -spd; st.facing = 2 }
+      if (keys.has('s') || keys.has('arrowdown'))  { dy = spd;  st.facing = 0 }
+      if (keys.has('a') || keys.has('arrowleft'))  { dx = -spd; st.facing = 1 }
+      if (keys.has('d') || keys.has('arrowright')) { dx = spd;  st.facing = 3 }
       if (dx && dy) { dx *= 0.707; dy *= 0.707 }
-      player.x = Math.max(20, Math.min(W - 20, player.x + dx))
-      player.y = Math.max(20, Math.min(H - 20, player.y + dy))
 
-      // Face toward mouse
-      player.angle = Math.atan2(mouseRef.current.y - player.y, mouseRef.current.x - player.x)
+      const newX = st.px + dx
+      const newY = st.py + dy
+      if (!isSolid(newX, st.py)) st.px = newX
+      if (!isSolid(st.px, newY)) st.py = newY
+      st.px = Math.max(0.5, Math.min(MAP_W - 0.5, st.px))
+      st.py = Math.max(0.5, Math.min(MAP_H - 0.5, st.py))
 
-      // Dash
-      if (player.isDashing) {
-        player.dashFrame++
-        if (player.dashFrame > 8) player.isDashing = false
-        // Dash particles
-        for (let i = 0; i < 3; i++) {
-          particles.push({
-            x: player.x + (Math.random() - 0.5) * 10,
-            y: player.y + (Math.random() - 0.5) * 10,
-            vx: -dx * 0.3 + (Math.random() - 0.5), vy: -dy * 0.3 + (Math.random() - 0.5),
-            life: 15, maxLife: 15, color: cfg.accent, size: 2, type: 'dash'
-          })
-        }
-      }
-      if (player.dashCooldown > 0) player.dashCooldown--
-      if (player.invincible > 0) player.invincible--
+      if (dx !== 0 || dy !== 0) st.moveT += 0.15
 
-      const isMoving = dx !== 0 || dy !== 0
-      if (isMoving && frame % 3 === 0) {
-        trail.push({ x: player.x, y: player.y, alpha: 0.4, color: cfg.main })
-      }
+      // Camera follows player
+      st.camX = st.px * TILE_S - W / 2
+      st.camY = st.py * TILE_S - H / 2
 
-      // Trail
-      for (let i = trail.length - 1; i >= 0; i--) {
-        const t = trail[i]
-        t.alpha -= 0.01
-        if (t.alpha <= 0) { trail.splice(i, 1); continue }
-        ctx.beginPath()
-        ctx.arc(t.x, t.y, 6 * t.alpha, 0, Math.PI * 2)
-        ctx.fillStyle = cfg.trail + t.alpha.toFixed(2) + ')'
-        ctx.fill()
-      }
+      if (st.invT > 0) st.invT--
 
-      // Ambient particles (rarity-based count)
-      if (frame % 8 === 0) {
-        for (let i = 0; i < Math.ceil(cfg.particleCount / 4); i++) {
-          particles.push({
-            x: player.x + (Math.random() - 0.5) * 40,
-            y: player.y + (Math.random() - 0.5) * 40,
-            vx: (Math.random() - 0.5) * 0.5, vy: -Math.random() * 0.8 - 0.3,
-            life: 40 + Math.random() * 30, maxLife: 60, color: cfg.glow, size: 1 + Math.random(), type: 'ambient'
-          })
-        }
-      }
+      // ── Swing Logic ─────────────────────────────────────────────────
+      if (st.swingT >= 0) {
+        st.swingT += 0.08
+        st.swingDir = st.facing
 
-      // ── Spawn ────────────────────────────────────────────────────────
-      const spawnRate = Math.max(40, 120 - waveRef.current * 8)
-      if (frame % spawnRate === 0 && enemies.length < 6 + waveRef.current * 2) spawnEnemy()
+        // Hit detection at peak
+        if (st.swingT > 0.3 && st.swingT < 0.5) {
+          const reach = 1.5
+          const dirs = [[0, 1], [-1, 0], [0, -1], [1, 0]][st.swingDir]
+          const hx = st.px + dirs[0] * reach
+          const hy = st.py + dirs[1] * reach
 
-      // ── Enemies ──────────────────────────────────────────────────────
-      for (let i = enemies.length - 1; i >= 0; i--) {
-        const e = enemies[i]
-        const edx = player.x - e.x
-        const edy = player.y - e.y
-        const dist = Math.sqrt(edx * edx + edy * edy)
-        e.angle = Math.atan2(edy, edx)
-
-        // Movement
-        if (e.type === 'phantom') {
-          e.x += Math.cos(e.angle) * e.speed + Math.sin(frame * 0.05 + e.phase) * 0.8
-          e.y += Math.sin(e.angle) * e.speed + Math.cos(frame * 0.05 + e.phase) * 0.8
-        } else if (dist > 25) {
-          e.x += (edx / dist) * e.speed
-          e.y += (edy / dist) * e.speed
-        }
-        if (e.hit > 0) e.hit--
-
-        // Player collision damage
-        if (dist < e.size + 10 && player.invincible <= 0) {
-          player.hp -= e.type === 'skull' ? 15 : 8
-          player.invincible = 30
-          player.combo = 0
-          screenShakeRef.current = 8
-          addText(player.x, player.y - 20, `-${e.type === 'skull' ? 15 : 8}`, '#ef4444')
-          if (player.hp <= 0) {
-            player.hp = player.maxHp
-            player.score = Math.max(0, player.score - 20)
-            player.combo = 0
-            addText(player.x, player.y - 30, 'RESPAWN', '#ef4444')
-          }
-        }
-
-        // Attack collision
-        if (player.attacking && player.attackFrame < 10) {
-          const reach = rarity === 'legendary' ? 48 : rarity === 'epic' ? 42 : rarity === 'rare' ? 38 : 32
-          const swAngle = player.angle - 1.2 + (player.attackFrame / 15) * 2.4
-          const ax = player.x + Math.cos(swAngle) * reach * 0.7
-          const ay = player.y + Math.sin(swAngle) * reach * 0.7
-          const adist = Math.sqrt((ax - e.x) ** 2 + (ay - e.y) ** 2)
-          if (adist < reach) {
-            e.hp--
-            e.hit = 6
-            screenShakeRef.current = 3
-            for (let p = 0; p < cfg.particleCount; p++) {
-              particles.push({
-                x: e.x, y: e.y,
-                vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5,
-                life: 20, maxLife: 20, color: cfg.main, size: 2 + Math.random() * 2, type: 'hit'
-              })
-            }
-            addText(e.x, e.y - e.size - 5, `${Math.ceil(reach / 10)}`, cfg.accent)
-
-            if (e.hp <= 0) {
-              const pts = e.type === 'skull' ? 25 : e.type === 'phantom' ? 15 : 10
-              player.score += pts * (1 + player.combo * 0.1)
-              player.combo++
-              if (player.combo > player.maxCombo) player.maxCombo = player.combo
-              player.xp += pts
-
-              // Level up
-              if (player.xp >= player.xpNeeded) {
-                player.xp -= player.xpNeeded
-                player.level++
-                player.xpNeeded = Math.floor(player.xpNeeded * 1.3)
-                waveRef.current++
-                addText(player.x, player.y - 35, 'LEVEL UP!', '#22c55e')
-                screenShakeRef.current = 10
-                for (let p = 0; p < 20; p++) {
-                  particles.push({
-                    x: player.x, y: player.y,
-                    vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8,
-                    life: 40, maxLife: 40, color: '#22c55e', size: 3 + Math.random() * 3, type: 'xp'
-                  })
-                }
-              }
-
-              addText(e.x, e.y - e.size - 15, `+${Math.floor(pts * (1 + player.combo * 0.1))}`, cfg.main)
-              for (let p = 0; p < cfg.particleCount * 2; p++) {
-                particles.push({
-                  x: e.x, y: e.y,
-                  vx: (Math.random() - 0.5) * 7, vy: (Math.random() - 0.5) * 7,
-                  life: 35, maxLife: 35, color: cfg.glow, size: 3 + Math.random() * 3, type: 'death'
+          st.mobs.forEach(m => {
+            const mdx = m.x - hx, mdy = m.y - hy
+            const dist = Math.sqrt(mdx * mdx + mdy * mdy)
+            if (dist < 1.2) {
+              const dmg = Math.ceil(3 * gunSkin.dmgMulti)
+              m.hp -= dmg
+              m.hit = 10
+              // Knockback
+              const kf = 0.4
+              m.knockX = dirs[0] * kf
+              m.knockY = dirs[1] * kf
+              st.combo++
+              st.texts.push({ x: m.x * TILE_S, y: m.y * TILE_S - 20, text: `${dmg}`, color: '#ef4444', life: 30 })
+              // Hit particles
+              for (let p = 0; p < 6; p++) {
+                st.particles.push({
+                  x: m.x * TILE_S, y: m.y * TILE_S,
+                  vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.5) * 3 - 1,
+                  life: 20, maxLife: 20, color: gunSkin.particleColor, size: 3
                 })
               }
-              enemies.splice(i, 1)
-              continue
+            }
+          })
+        }
+        if (st.swingT > 1) { st.swingT = -1; st.combo = 0 }
+      }
+
+      // ── Kill dead mobs ──────────────────────────────────────────────
+      for (let i = st.mobs.length - 1; i >= 0; i--) {
+        if (st.mobs[i].hp <= 0) {
+          const m = st.mobs[i]
+          const pts = m.type === 'creeper' ? 30 : m.type === 'skeleton' ? 20 : 15
+          st.score += pts
+          st.xp += pts
+          if (st.xp >= st.level * 50) { st.xp -= st.level * 50; st.level++ }
+          st.texts.push({ x: m.x * TILE_S, y: m.y * TILE_S - 30, text: `+${pts}`, color: '#22c55e', life: 40 })
+          for (let p = 0; p < 15; p++) {
+            const c = m.type === 'creeper' ? '#22c55e' : m.type === 'skeleton' ? '#e5e5e5' : '#5a7a5a'
+            st.particles.push({
+              x: m.x * TILE_S, y: m.y * TILE_S,
+              vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5 - 2,
+              life: 30, maxLife: 30, color: c, size: 4
+            })
+          }
+          st.mobs.splice(i, 1)
+        }
+      }
+
+      // Respawn
+      if (st.mobs.length < 8 && st.frame % 180 === 0) {
+        const ang = Math.random() * Math.PI * 2
+        const dist = 10 + Math.random() * 5
+        const mx = Math.max(1, Math.min(MAP_W - 2, st.px + Math.cos(ang) * dist))
+        const my = Math.max(1, Math.min(MAP_H - 2, st.py + Math.sin(ang) * dist))
+        if (!isSolid(mx, my)) {
+          const types: Mob['type'][] = ['zombie', 'creeper', 'skeleton']
+          const t = types[Math.floor(Math.random() * 3)]
+          st.mobs.push({
+            x: mx, y: my, type: t,
+            hp: t === 'creeper' ? 12 : t === 'skeleton' ? 8 : 10,
+            maxHp: t === 'creeper' ? 12 : t === 'skeleton' ? 8 : 10,
+            hit: 0, facing: 0, attackCd: 0, phase: Math.random() * 100,
+            knockX: 0, knockY: 0,
+          })
+        }
+      }
+
+      // ── Mob AI ──────────────────────────────────────────────────────
+      st.mobs.forEach(m => {
+        m.phase += 0.06
+        // Knockback decay
+        m.x += m.knockX; m.y += m.knockY
+        m.knockX *= 0.85; m.knockY *= 0.85
+        m.x = Math.max(0.5, Math.min(MAP_W - 0.5, m.x))
+        m.y = Math.max(0.5, Math.min(MAP_H - 0.5, m.y))
+
+        if (m.hit > 0) m.hit--
+        if (m.attackCd > 0) m.attackCd--
+
+        const mdx = st.px - m.x, mdy = st.py - m.y
+        const dist = Math.sqrt(mdx * mdx + mdy * mdy)
+
+        if (dist < 12) {
+          // Face player
+          if (Math.abs(mdx) > Math.abs(mdy)) m.facing = mdx > 0 ? 3 : 1
+          else m.facing = mdy > 0 ? 0 : 2
+
+          if (dist > 1) {
+            const ms = 0.02
+            const nmx = m.x + (mdx / dist) * ms
+            const nmy = m.y + (mdy / dist) * ms
+            if (!isSolid(nmx, m.y)) m.x = nmx
+            if (!isSolid(m.x, nmy)) m.y = nmy
+          }
+
+          // Contact damage
+          if (dist < 0.8 && m.attackCd <= 0 && st.invT <= 0) {
+            const dmg = m.type === 'creeper' ? 4 : 2
+            st.hp = Math.max(0, st.hp - dmg)
+            st.invT = 30
+            m.attackCd = 60
+            st.texts.push({ x: st.px * TILE_S, y: st.py * TILE_S - 30, text: `-${dmg}`, color: '#ef4444', life: 25 })
+            if (st.hp <= 0) {
+              st.hp = st.maxHp
+              st.score = Math.max(0, st.score - 30)
+              st.texts.push({ x: st.px * TILE_S, y: st.py * TILE_S - 50, text: 'RESPAWN!', color: '#ef4444', life: 50 })
             }
           }
         }
+      })
 
-        drawEnemy(e)
+      // ── RENDER ──────────────────────────────────────────────────────
+      ctx.clearRect(0, 0, W, H)
+      ctx.imageSmoothingEnabled = false
+
+      // Visible tile range
+      const startTX = Math.max(0, Math.floor(st.camX / TILE_S) - 1)
+      const startTY = Math.max(0, Math.floor(st.camY / TILE_S) - 1)
+      const endTX = Math.min(MAP_W, Math.ceil((st.camX + W) / TILE_S) + 1)
+      const endTY = Math.min(MAP_H, Math.ceil((st.camY + H) / TILE_S) + 1)
+
+      // Draw tiles
+      for (let ty = startTY; ty < endTY; ty++) {
+        for (let tx = startTX; tx < endTX; tx++) {
+          const tile = map[ty]?.[tx] ?? TILE.GRASS
+          const tc = TILE_COLORS[tile] || TILE_COLORS[TILE.GRASS]
+          const sx = tx * TILE_S - st.camX
+          const sy = ty * TILE_S - st.camY
+
+          // Base fill
+          ctx.fillStyle = tc.base
+          ctx.fillRect(sx, sy, TILE_S, TILE_S)
+
+          // Checker pattern for texture (pixelated)
+          ctx.fillStyle = tc.shade
+          for (let py = 0; py < TILE_S; py += 8) {
+            for (let px = 0; px < TILE_S; px += 8) {
+              if ((Math.floor(px / 8) + Math.floor(py / 8) + tx + ty) % 3 === 0) {
+                ctx.fillRect(sx + px, sy + py, 8, 8)
+              }
+            }
+          }
+
+          // Details
+          if (tc.detail && tile === TILE.GRASS) {
+            // Grass blades
+            ctx.fillStyle = tc.detail
+            const seed = tx * 127 + ty * 311
+            ctx.fillRect(sx + (seed % 12) + 4, sy + (seed % 8) + 4, 2, 4)
+            ctx.fillRect(sx + ((seed * 7) % 20) + 2, sy + ((seed * 3) % 16) + 8, 2, 3)
+          }
+          if (tile === TILE.FLOWER) {
+            // Flower on grass
+            const fc = ['#ef4444', '#fbbf24', '#a855f7', '#ec4899'][(tx * 7 + ty * 3) % 4]
+            ctx.fillStyle = fc
+            ctx.fillRect(sx + 12, sy + 10, 6, 6)
+            ctx.fillStyle = '#fef08a'
+            ctx.fillRect(sx + 14, sy + 12, 2, 2)
+            ctx.fillStyle = '#15803d'
+            ctx.fillRect(sx + 14, sy + 16, 2, 6)
+          }
+          if (tile === TILE.WATER) {
+            // Animated water shine
+            const waveOff = Math.sin(st.frame * 0.05 + tx + ty * 0.7) * 4
+            ctx.fillStyle = tc.detail!
+            ctx.globalAlpha = 0.3
+            ctx.fillRect(sx + 4 + waveOff, sy + 8, 12, 3)
+            ctx.fillRect(sx + 14 - waveOff, sy + 20, 10, 2)
+            ctx.globalAlpha = 1
+          }
+          if (tile === TILE.WOOD) {
+            // Trunk rings
+            ctx.fillStyle = tc.detail!
+            ctx.fillRect(sx + 10, sy + 6, 12, 4)
+            ctx.fillRect(sx + 10, sy + 14, 12, 4)
+            ctx.fillRect(sx + 10, sy + 22, 12, 4)
+          }
+
+          // Tile border (subtle)
+          ctx.strokeStyle = 'rgba(0,0,0,0.08)'
+          ctx.strokeRect(sx, sy, TILE_S, TILE_S)
+        }
       }
 
-      // ── Attack Logic ─────────────────────────────────────────────────
-      if (player.attacking) {
-        player.attackFrame++
-        if (player.attackFrame > 15) { player.attacking = false; player.attackFrame = 0 }
-      }
+      // ── Collect all drawables for y-sort ────────────────────────────
+      type Drawable = { y: number; draw: () => void }
+      const drawables: Drawable[] = []
 
-      // ── Draw Player ──────────────────────────────────────────────────
-      // Invincibility flash
-      if (player.invincible > 0 && frame % 4 < 2) {
-        ctx.globalAlpha = 0.5
-      }
-      drawCharacter(player.x, player.y, player.angle, isMoving)
-      drawWeapon(player.x, player.y, player.angle, player.attacking ? player.attackFrame / 15 : -1)
-      ctx.globalAlpha = 1
+      // Mobs
+      st.mobs.forEach(m => {
+        drawables.push({ y: m.y, draw: () => drawMob(ctx, m, st.camX, st.camY, st.frame) })
+      })
 
-      // ── Particles ────────────────────────────────────────────────────
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i]
-        p.x += p.vx; p.y += p.vy
-        p.vx *= 0.96; p.vy *= 0.96
-        p.life--
-        if (p.life <= 0) { particles.splice(i, 1); continue }
-        const alpha = Math.min(1, p.life / (p.maxLife * 0.5))
+      // Player
+      drawables.push({ y: st.py, draw: () => {
+        const sx = st.px * TILE_S - st.camX
+        const sy = st.py * TILE_S - st.camY
+        const bob = (dx !== 0 || dy !== 0) ? Math.sin(st.moveT) * 2 : 0
+        const isInv = st.invT > 0 && st.frame % 4 < 2
+
+        ctx.save()
+        ctx.translate(sx, sy + bob)
+        if (isInv) ctx.globalAlpha = 0.5
+
+        // Character shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.2)'
         ctx.beginPath()
-        ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2)
-        ctx.fillStyle = p.color
-        ctx.globalAlpha = alpha * 0.8
+        ctx.ellipse(0, 12, 10, 4, 0, 0, Math.PI * 2)
         ctx.fill()
+
+        // Aura (rarity glow)
+        if (activeCharSkin) {
+          const auraP = Math.sin(st.frame * 0.04) * 2
+          ctx.fillStyle = charSkin.aura
+          ctx.beginPath()
+          ctx.ellipse(0, 0, 18 + auraP, 18 + auraP, 0, 0, Math.PI * 2)
+          ctx.fill()
+        }
+
+        // ── Draw Avatar Based on Facing ──────────────────────────────
+        const f = st.facing // 0=down,1=left,2=up,3=right
+        const legSwing = (dx !== 0 || dy !== 0) ? Math.sin(st.moveT) * 3 : 0
+
+        // Legs
+        ctx.fillStyle = charSkin.legs
+        if (f === 0 || f === 2) {
+          ctx.fillRect(-6 + legSwing, 4, 5, 10)
+          ctx.fillRect(1 - legSwing, 4, 5, 10)
+          ctx.fillStyle = charSkin.legsDark
+          ctx.fillRect(-6 + legSwing, 12, 5, 2)
+          ctx.fillRect(1 - legSwing, 12, 5, 2)
+        } else {
+          ctx.fillRect(-3, 4 + legSwing, 6, 10)
+          ctx.fillStyle = charSkin.legsDark
+          ctx.fillRect(-3, 12 + legSwing, 6, 2)
+        }
+
+        // Body (torso armor)
+        ctx.fillStyle = charSkin.body
+        ctx.fillRect(-7, -8, 14, 14)
+        // Body gradient overlay
+        ctx.fillStyle = charSkin.bodyLight
+        ctx.fillRect(-7, -8, 14, 4)
+        // Center stripe
+        ctx.fillStyle = charSkin.bodyDark
+        ctx.fillRect(-1, -6, 2, 10)
+
+        // Arms
+        ctx.fillStyle = charSkin.body
+        if (f === 1) {
+          // Left-facing: back arm visible
+          ctx.fillRect(-11, -6 - legSwing * 0.5, 4, 10)
+        } else if (f === 3) {
+          ctx.fillRect(7, -6 - legSwing * 0.5, 4, 10)
+        } else {
+          // Front/back: both arms
+          ctx.fillRect(-11, -6 + legSwing * 0.5, 4, 10)
+          ctx.fillRect(7, -6 - legSwing * 0.5, 4, 10)
+        }
+
+        // Head
+        ctx.fillStyle = charSkin.helmet
+        ctx.fillRect(-6, -20, 12, 12)
+        // Helmet highlight
+        ctx.fillStyle = charSkin.helmetLight
+        ctx.fillRect(-6, -20, 12, 3)
+        ctx.fillRect(-6, -20, 3, 6)
+
+        // Face
+        if (f !== 2) { // Not facing away
+          // Eyes
+          ctx.fillStyle = charSkin.visor
+          ctx.fillRect(-4, -16, 3, 3)
+          ctx.fillRect(1, -16, 3, 3)
+          // Eye shine
+          ctx.fillStyle = '#fff'
+          ctx.fillRect(-3, -16, 1, 1)
+          ctx.fillRect(2, -16, 1, 1)
+          // Mouth
+          ctx.fillStyle = charSkin.visor
+          ctx.fillRect(-2, -12, 4, 1)
+        } else {
+          // Back of head
+          ctx.fillStyle = charSkin.helmetLight
+          ctx.fillRect(-4, -18, 8, 2)
+        }
+
+        // ── Weapon (Sword) ────────────────────────────────────────────
+        const swingProgress = st.swingT >= 0 ? Math.sin(st.swingT * Math.PI) : 0
+
+        ctx.save()
+        // Position sword based on facing
+        const swordOffsets = [[5, 2], [-14, -2], [5, -8], [10, -2]][f]
+        ctx.translate(swordOffsets[0], swordOffsets[1])
+
+        // Swing animation rotation
+        const swingRot = [
+          [0, -1.5],    // down: swing left-right
+          [1.5, 0],     // left: swing up-down
+          [0, 1.5],     // up: swing left-right
+          [-1.5, 0],    // right: swing up-down
+        ][f]
+        ctx.rotate(swingProgress * swingRot[0] + (f === 0 ? -0.3 : f === 2 ? 0.3 : 0))
+
+        // Sword trail
+        if (swingProgress > 0.1) {
+          ctx.fillStyle = gunSkin.swordTrail
+          ctx.beginPath()
+          ctx.arc(0, -12, 20, -Math.PI * 0.3, Math.PI * 0.3 * swingProgress)
+          ctx.fill()
+        }
+
+        // Sword blade
+        ctx.shadowColor = gunSkin.swordGlow
+        ctx.shadowBlur = swingProgress > 0 ? 12 : 4
+        ctx.fillStyle = gunSkin.sword
+        ctx.fillRect(-2, -30, 4, 22)
+        // Edge highlight
+        ctx.fillStyle = gunSkin.swordLight
+        ctx.fillRect(-1, -28, 2, 18)
+        // Tip
+        ctx.beginPath()
+        ctx.moveTo(-2, -30); ctx.lineTo(2, -30); ctx.lineTo(0, -35)
+        ctx.fillStyle = gunSkin.sword; ctx.fill()
+        // Guard
+        ctx.fillStyle = '#5c3310'
+        ctx.fillRect(-5, -8, 10, 3)
+        // Handle
+        ctx.fillStyle = '#3a2008'
+        ctx.fillRect(-1, -5, 3, 8)
+        ctx.shadowBlur = 0
+
+        const gRarity = activeGunSkin?.rarity?.toLowerCase()
+        if (activeGunSkin && (gRarity === 'legendary' || gRarity === 'epic')) {
+          ctx.globalAlpha = 0.5 + Math.sin(st.frame * 0.12) * 0.3
+          ctx.fillStyle = gunSkin.swordLight
+          const shimY = (st.frame * 3) % 22
+          ctx.fillRect(-1, -28 + shimY, 2, 4)
+          ctx.globalAlpha = 1
+        }
+
+        ctx.restore() // sword
+
+        // Rarity particles
+        if (activeCharSkin && st.frame % 15 === 0) {
+          st.particles.push({
+            x: sx + (Math.random() - 0.5) * 20,
+            y: sy + (Math.random() - 0.5) * 20 - 5,
+            vx: (Math.random() - 0.5) * 0.5, vy: -Math.random() * 1.5 - 0.5,
+            life: 25, maxLife: 25, color: charSkin.particleColor, size: 2
+          })
+        }
+
+        ctx.globalAlpha = 1
+        ctx.restore() // player
+      }})
+
+      // Y-sort render
+      drawables.sort((a, b) => a.y - b.y).forEach(d => d.draw())
+
+      // ── Particles ──────────────────────────────────────────────────
+      for (let i = st.particles.length - 1; i >= 0; i--) {
+        const p = st.particles[i]
+        p.x += p.vx; p.y += p.vy; p.vy += 0.05; p.life--
+        if (p.life <= 0) { st.particles.splice(i, 1); continue }
+        ctx.fillStyle = p.color
+        ctx.globalAlpha = p.life / p.maxLife
+        ctx.fillRect(p.x - st.camX - p.size / 2, p.y - st.camY - p.size / 2, p.size, p.size)
         ctx.globalAlpha = 1
       }
 
-      // ── Floating Texts ───────────────────────────────────────────────
-      for (let i = texts.length - 1; i >= 0; i--) {
-        const t = texts[i]
-        t.y += t.vy
-        t.life--
-        if (t.life <= 0) { texts.splice(i, 1); continue }
-        ctx.font = 'bold 12px "JetBrains Mono", monospace'
+      // ── Floating Texts ─────────────────────────────────────────────
+      for (let i = st.texts.length - 1; i >= 0; i--) {
+        const t = st.texts[i]; t.y -= 0.8; t.life--
+        if (t.life <= 0) { st.texts.splice(i, 1); continue }
+        ctx.font = 'bold 14px "JetBrains Mono"'
         ctx.textAlign = 'center'
-        ctx.globalAlpha = Math.min(1, t.life / 20)
         ctx.fillStyle = t.color
-        ctx.fillText(t.text, t.x, t.y)
+        ctx.globalAlpha = Math.min(1, t.life / 15)
+        // Pixel-art text shadow
+        ctx.fillStyle = '#000'
+        ctx.fillText(t.text, t.x - st.camX + 1, t.y - st.camY + 1)
+        ctx.fillStyle = t.color
+        ctx.fillText(t.text, t.x - st.camX, t.y - st.camY)
         ctx.globalAlpha = 1
       }
 
-      // ── HUD ──────────────────────────────────────────────────────────
-      const hudAlpha = '0.7'
-
-      // Top-left: Score + Combo
-      ctx.font = 'bold 12px "JetBrains Mono", monospace'
-      ctx.textAlign = 'left'
-      ctx.fillStyle = `rgba(34,197,94,${hudAlpha})`
-      ctx.fillText(`SCORE: ${Math.floor(player.score)}`, 12, 22)
-      if (player.combo > 1) {
-        ctx.fillStyle = cfg.main
-        ctx.fillText(`COMBO x${player.combo}`, 12, 38)
+      // ── HUD ─────────────────────────────────────────────────────────
+      // Health hearts
+      for (let i = 0; i < 10; i++) {
+        const hx = 16 + i * 16
+        const hy = H - 42
+        if (st.hp >= (i + 1) * 2) drawPixelHeart(ctx, hx, hy, '#e53e3e')
+        else if (st.hp >= i * 2 + 1) drawPixelHeart(ctx, hx, hy, '#e53e3e', true)
+        else drawPixelHeart(ctx, hx, hy, '#333')
       }
-
-      // Top-left: Level
-      ctx.fillStyle = `rgba(34,197,94,${hudAlpha})`
-      ctx.fillText(`LVL ${player.level}`, 12, 54)
 
       // XP bar
-      ctx.fillStyle = 'rgba(0,0,0,0.3)'
-      ctx.fillRect(12, 58, 80, 4)
-      ctx.fillStyle = '#22c55e'
-      ctx.fillRect(12, 58, 80 * (player.xp / player.xpNeeded), 4)
-
-      // Top-right: Skin name + rarity
-      ctx.textAlign = 'right'
-      ctx.fillStyle = cfg.main
-      ctx.font = 'bold 11px "JetBrains Mono", monospace'
-      ctx.fillText(activeSkin ? activeSkin.name : 'Default Skin', W - 12, 22)
-      ctx.font = '10px "JetBrains Mono", monospace'
-      ctx.fillStyle = cfg.glow
-      ctx.fillText(`[ ${rarity.toUpperCase()} ]`, W - 12, 36)
-
-      // HP bar top-right
-      const hpW = 100
       ctx.fillStyle = 'rgba(0,0,0,0.4)'
-      ctx.fillRect(W - 12 - hpW, 42, hpW, 6)
-      const hpPct = player.hp / player.maxHp
-      ctx.fillStyle = hpPct > 0.5 ? '#22c55e' : hpPct > 0.25 ? '#eab308' : '#ef4444'
-      ctx.fillRect(W - 12 - hpW, 42, hpW * hpPct, 6)
-
-      // Bottom: Controls + Wave
+      ctx.fillRect(16, H - 22, 170, 8)
+      ctx.fillStyle = '#22c55e'
+      ctx.fillRect(16, H - 22, 170 * (st.xp / (st.level * 50)), 8)
+      ctx.font = '9px "JetBrains Mono"'
+      ctx.fillStyle = '#fff'
       ctx.textAlign = 'center'
-      ctx.font = '10px "JetBrains Mono", monospace'
-      ctx.fillStyle = 'rgba(34,197,94,0.25)'
-      ctx.fillText(`WASD: Move  |  Click/Space: Attack  |  Shift: Dash  |  Wave ${waveRef.current}`, W / 2, H - 10)
+      ctx.fillText(`LVL ${st.level}`, 100, H - 15)
 
-      // Dash cooldown indicator
-      if (player.dashCooldown > 0) {
-        ctx.fillStyle = 'rgba(34,197,94,0.15)'
-        ctx.fillText(`Dash: ${Math.ceil(player.dashCooldown / 60 * 10) / 10}s`, W / 2, H - 24)
-      }
+      // Score
+      ctx.font = 'bold 13px "JetBrains Mono"'
+      ctx.textAlign = 'left'
+      ctx.fillStyle = '#000'; ctx.fillText(`SCORE: ${st.score}`, 17, 21)
+      ctx.fillStyle = '#22c55e'; ctx.fillText(`SCORE: ${st.score}`, 16, 20)
 
-      if (screenShakeRef.current > 0) ctx.restore()
+      // Skin labels (top-right)
+      ctx.textAlign = 'right'
+      ctx.font = 'bold 11px "JetBrains Mono"'
+      ctx.fillStyle = '#000'
+      ctx.fillText(`⚔ ${activeGunSkin?.name || 'Stone Sword'}`, W - 11, 21)
+      ctx.fillStyle = gunSkin.sword
+      ctx.fillText(`⚔ ${activeGunSkin?.name || 'Stone Sword'}`, W - 12, 20)
 
-      animRef.current = requestAnimationFrame(draw)
+      ctx.fillStyle = '#000'
+      ctx.fillText(`🧑 ${activeCharSkin?.name || 'Steve'}`, W - 11, 37)
+      ctx.fillStyle = charSkin.helmetLight
+      ctx.fillText(`🧑 ${activeCharSkin?.name || 'Steve'}`, W - 12, 36)
+
+      // Controls hint (bottom-right)
+      ctx.textAlign = 'right'
+      ctx.font = '10px "JetBrains Mono"'
+      ctx.fillStyle = 'rgba(255,255,255,0.3)'
+      ctx.fillText('WASD = Move | Click/Space = Attack', W - 12, H - 10)
+
+      animId = requestAnimationFrame(loop)
     }
 
-    draw()
-    return () => cancelAnimationFrame(animRef.current)
-  }, [activeSkin])
+    loop()
+    return () => cancelAnimationFrame(animId)
+  }, [activeGunSkin, activeCharSkin])
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="game-arena-canvas"
-      tabIndex={0}
-    />
+    <div style={{ width: '100%', height: '100%', background: '#2a5a1a', overflow: 'hidden' }}>
+      <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', imageRendering: 'pixelated' }} />
+    </div>
   )
+}
+
+// ─── Draw a Mob Sprite ───────────────────────────────────────────────────────
+function drawMob(ctx: CanvasRenderingContext2D, m: Mob, camX: number, camY: number, frame: number) {
+  const sx = m.x * TILE_S - camX
+  const sy = m.y * TILE_S - camY
+  const shake = m.hit > 0 ? (Math.random() - 0.5) * 3 : 0
+  const bob = Math.sin(m.phase) * 1.5
+  const legSwing = Math.sin(m.phase) * 3
+
+  ctx.save()
+  ctx.translate(sx + shake, sy + bob)
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.2)'
+  ctx.beginPath()
+  ctx.ellipse(0, 12, 8, 3, 0, 0, Math.PI * 2)
+  ctx.fill()
+
+  if (m.hit > 0) {
+    ctx.globalAlpha = m.hit % 2 === 0 ? 0.6 : 1
+  }
+
+  if (m.type === 'zombie') {
+    // Legs
+    ctx.fillStyle = '#303870'
+    ctx.fillRect(-5 + legSwing, 4, 4, 9)
+    ctx.fillRect(1 - legSwing, 4, 4, 9)
+    // Body
+    ctx.fillStyle = '#3a6a4a'
+    ctx.fillRect(-6, -7, 12, 13)
+    ctx.fillStyle = '#2e5a78'
+    ctx.fillRect(-6, -7, 12, 5)
+    // Arms (stretched forward like Minecraft zombie)
+    ctx.fillStyle = '#5a8a5a'
+    ctx.fillRect(-10, -6, 4, 12)
+    ctx.fillRect(6, -6, 4, 12)
+    // Head
+    ctx.fillStyle = '#5a8a5a'
+    ctx.fillRect(-5, -19, 10, 12)
+    ctx.fillStyle = '#6aa06a'
+    ctx.fillRect(-5, -19, 10, 3)
+    // Eyes
+    ctx.fillStyle = '#111'
+    ctx.fillRect(-3, -15, 2, 2)
+    ctx.fillRect(1, -15, 2, 2)
+    // Mouth
+    ctx.fillStyle = '#2a4a2a'
+    ctx.fillRect(-2, -11, 4, 2)
+  } else if (m.type === 'creeper') {
+    // Legs (4 short legs)
+    ctx.fillStyle = '#15803d'
+    ctx.fillRect(-6, 4, 4, 6)
+    ctx.fillRect(2, 4, 4, 6)
+    // Body
+    ctx.fillStyle = '#22c55e'
+    ctx.fillRect(-5, -6, 10, 12)
+    ctx.fillStyle = '#1aaa4a'
+    ctx.fillRect(-5, -6, 10, 4)
+    // Head (bigger)
+    ctx.fillStyle = '#22c55e'
+    ctx.fillRect(-6, -20, 12, 14)
+    ctx.fillStyle = '#2edb5e'
+    ctx.fillRect(-6, -20, 12, 3)
+    // Creeper face!
+    ctx.fillStyle = '#111'
+    // Eyes
+    ctx.fillRect(-4, -17, 3, 3)
+    ctx.fillRect(1, -17, 3, 3)
+    // Nose bridge
+    ctx.fillRect(-1, -13, 2, 2)
+    // Mouth (sad frown)
+    ctx.fillRect(-3, -11, 6, 2)
+    ctx.fillRect(-2, -9, 1, 2)
+    ctx.fillRect(1, -9, 1, 2)
+  } else {
+    // Skeleton
+    // Legs (thin)
+    ctx.fillStyle = '#d4d4d4'
+    ctx.fillRect(-3 + legSwing, 4, 2, 9)
+    ctx.fillRect(1 - legSwing, 4, 2, 9)
+    // Ribcage body (thin)
+    ctx.fillStyle = '#e5e5e5'
+    ctx.fillRect(-1, -6, 2, 12)
+    ctx.fillStyle = '#ccc'
+    ctx.fillRect(-4, -5, 8, 1)
+    ctx.fillRect(-4, -2, 8, 1)
+    ctx.fillRect(-4, 1, 8, 1)
+    // Arms holding bow
+    ctx.fillStyle = '#d4d4d4'
+    ctx.fillRect(-8, -5, 3, 10)
+    ctx.fillRect(5, -5, 3, 10)
+    // Head
+    ctx.fillStyle = '#e5e5e5'
+    ctx.fillRect(-5, -18, 10, 12)
+    ctx.fillStyle = '#f5f5f5'
+    ctx.fillRect(-5, -18, 10, 3)
+    // Eyes
+    ctx.fillStyle = '#111'
+    ctx.fillRect(-3, -15, 2, 2)
+    ctx.fillRect(1, -15, 2, 2)
+    // Nose
+    ctx.fillStyle = '#bbb'
+    ctx.fillRect(-1, -12, 2, 1)
+    // Mouth
+    ctx.fillStyle = '#111'
+    ctx.fillRect(-3, -10, 6, 1)
+    // Bow
+    ctx.strokeStyle = '#8b4513'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.arc(9, -2, 8, -0.8, 0.8)
+    ctx.stroke()
+    ctx.strokeStyle = '#aaa'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(9, -9)
+    ctx.lineTo(9, 5)
+    ctx.stroke()
+  }
+
+  // HP bar
+  if (m.hp < m.maxHp) {
+    ctx.globalAlpha = 1
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'
+    ctx.fillRect(-10, -25, 20, 3)
+    const pct = m.hp / m.maxHp
+    ctx.fillStyle = pct > 0.5 ? '#22c55e' : pct > 0.25 ? '#eab308' : '#ef4444'
+    ctx.fillRect(-10, -25, 20 * pct, 3)
+  }
+
+  ctx.globalAlpha = 1
+  ctx.restore()
+}
+
+// ─── Draw Pixel Heart ────────────────────────────────────────────────────────
+function drawPixelHeart(ctx: CanvasRenderingContext2D, x: number, y: number, color: string, half = false) {
+  ctx.fillStyle = '#111'
+  ctx.fillRect(x, y, 14, 12)
+  ctx.fillStyle = color
+
+  // Heart pixel pattern
+  ctx.fillRect(x + 1, y + 2, 4, 4)
+  ctx.fillRect(x + 3, y + 1, 3, 2)
+  if (!half) {
+    ctx.fillRect(x + 7, y + 1, 3, 2)
+    ctx.fillRect(x + 8, y + 2, 4, 4)
+  }
+  ctx.fillRect(x + 1, y + 5, half ? 6 : 12, 3)
+  ctx.fillRect(x + 2, y + 8, half ? 4 : 10, 2)
+  ctx.fillRect(x + 4, y + 10, half ? 2 : 6, 1)
+  ctx.fillRect(x + 6, y + 11, half ? 0 : 2, 1)
 }

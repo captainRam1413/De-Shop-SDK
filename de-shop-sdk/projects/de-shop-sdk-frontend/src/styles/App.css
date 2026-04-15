@@ -671,11 +671,13 @@ body {
 /* ─── Mint Bar ─────────────────────────────────────────────────────────── */
 .showcase__mint-bar {
   display: flex;
+  align-items: center;
   gap: 6px;
   padding: 10px 12px;
   border-bottom: 1px solid var(--border);
   background: rgba(0,0,0,0.2);
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .showcase__mint-input {
@@ -729,6 +731,16 @@ body {
 .showcase__mint-btn:disabled {
   opacity: 0.5;
   cursor: wait;
+}
+
+.showcase__mint-btn--alt {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: #3b82f6;
+  color: #60a5fa;
+}
+.showcase__mint-btn--alt:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.25);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
 }
 
 /* ─── Status Bar ───────────────────────────────────────────────────────── */
@@ -900,6 +912,116 @@ body {
   box-shadow: 0 0 12px var(--green-glow);
 }
 
+/* ─── Skin Intelligence Analysis Panel ─────────────────────────────────── */
+.showcase__analysis {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-active);
+  background: rgba(0,0,0,0.5);
+  animation: slide-up 0.3s ease-out;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.showcase__analysis-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(168,85,247,0.06);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--purple);
+}
+
+.showcase__analysis-close {
+  background: none;
+  border: none;
+  color: var(--green-dim);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+.showcase__analysis-close:hover {
+  background: rgba(239,68,68,0.15);
+  color: var(--red);
+}
+
+.showcase__analysis-body {
+  padding: 10px 14px 8px;
+}
+
+.showcase__analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.sia-item {
+  padding: 6px 8px;
+  background: rgba(168,85,247,0.04);
+  border: 1px solid rgba(168,85,247,0.12);
+  border-radius: 6px;
+}
+
+.sia-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--green-dim);
+  margin-bottom: 2px;
+}
+
+.sia-value {
+  font-size: 11px;
+  color: var(--green-bright);
+  font-weight: 500;
+}
+
+.sia-type {
+  color: var(--purple);
+}
+
+.sia-price {
+  color: var(--cyan);
+  font-weight: 700;
+}
+
+.sia-score-bar {
+  font-size: 10px;
+  color: var(--purple);
+  letter-spacing: 1px;
+  margin-right: 4px;
+}
+
+.sia-score-num {
+  font-size: 10px;
+  color: var(--green-dim);
+}
+
+.sia-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.sia-tag {
+  padding: 2px 7px;
+  background: rgba(34,197,94,0.06);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 9px;
+  color: var(--green-dim);
+  letter-spacing: 0.04em;
+}
+
 /* ─── Showcase Responsive ──────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .showcase__main {
@@ -912,5 +1034,8 @@ body {
   }
   .showcase__weapon-wrap {
     display: none;
+  }
+  .showcase__analysis-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

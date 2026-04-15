@@ -1,14 +1,25 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useWallet } from '@txnlab/use-wallet-react'
 import GameArena from './GameArena'
 import SkinCard from './SkinCard'
 import WalletModal from './WalletModal'
 import GameDemo from './GameDemo'
 import { DeShopSDK, type Asset } from '../sdk/DeShopSDK'
+import { skinIntelligence, type SkinAnalysis } from '../sdk/SkinIntelligence'
+import {
+  DeShopError,
+  WalletNotConnectedError,
+  InsufficientFundsError,
+  TransactionFailedError,
+} from '../sdk/errors'
 
-const sdk = new DeShopSDK(import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000')
+const sdk = new DeShopSDK({
+  network: 'testnet',
+  backendUrl: import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000',
+  debug: true,
+})
 
-type Tab = 'inventory' | 'market' | 'terminal'
+type Tab = 'inventory' | 'market'
 
 export default function GameShowcase() {
   const { wallets, activeAddress, transactionSigner, activeWallet } = useWallet()
@@ -16,12 +27,23 @@ export default function GameShowcase() {
   const [showWalletModal, setShowWalletModal] = useState(false)
   const [inventory, setInventory] = useState<Asset[]>([])
   const [market, setMarket] = useState<Asset[]>([])
-  const [activeSkin, setActiveSkin] = useState<Asset | null>(null)
+  const [activeGunSkin, setActiveGunSkin] = useState<Asset | null>(null)
+  const [activeCharSkin, setActiveCharSkin] = useState<Asset | null>(null)
+  const [analyzedAsset, setAnalyzedAsset] = useState<Asset | null>(null)
   const [tab, setTab] = useState<Tab>('inventory')
   const [status, setStatus] = useState('')
   const [isMinting, setIsMinting] = useState(false)
   const [mintName, setMintName] = useState('')
   const [mintRarity, setMintRarity] = useState('rare')
+  const [mintType, setMintType] = useState<'weapon' | 'character'>('weapon')
+  const [marketFilter, setMarketFilter] = useState('')
+  const [showAnalysis, setShowAnalysis] = useState(false)
+
+  // Skin Intelligence analysis of active skin
+  const analysis: SkinAnalysis | null = useMemo(() => {
+    if (!analyzedAsset) return null
+    return skinIntelligence.analyzeFromAsset(analyzedAsset)
+  }, [analyzedAsset])
 
   // Sync wallet signer with SDK
   useEffect(() => {
@@ -40,14 +62,14 @@ export default function GameShowcase() {
 
   const refreshMarket = useCallback(async () => {
     try {
-      const data = await sdk.getMarketplace()
+      const data = await sdk.getMarketplace(marketFilter ? { rarity: marketFilter } : undefined)
       setMarket(data)
     } catch (e) {
       console.error(e)
     }
-  }, [])
+  }, [marketFilter])
 
-  // Load data on connect
+  // Initial loads and interval
   useEffect(() => {
     if (activeAddress) {
       refreshInventory()
@@ -55,7 +77,6 @@ export default function GameShowcase() {
     }
   }, [activeAddress, refreshInventory, refreshMarket])
 
-  // Polling
   useEffect(() => {
     const interval = setInterval(() => {
       refreshMarket()
@@ -64,30 +85,94 @@ export default function GameShowcase() {
     return () => clearInterval(interval)
   }, [activeAddress, refreshInventory, refreshMarket])
 
+  // ─── Setup SDK Event Listeners ───
+  useEffect(() => {
+    const unsubMint = sdk.on('mint', (asset) => {
+      setStatus(`✓ Minted "${asset.name}" successfully!`)
+      refreshInventory()
+    })
+    const unsubList = sdk.on('list', (asset) => {
+      setStatus(`✓ Listed "${asset.name}" on the marketplace!`)
+      refreshInventory()
+      refreshMarket()
+    })
+    const unsubBuy = sdk.on('buy', (result) => {
+      setStatus(`✓ Purchased "${result.asset?.name}" successfully!`)
+      refreshInventory()
+      refreshMarket()
+    })
+    const unsubError = sdk.on('error', (err) => {
+       console.error("SDK Event Error:", err)
+    })
+
+    return () => {
+      unsubMint()
+      unsubList()
+      unsubBuy()
+      unsubError()
+    }
+  }, [refreshInventory, refreshMarket])
+
+  // ─── Helper for typed errors ───
+  const handleErrorDisplay = (e: any) => {
+    if (e instanceof WalletNotConnectedError) {
+      setStatus('✗ Please connect your wallet first.')
+      setShowWalletModal(true)
+    } else if (e instanceof InsufficientFundsError) {
+      setStatus(`✗ Insufficient funds. Need ${e.required} μALGO.`)
+    } else if (e instanceof TransactionFailedError) {
+      setStatus(`✗ TX Failed: ${e.message}`)
+    } else if (e instanceof DeShopError) {
+      setStatus(`✗ ${e.message}`)
+    } else {
+      setStatus(`✗ Error: ${e.message || 'Unknown error'}`)
+    }
+  }
+
   const handleMint = async () => {
     if (!activeAddress || isMinting) return
     setIsMinting(true)
     setStatus('Minting NFT on Algorand TestNet...')
     try {
       const name = mintName || `Neon-${Math.floor(Math.random() * 9999)}`
-      const asset = await sdk.mintNFT({
-        wallet: activeAddress,
-        skin_name: name,
-        rarity: mintRarity,
-      })
-      setStatus(`✓ Minted "${asset.name}" [${asset.rarity.toUpperCase()}] — ASA #${asset.asa_id}`)
+      await sdk.mintNFT({ wallet: activeAddress, skin_name: name, rarity: mintRarity, skin_type: mintType })
       setMintName('')
-      await refreshInventory()
+      // State & inventory update handled by the event listener now!
     } catch (e: any) {
-      setStatus(`✗ ${e.message}`)
+      handleErrorDisplay(e)
+    } finally {
+      setIsMinting(false)
+    }
+  }
+
+  const handleBatchMint = async () => {
+    if (!activeAddress || isMinting) return
+    setIsMinting(true)
+    setStatus('Batch minting 3 Operator Skins...')
+    try {
+      await sdk.batchMint([
+        { wallet: activeAddress, skin_name: 'Ghost Op (Desert)', rarity: 'epic' },
+        { wallet: activeAddress, skin_name: 'Ghost Op (Winter)', rarity: 'rare' },
+        { wallet: activeAddress, skin_name: 'Ghost Op (Night)', rarity: 'legendary' }
+      ])
+      refreshInventory() // Manually refresh as batch triggers individual mint events anyway
+    } catch (e: any) {
+      handleErrorDisplay(e)
     } finally {
       setIsMinting(false)
     }
   }
 
   const handleEquip = (asset: Asset) => {
-    setActiveSkin(asset)
-    setStatus(`Equipped "${asset.name}" [${asset.rarity.toUpperCase()}]`)
+    const a = skinIntelligence.analyzeFromAsset(asset)
+    if (a.type === 'gun_skin') setActiveGunSkin(asset)
+    else setActiveCharSkin(asset)
+    
+    setAnalyzedAsset(asset)
+    setShowAnalysis(true)
+    
+    const typeEmoji = a.type === 'gun_skin' ? '🔫' : a.type === 'character_skin' ? '🧑' : '✨'
+    setStatus(`${typeEmoji} Equipped "${asset.name}" — ${a.game_mapping.category} [${a.rarity_score}/10]`)
   }
 
   const handleList = async (asset: Asset) => {
@@ -96,11 +181,8 @@ export default function GameShowcase() {
     try {
       const ai = await sdk.getSuggestedPrice(asset.name, asset.rarity)
       await sdk.listAsset(activeAddress, asset.asa_id ?? asset.id, ai.price)
-      setStatus(`✓ Listed "${asset.name}" at ${ai.price} μALGO`)
-      await refreshInventory()
-      await refreshMarket()
     } catch (e: any) {
-      setStatus(`✗ ${e.message}`)
+      handleErrorDisplay(e)
     }
   }
 
@@ -109,11 +191,8 @@ export default function GameShowcase() {
     setStatus(`Buying "${asset.name}"...`)
     try {
       await sdk.buyAsset(activeAddress, asset.asa_id ?? asset.id)
-      setStatus(`✓ Purchased "${asset.name}" — now in your wallet!`)
-      await refreshInventory()
-      await refreshMarket()
     } catch (e: any) {
-      setStatus(`✗ ${e.message}`)
+      handleErrorDisplay(e)
     }
   }
 
@@ -157,20 +236,77 @@ export default function GameShowcase() {
         {/* Left: Game Arena */}
         <div className="showcase__arena-col">
           <div className="showcase__arena-header">
-            <span>🎮 LIVE GAME PREVIEW</span>
-            <span className="showcase__arena-hint">WASD to move — SPACE to attack</span>
+            <span>⛏ MINECRAFT WORLD</span>
+            <span className="showcase__arena-hint">
+              {analysis
+                ? `${analysis.type === 'gun_skin' ? '⚔ WEAPON SKIN' : analysis.type === 'character_skin' ? '🧑 CHARACTER SKIN' : '✨ ACCESSORY'} EQUIPPED`
+                : 'Click to play — WASD + Mouse'}
+            </span>
           </div>
           <div className="showcase__arena-wrap">
-            <GameArena activeSkin={activeSkin} />
+            <GameArena activeGunSkin={activeGunSkin} activeCharSkin={activeCharSkin} />
           </div>
-          <div className="showcase__weapon-wrap">
-            <GameDemo activeSkin={activeSkin} />
-          </div>
+
+          {/* Analysis Panel — slides up when skin equipped */}
+          {analysis && showAnalysis && (
+            <div className="showcase__analysis">
+              <div className="showcase__analysis-header">
+                <span>🧠 SKIN INTELLIGENCE</span>
+                <button className="showcase__analysis-close" onClick={() => setShowAnalysis(false)}>×</button>
+              </div>
+              <div className="showcase__analysis-body">
+                <div className="showcase__analysis-grid">
+                  <div className="sia-item">
+                    <div className="sia-label">TYPE</div>
+                    <div className="sia-value sia-type">
+                      {analysis.type === 'gun_skin' ? '🔫 Gun Skin' : analysis.type === 'character_skin' ? '🧑 Character' : '✨ Accessory'}
+                    </div>
+                  </div>
+                  <div className="sia-item">
+                    <div className="sia-label">GAME</div>
+                    <div className="sia-value">{analysis.game_mapping.category}</div>
+                  </div>
+                  <div className="sia-item">
+                    <div className="sia-label">RARITY</div>
+                    <div className="sia-value">
+                      <span className="sia-score-bar">
+                        {'█'.repeat(Math.round(analysis.rarity_score))}{'░'.repeat(10 - Math.round(analysis.rarity_score))}
+                      </span>
+                      <span className="sia-score-num">{analysis.rarity_score}/10</span>
+                    </div>
+                  </div>
+                  <div className="sia-item">
+                    <div className="sia-label">PRICE</div>
+                    <div className="sia-value sia-price">{analysis.suggested_price} μALGO</div>
+                  </div>
+                  <div className="sia-item">
+                    <div className="sia-label">CONFIDENCE</div>
+                    <div className="sia-value">{analysis.confidence}%</div>
+                  </div>
+                  <div className="sia-item">
+                    <div className="sia-label">STYLE</div>
+                    <div className="sia-value">{analysis.visual_style}</div>
+                  </div>
+                </div>
+                <div className="sia-tags">
+                  {analysis.tags.map((tag) => (
+                    <span key={tag} className="sia-tag">{tag}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Weapon Preview — only when no analysis panel */}
+          {(!analysis || !showAnalysis) && analyzedAsset && (
+            <div className="showcase__weapon-wrap">
+              <GameDemo activeSkin={analyzedAsset} />
+            </div>
+          )}
         </div>
 
         {/* Right: Panel */}
         <div className="showcase__panel-col">
-          {/* Tabs */}
           <div className="showcase__tabs">
             <button className={`showcase__tab ${tab === 'inventory' ? 'active' : ''}`} onClick={() => setTab('inventory')}>
               🎒 Inventory ({inventory.length})
@@ -180,43 +316,52 @@ export default function GameShowcase() {
             </button>
           </div>
 
-          {/* Mint Bar */}
           {activeAddress && tab === 'inventory' && (
             <div className="showcase__mint-bar">
               <input
                 className="showcase__mint-input"
-                placeholder="Skin name..."
+                placeholder="e.g. Dragon Flame AK"
                 value={mintName}
                 onChange={(e) => setMintName(e.target.value)}
               />
-              <select
-                className="showcase__mint-select"
-                value={mintRarity}
-                onChange={(e) => setMintRarity(e.target.value)}
-              >
+              <select className="showcase__mint-select" value={mintRarity} onChange={(e) => setMintRarity(e.target.value)}>
                 <option value="common">Common</option>
                 <option value="rare">Rare</option>
                 <option value="epic">Epic</option>
                 <option value="legendary">Legendary</option>
               </select>
-              <button
-                className="showcase__mint-btn"
-                onClick={handleMint}
-                disabled={isMinting}
-              >
-                {isMinting ? '⏳ Minting...' : '⚡ Mint NFT'}
+              <select className="showcase__mint-select" value={mintType} onChange={(e) => setMintType(e.target.value as any)}>
+                <option value="weapon">Weapon</option>
+                <option value="character">Character</option>
+              </select>
+              <button className="showcase__mint-btn" onClick={handleMint} disabled={isMinting}>
+                {isMinting ? '⏳...' : '⚡ Mint'}
+              </button>
+              <button className="showcase__mint-btn showcase__mint-btn--alt" onClick={handleBatchMint} disabled={isMinting} title="Showcase Batch Mint API">
+                📦 Batch (3)
               </button>
             </div>
           )}
 
-          {/* Status */}
+          {activeAddress && tab === 'market' && (
+             <div className="showcase__mint-bar">
+               <span style={{color: '#8be9fd', fontSize: '11px', flex:1}}>MARKET FILTER:</span>
+               <select className="showcase__mint-select" value={marketFilter} onChange={(e) => setMarketFilter(e.target.value)}>
+                <option value="">Any Rarity</option>
+                <option value="common">Common</option>
+                <option value="rare">Rare</option>
+                <option value="epic">Epic</option>
+                <option value="legendary">Legendary</option>
+              </select>
+             </div>
+          )}
+
           {status && (
             <div className={`showcase__status ${status.startsWith('✓') ? 'success' : status.startsWith('✗') ? 'error' : ''}`}>
               {status}
             </div>
           )}
 
-          {/* Card Grid */}
           <div className="showcase__cards">
             {!activeAddress && (
               <div className="showcase__empty">
@@ -231,7 +376,7 @@ export default function GameShowcase() {
             {activeAddress && tab === 'inventory' && inventory.length === 0 && (
               <div className="showcase__empty">
                 <div className="showcase__empty-icon">🎮</div>
-                <div>No skins yet! Mint your first NFT above ↑</div>
+                <div>No skins yet! Try minting "Dragon Flame AK" as Legendary ↑</div>
               </div>
             )}
 
@@ -239,7 +384,7 @@ export default function GameShowcase() {
               <SkinCard
                 key={asset.asa_id ?? asset.id}
                 asset={asset}
-                isActive={activeSkin?.id === asset.id}
+                isActive={activeGunSkin?.id === asset.id || activeCharSkin?.id === asset.id}
                 onEquip={handleEquip}
                 onList={handleList}
                 mode="inventory"
@@ -249,7 +394,7 @@ export default function GameShowcase() {
             {activeAddress && tab === 'market' && market.length === 0 && (
               <div className="showcase__empty">
                 <div className="showcase__empty-icon">🏪</div>
-                <div>No active listings</div>
+                <div>No active listings found for the current filter.</div>
               </div>
             )}
 
@@ -267,12 +412,8 @@ export default function GameShowcase() {
         </div>
       </div>
 
-      {/* Wallet Modal */}
       {showWalletModal && (
-        <WalletModal
-          wallets={wallets}
-          onClose={() => setShowWalletModal(false)}
-        />
+        <WalletModal wallets={wallets} onClose={() => setShowWalletModal(false)} />
       )}
     </div>
   )

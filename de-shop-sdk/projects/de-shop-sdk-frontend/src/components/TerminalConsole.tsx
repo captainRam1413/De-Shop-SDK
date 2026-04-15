@@ -3,8 +3,18 @@ import { useWallet } from '@txnlab/use-wallet-react'
 import GameDemo from './GameDemo'
 import WalletModal from './WalletModal'
 import { DeShopSDK, type Asset } from '../sdk/DeShopSDK'
+import { skinIntelligence } from '../sdk/SkinIntelligence'
+import {
+  DeShopError,
+  WalletNotConnectedError,
+  InsufficientFundsError,
+  TransactionFailedError,
+} from '../sdk/errors'
 
-const sdk = new DeShopSDK(import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000')
+const sdk = new DeShopSDK({
+  network: 'testnet',
+  backendUrl: import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000',
+})
 
 type LogLine = {
   id: number
@@ -83,9 +93,19 @@ export default function TerminalConsole() {
       if (activeAddress) {
         await refreshInventory(activeAddress)
       }
-    }, 2500)
+    }, 5000)
     return () => window.clearInterval(interval)
   }, [activeAddress, refreshMarket, refreshInventory])
+
+  // SDK Events
+  useEffect(() => {
+    const unsubMint = sdk.on('mint', (asset) => push(`[SDK Event] Minted "${asset.name}"`, 'system'))
+    const unsubList = sdk.on('list', (asset) => push(`[SDK Event] Listed "${asset.name}"`, 'system'))
+    const unsubBuy = sdk.on('buy', (res) => push(`[SDK Event] Bought "${res.asset?.name}"`, 'system'))
+    const unsubTransfer = sdk.on('transfer', (res) => push(`[SDK Event] Transferred Asset #${res.asset_id}`, 'system'))
+
+    return () => { unsubMint(); unsubList(); unsubBuy(); unsubTransfer() }
+  }, [push])
 
   // Auto-scroll
   useEffect(() => {
@@ -97,20 +117,37 @@ export default function TerminalConsole() {
     push('│')
     push('│  connect-wallet ........... Open wallet selector (Pera/Defly)')
     push('│  disconnect ............... Disconnect current wallet')
-    push('│  mint-skin <name> [rarity]  Mint NFT skin (common|rare|epic|legendary)')
+    push('│  mint-skin <name> [rarity] [type] Mint NFT skin')
     push('│  view-inventory ........... Show your owned assets')
     push('│  list-item <id> <price|auto> List an asset on marketplace')
     push('│  cancel-listing <id> ...... Cancel a marketplace listing')
     push('│  market ................... View marketplace listings')
     push('│  buy <id> ................. Buy a listed asset')
+    push('│  transfer-skin <id> <addr>. Transfer/gift an asset')
+    push('│  history <id> ............. View asset provenance history')
     push('│  apply-skin <id> .......... Apply skin to game demo')
     push('│  ai-price <name> [rarity] . Get AI price suggestion')
+    push('│  analyze-skin <id|name> ... Skin Intelligence analysis')
     push('│  bridge-minecraft ......... Check Minecraft bridge')
     push('│  bridge-steam ............. Check Steam bridge')
     push('│  clear .................... Clear terminal')
     push('│  help ..................... Show this help')
     push('│')
     push('└────────────────────────────────────────────────────────┘')
+  }
+
+  const handleErrorDisplay = (e: any) => {
+    if (e instanceof WalletNotConnectedError) {
+      push('✗ Wallet not connected. Use connect-wallet first.', 'error')
+    } else if (e instanceof InsufficientFundsError) {
+      push(`✗ Insufficient funds. Need ${e.required} μALGO, have ${e.available}.`, 'error')
+    } else if (e instanceof TransactionFailedError) {
+       push(`✗ Transaction failed: ${e.message}`, 'error')
+    } else if (e instanceof DeShopError) {
+      push(`✗ SDK Error: ${e.message}`, 'error')
+    } else {
+      push(`✗ Error: ${e.message || 'Unknown network error'}`, 'error')
+    }
   }
 
   const executeCommand = async (raw: string) => {
@@ -124,35 +161,18 @@ export default function TerminalConsole() {
     const [cmd, ...args] = trimmed.split(/\s+/)
 
     try {
-      // ── help ─────────────────────────────────────────────
-      if (cmd === 'help') {
-        printHelp()
-        return
-      }
+      if (cmd === 'help') return printHelp()
+      if (cmd === 'clear') return setLogs([])
 
-      // ── clear ────────────────────────────────────────────
-      if (cmd === 'clear') {
-        setLogs([])
-        return
-      }
-
-      // ── connect-wallet ───────────────────────────────────
       if (cmd === 'connect-wallet') {
-        if (activeAddress) {
-          push(`Already connected: ${activeAddress}`, 'system')
-          return
-        }
+        if (activeAddress) return push(`Already connected: ${activeAddress}`, 'system')
         setShowWalletModal(true)
         push('Opening wallet selector...', 'system')
         return
       }
 
-      // ── disconnect ───────────────────────────────────────
       if (cmd === 'disconnect') {
-        if (!activeAddress || !activeWallet) {
-          push('No wallet connected.', 'error')
-          return
-        }
+        if (!activeAddress || !activeWallet) return push('No wallet connected.', 'error')
         await activeWallet.disconnect()
         push('Wallet disconnected.', 'system')
         setInventory([])
@@ -160,235 +180,171 @@ export default function TerminalConsole() {
         return
       }
 
-      // ── require wallet for all commands below ────────────
       if (!activeAddress) {
         push('⚠ Connect a wallet first: connect-wallet', 'error')
         return
       }
 
-      // ── mint-skin ────────────────────────────────────────
       if (cmd === 'mint-skin') {
         const skinName = args[0] ?? `Neon-${Math.floor(Math.random() * 9999)}`
         const rarity = (args[1] ?? 'rare').toLowerCase()
+        const type = (args[2] ?? 'weapon').toLowerCase() as any
         if (!['common', 'rare', 'epic', 'legendary'].includes(rarity)) {
-          push('Rarity must be: common, rare, epic, legendary', 'error')
-          return
+          return push('Rarity must be: common, rare, epic, legendary', 'error')
+        }
+        if (!['weapon', 'character', 'accessory'].includes(type)) {
+          return push('Type must be: weapon, character, accessory', 'error')
         }
 
         push('Querying AI pricing engine...', 'system')
         const ai = await sdk.getSuggestedPrice(skinName, rarity)
-        push(
-          `AI Analysis ► Price: ${ai.price} μALGO | Confidence: ${ai.confidence}% | Trend: ${ai.trend}`,
-          'ai',
-        )
-
+        push(`AI Analysis ► Price: ${ai.price} μALGO | Confidence: ${ai.confidence}%`, 'ai')
         push('Minting NFT on Algorand TestNet...', 'system')
-        const asset = await sdk.mintNFT({
-          wallet: activeAddress,
-          skin_name: skinName,
-          rarity,
-        })
+        const asset = await sdk.mintNFT({ wallet: activeAddress, skin_name: skinName, rarity, skin_type: type, royalty_bps: 500 })
 
         const asaMsg = asset.asa_id ? ` | ASA: ${asset.asa_id}` : ''
         const txnMsg = asset.txn_id ? ` | TX: ${asset.txn_id.slice(0, 12)}...` : ''
-        push(
-          `✓ Minted "${asset.name}" (#${asset.id}) [${asset.rarity.toUpperCase()}]${asaMsg}${txnMsg}`,
-          'success',
-        )
+        push(`✓ Minted "${asset.name}" (#${asset.id}) [${asset.rarity.toUpperCase()}]${asaMsg}${txnMsg}`, 'success')
         await refreshInventory(activeAddress)
         return
       }
 
-      // ── view-inventory ───────────────────────────────────
       if (cmd === 'view-inventory') {
         const items = await refreshInventory(activeAddress)
-        if (!items.length) {
-          push('Inventory is empty. Mint some skins first!', 'system')
-          return
-        }
+        if (!items.length) return push('Inventory is empty. Mint some skins first!', 'system')
         push(`─── Inventory (${items.length} items) ───`)
-        items.forEach((asset) => {
+        for (const asset of items) {
           const status = asset.listed ? `LISTED @ ${asset.list_price}` : 'OWNED'
           push(`  #${asset.id}  ${asset.name}  [${asset.rarity.toUpperCase()}]  ${status}`)
-        })
+        }
         return
       }
 
-      // ── list-item ────────────────────────────────────────
       if (cmd === 'list-item') {
         const assetId = Number(args[0])
-        if (!assetId) {
-          push('Usage: list-item <assetId> <price|auto>', 'error')
-          return
-        }
-
         let price = Number(args[1])
+        if (!assetId) return push('Usage: list-item <assetId> <price|auto>', 'error')
+
         if (!price || args[1] === 'auto') {
           const target = inventory.find((a) => a.id === assetId)
-          const ai = await sdk.getSuggestedPrice(
-            target?.name ?? `Skin-${assetId}`,
-            target?.rarity ?? 'rare',
-          )
+          const ai = await sdk.getSuggestedPrice(target?.name ?? `Skin-${assetId}`, target?.rarity ?? 'rare')
           price = ai.price
-          push(`AI auto-priced at ${price} μALGO (confidence ${ai.confidence}%)`, 'ai')
+          push(`AI auto-priced at ${price} μALGO`, 'ai')
         }
 
         const updated = await sdk.listAsset(activeAddress, assetId, price)
         push(`✓ Listed asset #${updated.id} at ${price} μALGO`, 'success')
-        await refreshInventory(activeAddress)
-        await refreshMarket()
+        await refreshInventory(activeAddress); await refreshMarket()
         return
       }
 
-      // ── cancel-listing ───────────────────────────────────
       if (cmd === 'cancel-listing') {
         const assetId = Number(args[0])
-        if (!assetId) {
-          push('Usage: cancel-listing <assetId>', 'error')
-          return
-        }
+        if (!assetId) return push('Usage: cancel-listing <assetId>', 'error')
         const updated = await sdk.cancelListing(activeAddress, assetId)
         push(`✓ Cancelled listing for asset #${updated.id}`, 'success')
-        await refreshInventory(activeAddress)
-        await refreshMarket()
+        await refreshInventory(activeAddress); await refreshMarket()
         return
       }
 
-      // ── market ───────────────────────────────────────────
       if (cmd === 'market') {
         const items = await refreshMarket()
-        if (!items.length) {
-          push('Marketplace is empty. List some items!', 'system')
-          return
-        }
+        if (!items.length) return push('Marketplace is empty.', 'system')
         push(`─── Marketplace (${items.length} listings) ───`)
-        items.forEach((asset) => {
-          const seller = asset.owner.slice(0, 8) + '...'
-          push(`  #${asset.id}  ${asset.name}  [${asset.rarity.toUpperCase()}]  ${asset.list_price} μALGO  by ${seller}`)
-        })
+        for (const asset of items) {
+          push(`  #${asset.id}  ${asset.name}  [${asset.rarity.toUpperCase()}]  ${asset.list_price} μALGO`)
+        }
         return
       }
 
-      // ── buy ──────────────────────────────────────────────
       if (cmd === 'buy') {
         const assetId = Number(args[0])
-        if (!assetId) {
-          push('Usage: buy <assetId>', 'error')
-          return
-        }
-
-        // Show what will be purchased
-        const currentMarket = await refreshMarket()
-        const listing = currentMarket.find((a) => a.id === assetId)
-        if (listing) {
-          push(`Buying "${listing.name}" [${listing.rarity.toUpperCase()}] for ${listing.list_price} μALGO...`, 'system')
-          push(`Seller: ${listing.owner.slice(0, 8)}...${listing.owner.slice(-4)}`, 'system')
-        }
+        if (!assetId) return push('Usage: buy <assetId>', 'error')
 
         push('Sending ALGO payment on-chain...', 'system')
         const result = await sdk.buyAsset(activeAddress, assetId)
-
-        push(
-          `✓ Purchased asset #${result.asset?.id || assetId} "${result.asset?.name || ''}" — now owned by you!`,
-          'success',
-        )
-
-        // Show on-chain payment details
-        if (result.payment_txn_id) {
-          push(`  Payment TX: ${result.payment_txn_id}`, 'success')
-          push(`  Amount: ${result.amount_paid} μALGO → seller`, 'success')
-        }
-        if (result.royalty_txn_id) {
-          push(`  Royalty TX: ${result.royalty_txn_id}`, 'success')
-          push(`  Royalty paid to creator`, 'success')
-        }
-        if (result.sale) {
-          const sale = result.sale
-          push(`─── Sale Receipt ───`)
-          push(`  Price: ${sale.price} μALGO`)
-          push(`  Seller proceeds: ${sale.seller_proceeds} μALGO`)
-          push(`  Royalty: ${sale.royalty_paid} μALGO → ${sale.creator?.slice(0, 8)}...`)
-        }
-        if (result.payment_txn_id) {
-          push(
-            `  Explorer: https://testnet.explorer.perawallet.app/tx/${result.payment_txn_id}`,
-            'system',
-          )
-        }
-
-        await refreshInventory(activeAddress)
-        await refreshMarket()
+        push(`✓ Purchased asset #${assetId}!`, 'success')
+        if (result.payment_txn_id) push(`  Payment TX: ${result.payment_txn_id}`, 'success')
+        await refreshInventory(activeAddress); await refreshMarket()
         return
       }
 
-      // ── apply-skin ───────────────────────────────────────
+      if (cmd === 'transfer-skin') {
+        const assetId = Number(args[0])
+        const toAddr = args[1]
+        if (!assetId || !toAddr) return push('Usage: transfer-skin <assetId> <address>', 'error')
+        push(`Transferring asset #${assetId} to ${toAddr.slice(0,8)}...`, 'system')
+        const result = await sdk.transferAsset(toAddr, assetId)
+        push(`✓ Delivered to ${toAddr.slice(0, 8)}. TX: ${result.txn_id}`, 'success')
+        await refreshInventory(activeAddress)
+        return
+      }
+
+      if (cmd === 'history') {
+         const assetId = Number(args[0])
+         if (!assetId) return push('Usage: history <assetId>', 'error')
+         const hist = await sdk.getAssetHistory(assetId)
+         push(`─── Asset Provenance (#${assetId}) ───`)
+         if (hist.length === 0) push('  No history recorded.')
+         for (const h of hist) {
+             const time = new Date(h.timestamp).toLocaleTimeString()
+             push(`  [${time}] ${h.type.toUpperCase()} by ${h.by.slice(0,6)}... ${h.price ? '@ '+h.price+' μALGO' : ''}`)
+         }
+         return
+      }
+
       if (cmd === 'apply-skin') {
         const assetId = Number(args[0])
         const asset = inventory.find((item) => item.id === assetId)
-        if (!asset) {
-          push(`Asset #${assetId} not found in your inventory.`, 'error')
-          return
-        }
+        if (!asset) return push(`Asset not found in your inventory.`, 'error')
         setActiveSkin(asset)
-        push(`✓ Skin applied: "${asset.name}" [${asset.rarity.toUpperCase()}]`, 'success')
-        push('Game engine updated with new skin texture.', 'system')
+        push(`✓ Skin applied: "${asset.name}"`, 'success')
         return
       }
 
-      // ── ai-price ─────────────────────────────────────────
+      if (cmd === 'analyze-skin') {
+         const query = args.join(' ')
+         if (!query) return push('Usage: analyze-skin <id|name>', 'error')
+         push('Running Skin Intelligence Engine...', 'system')
+         const assetId = Number(query)
+         let target: Asset | undefined
+         if (!isNaN(assetId)) {
+            target = inventory.find((a) => a.id === assetId || a.asa_id === assetId) || market.find((a) => a.id === assetId || a.asa_id === assetId)
+         } else {
+            target = inventory.find((a) => a.name.toLowerCase().includes(query.toLowerCase()))
+         }
+         const meta = target ? { name: target.name, attributes: { rarity: target.rarity } } : { name: query, attributes: { rarity: args[1] || 'rare' } }
+         const analysis = skinIntelligence.analyze(meta)
+         
+         const typeLabel = analysis.type === 'gun_skin' ? '🔫 Gun Skin' : analysis.type === 'character_skin' ? '🧑 Character Skin' : '✨ Accessory'
+         push(`  [INFO] Skin Type: ${typeLabel}`, 'ai')
+         push(`  [INFO] Game Mapping: ${analysis.game_mapping.category}`, 'ai')
+         const scoreBar = '█'.repeat(Math.round(analysis.rarity_score)) + '░'.repeat(10 - Math.round(analysis.rarity_score))
+         push(`  [INFO] Rarity Score: [${scoreBar}] ${analysis.rarity_score}/10`, 'ai')
+         push(`  [INFO] Tags: ${analysis.tags.join(', ')}`, 'system')
+         push(`  ${analysis.description}`, 'ai')
+
+         if (target) setActiveSkin(target)
+         return
+      }
+
       if (cmd === 'ai-price') {
-        const name = args[0] ?? 'GenericSkin'
-        const rarity = (args[1] ?? 'rare').toLowerCase()
-        const ai = await sdk.getSuggestedPrice(name, rarity)
-        push(`─── AI Price Analysis ───`, 'ai')
-        push(`  Skin: ${name}  Rarity: ${rarity}`, 'ai')
-        push(`  Suggested Price: ${ai.price} μALGO`, 'ai')
-        push(`  Confidence: ${ai.confidence}%`, 'ai')
-        push(`  Trend: ${ai.trend}`, 'ai')
-        if (ai.rarity_score) push(`  Rarity Score: ${ai.rarity_score}`, 'ai')
-        if (ai.demand_score) push(`  Demand Score: ${ai.demand_score}`, 'ai')
+        const ai = await sdk.getSuggestedPrice(args[0] ?? 'GenericSkin', args[1] ?? 'rare')
+        push(`Suggested Price: ${ai.price} μALGO (Conf: ${ai.confidence}%)`, 'ai')
         return
       }
 
-      // ── bridge-minecraft ─────────────────────────────────
-      if (cmd === 'bridge-minecraft') {
-        push('Querying Minecraft bridge...', 'system')
-        try {
-          const info = await sdk.getBridgeMinecraft(activeAddress)
-          push(`─── Minecraft Bridge ───`, 'success')
-          push(`  Platform: ${info.platform}`)
-          push(`  Status: ${info.status}`)
-          push(`  Synced skins: ${info.skins.length}`)
-          info.skins.forEach((s: any) => {
-            push(`    • ${s.name} [${s.rarity}] — ${s.applied ? 'APPLIED' : 'available'}`)
-          })
-        } catch (e) {
-          push(`Bridge error: ${(e as Error).message}`, 'error')
-        }
-        return
-      }
-
-      // ── bridge-steam ─────────────────────────────────────
-      if (cmd === 'bridge-steam') {
-        push('Querying Steam trade bridge...', 'system')
-        try {
-          const info = await sdk.getBridgeSteam(activeAddress)
-          push(`─── Steam Bridge ───`, 'success')
-          push(`  Platform: ${info.platform}`)
-          push(`  Status: ${info.status}`)
-          push(`  Tradeable items: ${info.skins.length}`)
-          info.skins.forEach((s: any) => {
-            push(`    • ${s.name} [${s.rarity}]`)
-          })
-        } catch (e) {
-          push(`Bridge error: ${(e as Error).message}`, 'error')
-        }
+      if (cmd === 'bridge-minecraft' || cmd === 'bridge-steam') {
+        const info = cmd === 'bridge-minecraft' ? await sdk.getBridgeMinecraft(activeAddress) : await sdk.getBridgeSteam(activeAddress)
+        push(`─── ${info.platform} Bridge ───`, 'success')
+        push(`  Status: ${info.status}`)
+        push(`  Items: ${info.skins.length}`)
         return
       }
 
       push(`Unknown command: "${cmd}". Type "help" for commands.`, 'error')
     } catch (error) {
-      push(`Error: ${(error as Error).message}`, 'error')
+       handleErrorDisplay(error)
     }
   }
 
@@ -413,34 +369,28 @@ export default function TerminalConsole() {
     }
   }
 
-  const addr = activeAddress
-    ? `${activeAddress.slice(0, 6)}...${activeAddress.slice(-4)}`
-    : 'not connected'
+  const addr = activeAddress ? `${activeAddress.slice(0, 6)}...${activeAddress.slice(-4)}` : 'not connected'
 
   const onWalletConnected = () => {
     setShowWalletModal(false)
     if (activeAddress) {
       push(`✓ Wallet connected: ${activeAddress}`, 'success')
-      push(`Network: Algorand TestNet | ASA minting enabled`, 'system')
+      push(`Network: Algorand TestNet | SDK v2.0`, 'system')
       void refreshInventory(activeAddress)
       void refreshMarket()
     }
   }
 
-  // When wallet state changes externally (user connects via modal)
   useEffect(() => {
-    if (activeAddress && showWalletModal) {
-      onWalletConnected()
-    }
+    if (activeAddress && showWalletModal) onWalletConnected()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeAddress])
 
   return (
     <div className="app-container" onClick={() => inputRef.current?.focus()}>
-      {/* ── Status Bar ─────────────────────────────────── */}
       <div className="status-bar">
         <div className="left">
-          <span>DE-SHOP SDK v1.0</span>
+          <span>DE-SHOP SDK v2.0</span>
           <div className="status-indicator">
             <div className={`status-dot ${activeAddress ? 'connected' : ''}`} />
             <span>{activeAddress ? 'CONNECTED' : 'DISCONNECTED'}</span>
@@ -452,15 +402,11 @@ export default function TerminalConsole() {
         </div>
       </div>
 
-      {/* ── Main Layout ────────────────────────────────── */}
       <div className="terminal-layout">
-        {/* Terminal */}
         <div className="terminal-panel">
           <div className="terminal-header">
             <span>DE-SHOP SDK // AI + ALGORAND NFT MARKETPLACE</span>
-            <span className="ver">
-              {inventory.length} items | {market.length} listed
-            </span>
+            <span className="ver">{inventory.length} items | {market.length} listed</span>
           </div>
 
           <div className="terminal-screen">
@@ -496,45 +442,19 @@ export default function TerminalConsole() {
           </form>
         </div>
 
-        {/* Sidebar */}
         <div className="sidebar">
           <GameDemo activeSkin={activeSkin} />
-
           <div className="info-panel">
             <div className="info-title">System Info</div>
-            <div className="info-row">
-              <span className="info-label">Wallet</span>
-              <span className="info-value">{addr}</span>
-            </div>
-            <div className="info-row">
-              <span className="info-label">Network</span>
-              <span className="info-value">TestNet</span>
-            </div>
-            <div className="info-row">
-              <span className="info-label">Inventory</span>
-              <span className="info-value">{inventory.length} items</span>
-            </div>
-            <div className="info-row">
-              <span className="info-label">Marketplace</span>
-              <span className="info-value">{market.length} listings</span>
-            </div>
-            <div className="info-row">
-              <span className="info-label">Active Skin</span>
-              <span className="info-value">
-                {activeSkin ? activeSkin.name : 'Default'}
-              </span>
-            </div>
+            <div className="info-row"><span className="info-label">Wallet</span><span className="info-value">{addr}</span></div>
+            <div className="info-row"><span className="info-label">Network</span><span className="info-value">TestNet (v2.0)</span></div>
+            <div className="info-row"><span className="info-label">Inventory</span><span className="info-value">{inventory.length} items</span></div>
+            <div className="info-row"><span className="info-label">Marketplace</span><span className="info-value">{market.length} listings</span></div>
           </div>
         </div>
       </div>
 
-      {/* Wallet Modal */}
-      {showWalletModal && (
-        <WalletModal
-          wallets={wallets}
-          onClose={() => setShowWalletModal(false)}
-        />
-      )}
+      {showWalletModal && <WalletModal wallets={wallets} onClose={() => setShowWalletModal(false)} />}
     </div>
   )
 }
