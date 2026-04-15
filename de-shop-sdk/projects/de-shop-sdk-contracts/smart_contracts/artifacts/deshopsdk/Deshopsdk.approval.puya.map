@@ -1,0 +1,3226 @@
+{
+  "version": 3,
+  "sources": [
+    "../../deshopsdk/contract.py"
+  ],
+  "mappings": ";;;;;;;;;;;;;;;AAQA;;AAAA;;;AAAA;;AAAA;AAAA;AAAA;;AAAA;AAAA;;;;;;;;;;;;;;;;;;;;;;AAAA;;;AAAA;;;;;;;;;;AAAA;;;;;;;;;AAIK;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;;AAAA;AAAA;AAAA;AAAA;;AAAA;AAAA;AAAA;AAGU;AAAA;;AAAoB;;AAApB;AAAP;AACO;;AAAkB;;;;AAAlB;AAAP;AACA;AAEmB;;AACF;;;;;;;AAHjB;;;AAIQ;;;AAJR;AALH;AAAA;AAYA;;AAAA;AAAA;AAAA;AAAA;;AAAA;AAAA;AAAA;AAAA;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;;;AAAA;AAAA;AAAA;;AAAA;AAAA;AAAA;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAEU;;AAAA;;AAAwB;;AAAxB;AAAP;AACO;;AAAA;;AAAsB;AAAtB;AAAP;AACO;;AAAA;;AAAgB;;AAAhB;AAAP;AACO;;AAAA;AAAP;AAEW;;AAAA;;AACJ;AAAgB;AAAhB;AAAA;AAAA;AAAA;AAAA;;AAAA;AAAP;AAGiB;;AADS;;AAAA;AAAA;;AAAA;AAAA;;AAAA;AAA1B;AAVH;AAAA;AAiBA;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;;AAAA;AAAA;AAAA;AAAA;;AAAA;AAAA;AAAA;AAGU;AAAA;AAAY;AAAZ;AAAA;AAAA;AAAA;;AAAA;AAAA;AAAA;;AAAP;AAEU;AAAA;AACF;AAAA;;AAAA;AACC;;AAAA;;;AAAA;;AACC;;AAAA;;;AAAA;;AACI;AAAA;;AAAA;AAEP;;AAAA;;AAAoB;;AAApB;AAAP;AACO;;AAAA;;AAAA;;AAAA;AAAP;AACO;;AAAA;;AAAkB;;AAAlB;AAAP;AAEW;;AAAA;AAAwB;;;AAAzB;AAAA;AAAA;;AACM;AAAA;AAExB;;;AACY;;;;;;;;AAAA;;;AAAwD;;;AAAxD;AACZ;;AAAA;;;AACY;;;;;;;;;AAAA;;;AAAmD;;;AAAnD;AAEJ;AAEmB;;;;;;AACF;;;;;;;;;AAHjB;;;AAKQ;;;AALR;AAQA;;AAAA;;AA/BH;AAAA;AAiCA;;;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAGU;AAAA;AAAY;AAAZ;AAAA;AAAA;AAAA;AAAA;;AAAP;AACU;AAAA;AAAA;AACH;;;AAAyB;;AAAzB;AAAP;AAEA;AAEmB;;AAEA;;;AADF;;;;;;;;AAHjB;;;AAKQ;;;AALR;AAQA;;AAfH;AAAA",
+  "op_pc_offset": 0,
+  "pc_events": {
+    "1": {
+      "subroutine": "algopy.arc4.ARC4Contract.approval_program",
+      "params": {},
+      "block": "main",
+      "stack_in": [],
+      "op": "intcblock 1 0 8 4"
+    },
+    "7": {
+      "op": "bytecblock 0x6c6973745f"
+    },
+    "15": {
+      "op": "txn NumAppArgs",
+      "defined_out": [
+        "tmp%0#1"
+      ],
+      "stack_out": [
+        "tmp%0#1"
+      ]
+    },
+    "17": {
+      "op": "bz main___algopy_default_create@13",
+      "stack_out": []
+    },
+    "20": {
+      "op": "txn OnCompletion",
+      "defined_out": [
+        "tmp%2#0"
+      ],
+      "stack_out": [
+        "tmp%2#0"
+      ]
+    },
+    "22": {
+      "op": "!",
+      "defined_out": [
+        "tmp%3#0"
+      ],
+      "stack_out": [
+        "tmp%3#0"
+      ]
+    },
+    "23": {
+      "op": "assert",
+      "stack_out": []
+    },
+    "24": {
+      "op": "txn ApplicationID",
+      "defined_out": [
+        "tmp%4#0"
+      ],
+      "stack_out": [
+        "tmp%4#0"
+      ]
+    },
+    "26": {
+      "op": "assert",
+      "stack_out": []
+    },
+    "27": {
+      "op": "pushbytess 0xbb240e97 0x17d5a832 0x34be79d2 0xb639d4bc // method \"setupAsset(uint64,pay)void\", method \"listAsset(axfer,uint64,address,uint64)void\", method \"buyAsset(uint64,pay)void\", method \"cancelListing(uint64)void\"",
+      "defined_out": [
+        "Method(buyAsset(uint64,pay)void)",
+        "Method(cancelListing(uint64)void)",
+        "Method(listAsset(axfer,uint64,address,uint64)void)",
+        "Method(setupAsset(uint64,pay)void)"
+      ],
+      "stack_out": [
+        "Method(setupAsset(uint64,pay)void)",
+        "Method(listAsset(axfer,uint64,address,uint64)void)",
+        "Method(buyAsset(uint64,pay)void)",
+        "Method(cancelListing(uint64)void)"
+      ]
+    },
+    "49": {
+      "op": "txna ApplicationArgs 0",
+      "defined_out": [
+        "Method(buyAsset(uint64,pay)void)",
+        "Method(cancelListing(uint64)void)",
+        "Method(listAsset(axfer,uint64,address,uint64)void)",
+        "Method(setupAsset(uint64,pay)void)",
+        "tmp%6#0"
+      ],
+      "stack_out": [
+        "Method(setupAsset(uint64,pay)void)",
+        "Method(listAsset(axfer,uint64,address,uint64)void)",
+        "Method(buyAsset(uint64,pay)void)",
+        "Method(cancelListing(uint64)void)",
+        "tmp%6#0"
+      ]
+    },
+    "52": {
+      "op": "match setupAsset listAsset buyAsset cancelListing",
+      "stack_out": []
+    },
+    "62": {
+      "op": "err"
+    },
+    "63": {
+      "block": "main___algopy_default_create@13",
+      "stack_in": [],
+      "op": "txn OnCompletion",
+      "defined_out": [
+        "tmp%7#0"
+      ],
+      "stack_out": [
+        "tmp%7#0"
+      ]
+    },
+    "65": {
+      "op": "!",
+      "defined_out": [
+        "tmp%8#0"
+      ],
+      "stack_out": [
+        "tmp%8#0"
+      ]
+    },
+    "66": {
+      "op": "txn ApplicationID",
+      "defined_out": [
+        "tmp%8#0",
+        "tmp%9#0"
+      ],
+      "stack_out": [
+        "tmp%8#0",
+        "tmp%9#0"
+      ]
+    },
+    "68": {
+      "op": "!",
+      "defined_out": [
+        "tmp%10#0",
+        "tmp%8#0"
+      ],
+      "stack_out": [
+        "tmp%8#0",
+        "tmp%10#0"
+      ]
+    },
+    "69": {
+      "op": "&&",
+      "defined_out": [
+        "tmp%11#0"
+      ],
+      "stack_out": [
+        "tmp%11#0"
+      ]
+    },
+    "70": {
+      "op": "return",
+      "defined_out": [],
+      "stack_out": []
+    },
+    "71": {
+      "subroutine": "smart_contracts.deshopsdk.contract.Deshopsdk.setupAsset[routing]",
+      "params": {},
+      "block": "setupAsset",
+      "stack_in": [],
+      "op": "txna ApplicationArgs 1",
+      "defined_out": [
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0"
+      ]
+    },
+    "74": {
+      "op": "dup",
+      "defined_out": [
+        "tmp%0#0",
+        "tmp%0#0 (copy)"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "tmp%0#0 (copy)"
+      ]
+    },
+    "75": {
+      "op": "len",
+      "defined_out": [
+        "len%0#0",
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "len%0#0"
+      ]
+    },
+    "76": {
+      "op": "intc_2 // 8",
+      "defined_out": [
+        "8",
+        "len%0#0",
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "len%0#0",
+        "8"
+      ]
+    },
+    "77": {
+      "op": "==",
+      "defined_out": [
+        "eq%0#0",
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "eq%0#0"
+      ]
+    },
+    "78": {
+      "error": "invalid number of bytes for arc4.uint64",
+      "op": "assert // invalid number of bytes for arc4.uint64",
+      "stack_out": [
+        "tmp%0#0"
+      ]
+    },
+    "79": {
+      "op": "btoi",
+      "defined_out": [
+        "asset#0"
+      ],
+      "stack_out": [
+        "asset#0"
+      ]
+    },
+    "80": {
+      "op": "txn GroupIndex",
+      "defined_out": [
+        "asset#0",
+        "tmp%2#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "tmp%2#0"
+      ]
+    },
+    "82": {
+      "op": "intc_0 // 1",
+      "defined_out": [
+        "1",
+        "asset#0",
+        "tmp%2#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "tmp%2#0",
+        "1"
+      ]
+    },
+    "83": {
+      "op": "-",
+      "defined_out": [
+        "asset#0",
+        "mbr_pay#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "mbr_pay#0"
+      ]
+    },
+    "84": {
+      "op": "dup",
+      "defined_out": [
+        "asset#0",
+        "mbr_pay#0",
+        "mbr_pay#0 (copy)"
+      ],
+      "stack_out": [
+        "asset#0",
+        "mbr_pay#0",
+        "mbr_pay#0 (copy)"
+      ]
+    },
+    "85": {
+      "op": "gtxns TypeEnum",
+      "defined_out": [
+        "asset#0",
+        "gtxn_type%0#0",
+        "mbr_pay#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "mbr_pay#0",
+        "gtxn_type%0#0"
+      ]
+    },
+    "87": {
+      "op": "intc_0 // pay",
+      "defined_out": [
+        "asset#0",
+        "gtxn_type%0#0",
+        "mbr_pay#0",
+        "pay"
+      ],
+      "stack_out": [
+        "asset#0",
+        "mbr_pay#0",
+        "gtxn_type%0#0",
+        "pay"
+      ]
+    },
+    "88": {
+      "op": "==",
+      "defined_out": [
+        "asset#0",
+        "gtxn_type_matches%0#0",
+        "mbr_pay#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "mbr_pay#0",
+        "gtxn_type_matches%0#0"
+      ]
+    },
+    "89": {
+      "error": "transaction type is pay",
+      "op": "assert // transaction type is pay",
+      "stack_out": [
+        "asset#0",
+        "mbr_pay#0"
+      ]
+    },
+    "90": {
+      "op": "dup",
+      "stack_out": [
+        "asset#0",
+        "mbr_pay#0",
+        "mbr_pay#0 (copy)"
+      ]
+    },
+    "91": {
+      "op": "gtxns Receiver",
+      "defined_out": [
+        "asset#0",
+        "mbr_pay#0",
+        "tmp%0#1"
+      ],
+      "stack_out": [
+        "asset#0",
+        "mbr_pay#0",
+        "tmp%0#1"
+      ]
+    },
+    "93": {
+      "op": "global CurrentApplicationAddress",
+      "defined_out": [
+        "asset#0",
+        "mbr_pay#0",
+        "tmp%0#1",
+        "tmp%1#1"
+      ],
+      "stack_out": [
+        "asset#0",
+        "mbr_pay#0",
+        "tmp%0#1",
+        "tmp%1#1"
+      ]
+    },
+    "95": {
+      "op": "==",
+      "defined_out": [
+        "asset#0",
+        "mbr_pay#0",
+        "tmp%2#1"
+      ],
+      "stack_out": [
+        "asset#0",
+        "mbr_pay#0",
+        "tmp%2#1"
+      ]
+    },
+    "96": {
+      "error": "pay exact mbr",
+      "op": "assert // pay exact mbr",
+      "stack_out": [
+        "asset#0",
+        "mbr_pay#0"
+      ]
+    },
+    "97": {
+      "op": "gtxns Amount",
+      "defined_out": [
+        "asset#0",
+        "tmp%3#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "tmp%3#0"
+      ]
+    },
+    "99": {
+      "op": "pushint 100000",
+      "defined_out": [
+        "100000",
+        "asset#0",
+        "tmp%3#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "tmp%3#0",
+        "100000"
+      ]
+    },
+    "103": {
+      "op": "==",
+      "defined_out": [
+        "asset#0",
+        "tmp%4#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "tmp%4#0"
+      ]
+    },
+    "104": {
+      "error": "must pay 0.1 ALGO for ASA MBR",
+      "op": "assert // must pay 0.1 ALGO for ASA MBR",
+      "stack_out": [
+        "asset#0"
+      ]
+    },
+    "105": {
+      "op": "itxn_begin"
+    },
+    "106": {
+      "op": "global CurrentApplicationAddress",
+      "defined_out": [
+        "asset#0",
+        "inner_txn_params%0%%param_AssetReceiver_idx_0#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "inner_txn_params%0%%param_AssetReceiver_idx_0#0"
+      ]
+    },
+    "108": {
+      "op": "intc_1 // 0",
+      "defined_out": [
+        "0",
+        "asset#0",
+        "inner_txn_params%0%%param_AssetReceiver_idx_0#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "inner_txn_params%0%%param_AssetReceiver_idx_0#0",
+        "0"
+      ]
+    },
+    "109": {
+      "op": "itxn_field AssetAmount",
+      "stack_out": [
+        "asset#0",
+        "inner_txn_params%0%%param_AssetReceiver_idx_0#0"
+      ]
+    },
+    "111": {
+      "op": "itxn_field AssetReceiver",
+      "stack_out": [
+        "asset#0"
+      ]
+    },
+    "113": {
+      "op": "itxn_field XferAsset",
+      "stack_out": []
+    },
+    "115": {
+      "op": "intc_3 // axfer",
+      "defined_out": [
+        "axfer"
+      ],
+      "stack_out": [
+        "axfer"
+      ]
+    },
+    "116": {
+      "op": "itxn_field TypeEnum",
+      "stack_out": []
+    },
+    "118": {
+      "op": "intc_1 // 0",
+      "stack_out": [
+        "0"
+      ]
+    },
+    "119": {
+      "op": "itxn_field Fee",
+      "stack_out": []
+    },
+    "121": {
+      "op": "itxn_submit"
+    },
+    "122": {
+      "op": "intc_0 // 1",
+      "stack_out": [
+        "1"
+      ]
+    },
+    "123": {
+      "op": "return",
+      "stack_out": []
+    },
+    "124": {
+      "subroutine": "smart_contracts.deshopsdk.contract.Deshopsdk.listAsset[routing]",
+      "params": {},
+      "block": "listAsset",
+      "stack_in": [],
+      "op": "txn GroupIndex",
+      "defined_out": [
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0"
+      ]
+    },
+    "126": {
+      "op": "intc_0 // 1",
+      "defined_out": [
+        "1",
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "1"
+      ]
+    },
+    "127": {
+      "op": "-",
+      "defined_out": [
+        "axfer#0"
+      ],
+      "stack_out": [
+        "axfer#0"
+      ]
+    },
+    "128": {
+      "op": "dup",
+      "defined_out": [
+        "axfer#0",
+        "axfer#0 (copy)"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "axfer#0 (copy)"
+      ]
+    },
+    "129": {
+      "op": "gtxns TypeEnum",
+      "defined_out": [
+        "axfer#0",
+        "gtxn_type%0#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "gtxn_type%0#0"
+      ]
+    },
+    "131": {
+      "op": "intc_3 // axfer",
+      "defined_out": [
+        "axfer",
+        "axfer#0",
+        "gtxn_type%0#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "gtxn_type%0#0",
+        "axfer"
+      ]
+    },
+    "132": {
+      "op": "==",
+      "defined_out": [
+        "axfer#0",
+        "gtxn_type_matches%0#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "gtxn_type_matches%0#0"
+      ]
+    },
+    "133": {
+      "error": "transaction type is axfer",
+      "op": "assert // transaction type is axfer",
+      "stack_out": [
+        "axfer#0"
+      ]
+    },
+    "134": {
+      "op": "txna ApplicationArgs 1",
+      "defined_out": [
+        "axfer#0",
+        "price#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0"
+      ]
+    },
+    "137": {
+      "op": "dup",
+      "defined_out": [
+        "axfer#0",
+        "price#0",
+        "price#0 (copy)"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "price#0 (copy)"
+      ]
+    },
+    "138": {
+      "op": "len",
+      "defined_out": [
+        "axfer#0",
+        "len%0#0",
+        "price#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "len%0#0"
+      ]
+    },
+    "139": {
+      "op": "intc_2 // 8",
+      "defined_out": [
+        "8",
+        "axfer#0",
+        "len%0#0",
+        "price#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "len%0#0",
+        "8"
+      ]
+    },
+    "140": {
+      "op": "==",
+      "defined_out": [
+        "axfer#0",
+        "eq%0#0",
+        "price#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "eq%0#0"
+      ]
+    },
+    "141": {
+      "error": "invalid number of bytes for arc4.uint64",
+      "op": "assert // invalid number of bytes for arc4.uint64",
+      "stack_out": [
+        "axfer#0",
+        "price#0"
+      ]
+    },
+    "142": {
+      "op": "txna ApplicationArgs 2",
+      "defined_out": [
+        "axfer#0",
+        "creator#0",
+        "price#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0"
+      ]
+    },
+    "145": {
+      "op": "dup",
+      "defined_out": [
+        "axfer#0",
+        "creator#0",
+        "creator#0 (copy)",
+        "price#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "creator#0 (copy)"
+      ]
+    },
+    "146": {
+      "op": "len",
+      "defined_out": [
+        "axfer#0",
+        "creator#0",
+        "len%1#0",
+        "price#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "len%1#0"
+      ]
+    },
+    "147": {
+      "op": "pushint 32",
+      "defined_out": [
+        "32",
+        "axfer#0",
+        "creator#0",
+        "len%1#0",
+        "price#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "len%1#0",
+        "32"
+      ]
+    },
+    "149": {
+      "op": "==",
+      "defined_out": [
+        "axfer#0",
+        "creator#0",
+        "eq%1#0",
+        "price#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "eq%1#0"
+      ]
+    },
+    "150": {
+      "error": "invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
+      "op": "assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>",
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0"
+      ]
+    },
+    "151": {
+      "op": "txna ApplicationArgs 3",
+      "defined_out": [
+        "axfer#0",
+        "creator#0",
+        "price#0",
+        "royalty_bps#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0"
+      ]
+    },
+    "154": {
+      "op": "dup",
+      "defined_out": [
+        "axfer#0",
+        "creator#0",
+        "price#0",
+        "royalty_bps#0",
+        "royalty_bps#0 (copy)"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "royalty_bps#0 (copy)"
+      ]
+    },
+    "155": {
+      "op": "len",
+      "defined_out": [
+        "axfer#0",
+        "creator#0",
+        "len%2#0",
+        "price#0",
+        "royalty_bps#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "len%2#0"
+      ]
+    },
+    "156": {
+      "op": "intc_2 // 8",
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "len%2#0",
+        "8"
+      ]
+    },
+    "157": {
+      "op": "==",
+      "defined_out": [
+        "axfer#0",
+        "creator#0",
+        "eq%2#0",
+        "price#0",
+        "royalty_bps#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "eq%2#0"
+      ]
+    },
+    "158": {
+      "error": "invalid number of bytes for arc4.uint64",
+      "op": "assert // invalid number of bytes for arc4.uint64",
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0"
+      ]
+    },
+    "159": {
+      "op": "dig 3",
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "axfer#0 (copy)"
+      ]
+    },
+    "161": {
+      "op": "gtxns AssetReceiver",
+      "defined_out": [
+        "axfer#0",
+        "creator#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%0#1"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "tmp%0#1"
+      ]
+    },
+    "163": {
+      "op": "global CurrentApplicationAddress",
+      "defined_out": [
+        "axfer#0",
+        "creator#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%0#1",
+        "tmp%1#1"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "tmp%0#1",
+        "tmp%1#1"
+      ]
+    },
+    "165": {
+      "op": "==",
+      "defined_out": [
+        "axfer#0",
+        "creator#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%2#1"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "tmp%2#1"
+      ]
+    },
+    "166": {
+      "error": "axfer not to contract",
+      "op": "assert // axfer not to contract",
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0"
+      ]
+    },
+    "167": {
+      "op": "dig 3",
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "axfer#0 (copy)"
+      ]
+    },
+    "169": {
+      "op": "gtxns AssetAmount",
+      "defined_out": [
+        "axfer#0",
+        "creator#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%3#1"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "tmp%3#1"
+      ]
+    },
+    "171": {
+      "op": "intc_0 // 1",
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "tmp%3#1",
+        "1"
+      ]
+    },
+    "172": {
+      "op": "==",
+      "defined_out": [
+        "axfer#0",
+        "creator#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%4#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "tmp%4#0"
+      ]
+    },
+    "173": {
+      "error": "must transfer 1 asset",
+      "op": "assert // must transfer 1 asset",
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0"
+      ]
+    },
+    "174": {
+      "op": "dig 3",
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "axfer#0 (copy)"
+      ]
+    },
+    "176": {
+      "op": "gtxns Sender",
+      "defined_out": [
+        "axfer#0",
+        "creator#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%5#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "tmp%5#0"
+      ]
+    },
+    "178": {
+      "op": "txn Sender",
+      "defined_out": [
+        "axfer#0",
+        "creator#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%5#0",
+        "tmp%6#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "tmp%5#0",
+        "tmp%6#0"
+      ]
+    },
+    "180": {
+      "op": "==",
+      "defined_out": [
+        "axfer#0",
+        "creator#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%7#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "tmp%7#0"
+      ]
+    },
+    "181": {
+      "error": "must be sender",
+      "op": "assert // must be sender",
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0"
+      ]
+    },
+    "182": {
+      "op": "dig 2",
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "price#0 (copy)"
+      ]
+    },
+    "184": {
+      "op": "btoi",
+      "defined_out": [
+        "axfer#0",
+        "creator#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%8#0"
+      ],
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "tmp%8#0"
+      ]
+    },
+    "185": {
+      "error": "price > 0",
+      "op": "assert // price > 0",
+      "stack_out": [
+        "axfer#0",
+        "price#0",
+        "creator#0",
+        "royalty_bps#0"
+      ]
+    },
+    "186": {
+      "op": "uncover 3",
+      "stack_out": [
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "axfer#0"
+      ]
+    },
+    "188": {
+      "op": "gtxns XferAsset",
+      "defined_out": [
+        "asset_id#0",
+        "creator#0",
+        "price#0",
+        "royalty_bps#0"
+      ],
+      "stack_out": [
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "asset_id#0"
+      ]
+    },
+    "190": {
+      "op": "itob",
+      "defined_out": [
+        "creator#0",
+        "encoded_value%0#0",
+        "price#0",
+        "royalty_bps#0"
+      ],
+      "stack_out": [
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "encoded_value%0#0"
+      ]
+    },
+    "191": {
+      "op": "bytec_0 // 0x6c6973745f",
+      "defined_out": [
+        "0x6c6973745f",
+        "creator#0",
+        "encoded_value%0#0",
+        "price#0",
+        "royalty_bps#0"
+      ],
+      "stack_out": [
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "encoded_value%0#0",
+        "0x6c6973745f"
+      ]
+    },
+    "192": {
+      "op": "swap",
+      "stack_out": [
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "0x6c6973745f",
+        "encoded_value%0#0"
+      ]
+    },
+    "193": {
+      "op": "concat",
+      "defined_out": [
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "price#0",
+        "royalty_bps#0"
+      ],
+      "stack_out": [
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "map_prefixed_key%0#0"
+      ]
+    },
+    "194": {
+      "op": "dup",
+      "defined_out": [
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "map_prefixed_key%0#0 (copy)",
+        "price#0",
+        "royalty_bps#0"
+      ],
+      "stack_out": [
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "map_prefixed_key%0#0",
+        "map_prefixed_key%0#0 (copy)"
+      ]
+    },
+    "195": {
+      "op": "box_len",
+      "defined_out": [
+        "_%0#0",
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "maybe_exists%0#0",
+        "price#0",
+        "royalty_bps#0"
+      ],
+      "stack_out": [
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "map_prefixed_key%0#0",
+        "_%0#0",
+        "maybe_exists%0#0"
+      ]
+    },
+    "196": {
+      "op": "bury 1",
+      "stack_out": [
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "map_prefixed_key%0#0",
+        "maybe_exists%0#0"
+      ]
+    },
+    "198": {
+      "op": "!",
+      "defined_out": [
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%11#0"
+      ],
+      "stack_out": [
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "map_prefixed_key%0#0",
+        "tmp%11#0"
+      ]
+    },
+    "199": {
+      "error": "already listed",
+      "op": "assert // already listed",
+      "stack_out": [
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "map_prefixed_key%0#0"
+      ]
+    },
+    "200": {
+      "op": "txn Sender",
+      "defined_out": [
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "price#0",
+        "reinterpret_Encoded(uint8[32])%0#0",
+        "royalty_bps#0"
+      ],
+      "stack_out": [
+        "price#0",
+        "creator#0",
+        "royalty_bps#0",
+        "map_prefixed_key%0#0",
+        "reinterpret_Encoded(uint8[32])%0#0"
+      ]
+    },
+    "202": {
+      "op": "uncover 4",
+      "stack_out": [
+        "creator#0",
+        "royalty_bps#0",
+        "map_prefixed_key%0#0",
+        "reinterpret_Encoded(uint8[32])%0#0",
+        "price#0"
+      ]
+    },
+    "204": {
+      "op": "concat",
+      "defined_out": [
+        "aggregate%head%1#0",
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "royalty_bps#0"
+      ],
+      "stack_out": [
+        "creator#0",
+        "royalty_bps#0",
+        "map_prefixed_key%0#0",
+        "aggregate%head%1#0"
+      ]
+    },
+    "205": {
+      "op": "uncover 3",
+      "stack_out": [
+        "royalty_bps#0",
+        "map_prefixed_key%0#0",
+        "aggregate%head%1#0",
+        "creator#0"
+      ]
+    },
+    "207": {
+      "op": "concat",
+      "defined_out": [
+        "aggregate%head%2#0",
+        "map_prefixed_key%0#0",
+        "royalty_bps#0"
+      ],
+      "stack_out": [
+        "royalty_bps#0",
+        "map_prefixed_key%0#0",
+        "aggregate%head%2#0"
+      ]
+    },
+    "208": {
+      "op": "uncover 2",
+      "stack_out": [
+        "map_prefixed_key%0#0",
+        "aggregate%head%2#0",
+        "royalty_bps#0"
+      ]
+    },
+    "210": {
+      "op": "concat",
+      "defined_out": [
+        "aggregate%head%3#0",
+        "map_prefixed_key%0#0"
+      ],
+      "stack_out": [
+        "map_prefixed_key%0#0",
+        "aggregate%head%3#0"
+      ]
+    },
+    "211": {
+      "op": "box_put",
+      "stack_out": []
+    },
+    "212": {
+      "op": "intc_0 // 1",
+      "stack_out": [
+        "1"
+      ]
+    },
+    "213": {
+      "op": "return",
+      "stack_out": []
+    },
+    "214": {
+      "subroutine": "smart_contracts.deshopsdk.contract.Deshopsdk.buyAsset[routing]",
+      "params": {},
+      "block": "buyAsset",
+      "stack_in": [],
+      "op": "txna ApplicationArgs 1",
+      "defined_out": [
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0"
+      ]
+    },
+    "217": {
+      "op": "dup",
+      "defined_out": [
+        "tmp%0#0",
+        "tmp%0#0 (copy)"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "tmp%0#0 (copy)"
+      ]
+    },
+    "218": {
+      "op": "len",
+      "defined_out": [
+        "len%0#0",
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "len%0#0"
+      ]
+    },
+    "219": {
+      "op": "intc_2 // 8",
+      "defined_out": [
+        "8",
+        "len%0#0",
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "len%0#0",
+        "8"
+      ]
+    },
+    "220": {
+      "op": "==",
+      "defined_out": [
+        "eq%0#0",
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "eq%0#0"
+      ]
+    },
+    "221": {
+      "error": "invalid number of bytes for arc4.uint64",
+      "op": "assert // invalid number of bytes for arc4.uint64",
+      "stack_out": [
+        "tmp%0#0"
+      ]
+    },
+    "222": {
+      "op": "btoi",
+      "defined_out": [
+        "asset#0"
+      ],
+      "stack_out": [
+        "asset#0"
+      ]
+    },
+    "223": {
+      "op": "dup",
+      "defined_out": [
+        "asset#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "asset#0"
+      ]
+    },
+    "224": {
+      "op": "txn GroupIndex",
+      "defined_out": [
+        "asset#0",
+        "tmp%2#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "asset#0",
+        "tmp%2#0"
+      ]
+    },
+    "226": {
+      "op": "intc_0 // 1",
+      "defined_out": [
+        "1",
+        "asset#0",
+        "tmp%2#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "asset#0",
+        "tmp%2#0",
+        "1"
+      ]
+    },
+    "227": {
+      "op": "-",
+      "defined_out": [
+        "asset#0",
+        "payment#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "asset#0",
+        "payment#0"
+      ]
+    },
+    "228": {
+      "op": "dup",
+      "defined_out": [
+        "asset#0",
+        "payment#0",
+        "payment#0 (copy)"
+      ],
+      "stack_out": [
+        "asset#0",
+        "asset#0",
+        "payment#0",
+        "payment#0 (copy)"
+      ]
+    },
+    "229": {
+      "op": "gtxns TypeEnum",
+      "defined_out": [
+        "asset#0",
+        "gtxn_type%0#0",
+        "payment#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "asset#0",
+        "payment#0",
+        "gtxn_type%0#0"
+      ]
+    },
+    "231": {
+      "op": "intc_0 // pay",
+      "defined_out": [
+        "asset#0",
+        "gtxn_type%0#0",
+        "pay",
+        "payment#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "asset#0",
+        "payment#0",
+        "gtxn_type%0#0",
+        "pay"
+      ]
+    },
+    "232": {
+      "op": "==",
+      "defined_out": [
+        "asset#0",
+        "gtxn_type_matches%0#0",
+        "payment#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "asset#0",
+        "payment#0",
+        "gtxn_type_matches%0#0"
+      ]
+    },
+    "233": {
+      "error": "transaction type is pay",
+      "op": "assert // transaction type is pay",
+      "stack_out": [
+        "asset#0",
+        "asset#0",
+        "payment#0"
+      ]
+    },
+    "234": {
+      "op": "swap",
+      "stack_out": [
+        "asset#0",
+        "payment#0",
+        "asset#0"
+      ]
+    },
+    "235": {
+      "op": "itob",
+      "defined_out": [
+        "asset#0",
+        "encoded_value%0#0",
+        "payment#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "payment#0",
+        "encoded_value%0#0"
+      ]
+    },
+    "236": {
+      "op": "bytec_0 // 0x6c6973745f",
+      "defined_out": [
+        "0x6c6973745f",
+        "asset#0",
+        "encoded_value%0#0",
+        "payment#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "payment#0",
+        "encoded_value%0#0",
+        "0x6c6973745f"
+      ]
+    },
+    "237": {
+      "op": "swap",
+      "stack_out": [
+        "asset#0",
+        "payment#0",
+        "0x6c6973745f",
+        "encoded_value%0#0"
+      ]
+    },
+    "238": {
+      "op": "concat",
+      "defined_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "payment#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "payment#0",
+        "map_prefixed_key%0#0"
+      ]
+    },
+    "239": {
+      "op": "dup",
+      "stack_out": [
+        "asset#0",
+        "payment#0",
+        "map_prefixed_key%0#0",
+        "map_prefixed_key%0#0"
+      ]
+    },
+    "240": {
+      "op": "cover 2",
+      "defined_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "payment#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "map_prefixed_key%0#0"
+      ]
+    },
+    "242": {
+      "op": "dup",
+      "defined_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "map_prefixed_key%0#0 (copy)",
+        "payment#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "map_prefixed_key%0#0",
+        "map_prefixed_key%0#0 (copy)"
+      ]
+    },
+    "243": {
+      "op": "box_len",
+      "defined_out": [
+        "_%0#0",
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "maybe_exists%0#0",
+        "payment#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "map_prefixed_key%0#0",
+        "_%0#0",
+        "maybe_exists%0#0"
+      ]
+    },
+    "244": {
+      "op": "bury 1",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "map_prefixed_key%0#0",
+        "maybe_exists%0#0"
+      ]
+    },
+    "246": {
+      "error": "not listed",
+      "op": "assert // not listed",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "map_prefixed_key%0#0"
+      ]
+    },
+    "247": {
+      "op": "box_get",
+      "defined_out": [
+        "aggregate%box_get%1#0",
+        "asset#0",
+        "listing#0",
+        "map_prefixed_key%0#0",
+        "payment#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "listing#0",
+        "aggregate%box_get%1#0"
+      ]
+    },
+    "248": {
+      "op": "pop",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "listing#0"
+      ]
+    },
+    "249": {
+      "op": "dup",
+      "defined_out": [
+        "asset#0",
+        "listing#0",
+        "listing#0 (copy)",
+        "map_prefixed_key%0#0",
+        "payment#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "listing#0",
+        "listing#0 (copy)"
+      ]
+    },
+    "250": {
+      "op": "pushint 32",
+      "defined_out": [
+        "32",
+        "asset#0",
+        "listing#0",
+        "listing#0 (copy)",
+        "map_prefixed_key%0#0",
+        "payment#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "listing#0",
+        "listing#0 (copy)",
+        "32"
+      ]
+    },
+    "252": {
+      "op": "extract_uint64",
+      "defined_out": [
+        "asset#0",
+        "listing#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "price#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "listing#0",
+        "price#0"
+      ]
+    },
+    "253": {
+      "op": "dig 1",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "listing#0",
+        "price#0",
+        "listing#0 (copy)"
+      ]
+    },
+    "255": {
+      "op": "extract 0 32",
+      "defined_out": [
+        "asset#0",
+        "listing#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "price#0",
+        "seller#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "listing#0",
+        "price#0",
+        "seller#0"
+      ]
+    },
+    "258": {
+      "op": "cover 3",
+      "defined_out": [
+        "asset#0",
+        "listing#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "price#0",
+        "seller#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "payment#0",
+        "listing#0",
+        "price#0"
+      ]
+    },
+    "260": {
+      "op": "dig 1",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "payment#0",
+        "listing#0",
+        "price#0",
+        "listing#0 (copy)"
+      ]
+    },
+    "262": {
+      "op": "extract 40 32",
+      "defined_out": [
+        "asset#0",
+        "creator#0",
+        "listing#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "price#0",
+        "seller#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "payment#0",
+        "listing#0",
+        "price#0",
+        "creator#0"
+      ]
+    },
+    "265": {
+      "op": "cover 3",
+      "defined_out": [
+        "asset#0",
+        "creator#0",
+        "listing#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "price#0",
+        "seller#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "payment#0",
+        "listing#0",
+        "price#0"
+      ]
+    },
+    "267": {
+      "op": "swap",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "payment#0",
+        "price#0",
+        "listing#0"
+      ]
+    },
+    "268": {
+      "op": "pushint 72",
+      "defined_out": [
+        "72",
+        "asset#0",
+        "creator#0",
+        "listing#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "price#0",
+        "seller#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "payment#0",
+        "price#0",
+        "listing#0",
+        "72"
+      ]
+    },
+    "270": {
+      "op": "extract_uint64",
+      "defined_out": [
+        "asset#0",
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "price#0",
+        "royalty_bps#0",
+        "seller#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "payment#0",
+        "price#0",
+        "royalty_bps#0"
+      ]
+    },
+    "271": {
+      "op": "dig 2",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "payment#0",
+        "price#0",
+        "royalty_bps#0",
+        "payment#0 (copy)"
+      ]
+    },
+    "273": {
+      "op": "gtxns Receiver",
+      "defined_out": [
+        "asset#0",
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "price#0",
+        "royalty_bps#0",
+        "seller#0",
+        "tmp%2#1"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "payment#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%2#1"
+      ]
+    },
+    "275": {
+      "op": "global CurrentApplicationAddress",
+      "defined_out": [
+        "asset#0",
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "price#0",
+        "royalty_bps#0",
+        "seller#0",
+        "tmp%2#1",
+        "tmp%3#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "payment#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%2#1",
+        "tmp%3#0"
+      ]
+    },
+    "277": {
+      "op": "==",
+      "defined_out": [
+        "asset#0",
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "price#0",
+        "royalty_bps#0",
+        "seller#0",
+        "tmp%4#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "payment#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%4#0"
+      ]
+    },
+    "278": {
+      "error": "pay contract",
+      "op": "assert // pay contract",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "payment#0",
+        "price#0",
+        "royalty_bps#0"
+      ]
+    },
+    "279": {
+      "op": "dig 2",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "payment#0",
+        "price#0",
+        "royalty_bps#0",
+        "payment#0 (copy)"
+      ]
+    },
+    "281": {
+      "op": "gtxns Amount",
+      "defined_out": [
+        "asset#0",
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "price#0",
+        "royalty_bps#0",
+        "seller#0",
+        "tmp%5#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "payment#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%5#0"
+      ]
+    },
+    "283": {
+      "op": "dig 2",
+      "defined_out": [
+        "asset#0",
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "price#0",
+        "price#0 (copy)",
+        "royalty_bps#0",
+        "seller#0",
+        "tmp%5#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "payment#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%5#0",
+        "price#0 (copy)"
+      ]
+    },
+    "285": {
+      "op": ">=",
+      "defined_out": [
+        "asset#0",
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "payment#0",
+        "price#0",
+        "royalty_bps#0",
+        "seller#0",
+        "tmp%6#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "payment#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%6#0"
+      ]
+    },
+    "286": {
+      "error": "insufficient payment",
+      "op": "assert // insufficient payment",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "payment#0",
+        "price#0",
+        "royalty_bps#0"
+      ]
+    },
+    "287": {
+      "op": "uncover 2",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "price#0",
+        "royalty_bps#0",
+        "payment#0"
+      ]
+    },
+    "289": {
+      "op": "gtxns Sender",
+      "defined_out": [
+        "asset#0",
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "price#0",
+        "royalty_bps#0",
+        "seller#0",
+        "tmp%7#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%7#0"
+      ]
+    },
+    "291": {
+      "op": "txn Sender",
+      "defined_out": [
+        "asset#0",
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "price#0",
+        "royalty_bps#0",
+        "seller#0",
+        "tmp%7#0",
+        "tmp%8#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%7#0",
+        "tmp%8#0"
+      ]
+    },
+    "293": {
+      "op": "==",
+      "defined_out": [
+        "asset#0",
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "price#0",
+        "royalty_bps#0",
+        "seller#0",
+        "tmp%9#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "price#0",
+        "royalty_bps#0",
+        "tmp%9#0"
+      ]
+    },
+    "294": {
+      "error": "sender mismatch",
+      "op": "assert // sender mismatch",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "price#0",
+        "royalty_bps#0"
+      ]
+    },
+    "295": {
+      "op": "dig 1",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "price#0",
+        "royalty_bps#0",
+        "price#0 (copy)"
+      ]
+    },
+    "297": {
+      "op": "*",
+      "defined_out": [
+        "asset#0",
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "price#0",
+        "seller#0",
+        "tmp%10#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "price#0",
+        "tmp%10#0"
+      ]
+    },
+    "298": {
+      "op": "pushint 10000",
+      "defined_out": [
+        "10000",
+        "asset#0",
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "price#0",
+        "seller#0",
+        "tmp%10#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "price#0",
+        "tmp%10#0",
+        "10000"
+      ]
+    },
+    "301": {
+      "op": "/",
+      "defined_out": [
+        "asset#0",
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "price#0",
+        "royalty#0",
+        "seller#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "price#0",
+        "royalty#0"
+      ]
+    },
+    "302": {
+      "op": "dup",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "price#0",
+        "royalty#0",
+        "royalty#0"
+      ]
+    },
+    "303": {
+      "op": "cover 2",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "price#0",
+        "royalty#0"
+      ]
+    },
+    "305": {
+      "op": "-",
+      "defined_out": [
+        "asset#0",
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "royalty#0",
+        "seller#0",
+        "seller_amount#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ]
+    },
+    "306": {
+      "op": "dup",
+      "defined_out": [
+        "asset#0",
+        "creator#0",
+        "map_prefixed_key%0#0",
+        "royalty#0",
+        "seller#0",
+        "seller_amount#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "seller_amount#0"
+      ]
+    },
+    "307": {
+      "op": "bz buyAsset_after_if_else@4",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ]
+    },
+    "310": {
+      "op": "itxn_begin"
+    },
+    "311": {
+      "op": "dup",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "seller_amount#0"
+      ]
+    },
+    "312": {
+      "op": "itxn_field Amount",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ]
+    },
+    "314": {
+      "op": "dig 3",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "seller#0"
+      ]
+    },
+    "316": {
+      "op": "itxn_field Receiver",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ]
+    },
+    "318": {
+      "op": "intc_0 // pay",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "pay"
+      ]
+    },
+    "319": {
+      "op": "itxn_field TypeEnum",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ]
+    },
+    "321": {
+      "op": "intc_1 // 0",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "0"
+      ]
+    },
+    "322": {
+      "op": "itxn_field Fee",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ]
+    },
+    "324": {
+      "op": "itxn_submit"
+    },
+    "325": {
+      "block": "buyAsset_after_if_else@4",
+      "stack_in": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ],
+      "op": "dig 1",
+      "defined_out": [
+        "royalty#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "royalty#0"
+      ]
+    },
+    "327": {
+      "op": "bz buyAsset_after_if_else@7",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ]
+    },
+    "330": {
+      "op": "itxn_begin"
+    },
+    "331": {
+      "op": "dig 1",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "royalty#0"
+      ]
+    },
+    "333": {
+      "op": "itxn_field Amount",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ]
+    },
+    "335": {
+      "op": "dig 2",
+      "defined_out": [
+        "creator#0",
+        "royalty#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "creator#0"
+      ]
+    },
+    "337": {
+      "op": "itxn_field Receiver",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ]
+    },
+    "339": {
+      "op": "intc_0 // pay",
+      "defined_out": [
+        "creator#0",
+        "pay",
+        "royalty#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "pay"
+      ]
+    },
+    "340": {
+      "op": "itxn_field TypeEnum",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ]
+    },
+    "342": {
+      "op": "intc_1 // 0",
+      "defined_out": [
+        "0",
+        "creator#0",
+        "royalty#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "0"
+      ]
+    },
+    "343": {
+      "op": "itxn_field Fee",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ]
+    },
+    "345": {
+      "op": "itxn_submit"
+    },
+    "346": {
+      "block": "buyAsset_after_if_else@7",
+      "stack_in": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ],
+      "op": "itxn_begin"
+    },
+    "347": {
+      "op": "txn Sender",
+      "defined_out": [
+        "inner_txn_params%2%%param_AssetReceiver_idx_0#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "inner_txn_params%2%%param_AssetReceiver_idx_0#0"
+      ]
+    },
+    "349": {
+      "op": "dig 4",
+      "defined_out": [
+        "inner_txn_params%2%%param_AssetReceiver_idx_0#0",
+        "seller#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "inner_txn_params%2%%param_AssetReceiver_idx_0#0",
+        "seller#0"
+      ]
+    },
+    "351": {
+      "op": "itxn_field AssetCloseTo",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "inner_txn_params%2%%param_AssetReceiver_idx_0#0"
+      ]
+    },
+    "353": {
+      "op": "intc_0 // 1",
+      "defined_out": [
+        "1",
+        "inner_txn_params%2%%param_AssetReceiver_idx_0#0",
+        "seller#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "inner_txn_params%2%%param_AssetReceiver_idx_0#0",
+        "1"
+      ]
+    },
+    "354": {
+      "op": "itxn_field AssetAmount",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "inner_txn_params%2%%param_AssetReceiver_idx_0#0"
+      ]
+    },
+    "356": {
+      "op": "itxn_field AssetReceiver",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ]
+    },
+    "358": {
+      "op": "dig 5",
+      "defined_out": [
+        "asset#0",
+        "seller#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "asset#0"
+      ]
+    },
+    "360": {
+      "op": "itxn_field XferAsset",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ]
+    },
+    "362": {
+      "op": "intc_3 // axfer",
+      "defined_out": [
+        "asset#0",
+        "axfer",
+        "seller#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "axfer"
+      ]
+    },
+    "363": {
+      "op": "itxn_field TypeEnum",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ]
+    },
+    "365": {
+      "op": "intc_1 // 0",
+      "defined_out": [
+        "0",
+        "asset#0",
+        "seller#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "0"
+      ]
+    },
+    "366": {
+      "op": "itxn_field Fee",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ]
+    },
+    "368": {
+      "op": "itxn_submit"
+    },
+    "369": {
+      "op": "dig 4",
+      "defined_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "map_prefixed_key%0#0"
+      ]
+    },
+    "371": {
+      "op": "box_del",
+      "defined_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "{box_del}"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "{box_del}"
+      ]
+    },
+    "372": {
+      "op": "pop",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ]
+    },
+    "373": {
+      "op": "intc_0 // 1",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0",
+        "1"
+      ]
+    },
+    "374": {
+      "op": "return",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "seller#0",
+        "creator#0",
+        "royalty#0",
+        "seller_amount#0"
+      ]
+    },
+    "375": {
+      "subroutine": "smart_contracts.deshopsdk.contract.Deshopsdk.cancelListing[routing]",
+      "params": {},
+      "block": "cancelListing",
+      "stack_in": [],
+      "op": "txna ApplicationArgs 1",
+      "defined_out": [
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0"
+      ]
+    },
+    "378": {
+      "op": "dup",
+      "defined_out": [
+        "tmp%0#0",
+        "tmp%0#0 (copy)"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "tmp%0#0 (copy)"
+      ]
+    },
+    "379": {
+      "op": "len",
+      "defined_out": [
+        "len%0#0",
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "len%0#0"
+      ]
+    },
+    "380": {
+      "op": "intc_2 // 8",
+      "defined_out": [
+        "8",
+        "len%0#0",
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "len%0#0",
+        "8"
+      ]
+    },
+    "381": {
+      "op": "==",
+      "defined_out": [
+        "eq%0#0",
+        "tmp%0#0"
+      ],
+      "stack_out": [
+        "tmp%0#0",
+        "eq%0#0"
+      ]
+    },
+    "382": {
+      "error": "invalid number of bytes for arc4.uint64",
+      "op": "assert // invalid number of bytes for arc4.uint64",
+      "stack_out": [
+        "tmp%0#0"
+      ]
+    },
+    "383": {
+      "op": "btoi",
+      "defined_out": [
+        "asset#0"
+      ],
+      "stack_out": [
+        "asset#0"
+      ]
+    },
+    "384": {
+      "op": "dup",
+      "defined_out": [
+        "asset#0",
+        "asset#0 (copy)"
+      ],
+      "stack_out": [
+        "asset#0",
+        "asset#0 (copy)"
+      ]
+    },
+    "385": {
+      "op": "itob",
+      "defined_out": [
+        "asset#0",
+        "encoded_value%0#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "encoded_value%0#0"
+      ]
+    },
+    "386": {
+      "op": "bytec_0 // 0x6c6973745f",
+      "defined_out": [
+        "0x6c6973745f",
+        "asset#0",
+        "encoded_value%0#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "encoded_value%0#0",
+        "0x6c6973745f"
+      ]
+    },
+    "387": {
+      "op": "swap",
+      "stack_out": [
+        "asset#0",
+        "0x6c6973745f",
+        "encoded_value%0#0"
+      ]
+    },
+    "388": {
+      "op": "concat",
+      "defined_out": [
+        "asset#0",
+        "map_prefixed_key%0#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0"
+      ]
+    },
+    "389": {
+      "op": "dup",
+      "defined_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "map_prefixed_key%0#0 (copy)"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "map_prefixed_key%0#0 (copy)"
+      ]
+    },
+    "390": {
+      "op": "box_len",
+      "defined_out": [
+        "_%0#0",
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "maybe_exists%0#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "_%0#0",
+        "maybe_exists%0#0"
+      ]
+    },
+    "391": {
+      "op": "bury 1",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "maybe_exists%0#0"
+      ]
+    },
+    "393": {
+      "error": "not listed",
+      "op": "assert // not listed",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0"
+      ]
+    },
+    "394": {
+      "op": "dup",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "map_prefixed_key%0#0 (copy)"
+      ]
+    },
+    "395": {
+      "op": "box_get",
+      "defined_out": [
+        "aggregate%box_get%1#0",
+        "asset#0",
+        "listing#0",
+        "map_prefixed_key%0#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "listing#0",
+        "aggregate%box_get%1#0"
+      ]
+    },
+    "396": {
+      "op": "pop",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "listing#0"
+      ]
+    },
+    "397": {
+      "op": "extract 0 32",
+      "defined_out": [
+        "aggregate%extract%0#0",
+        "asset#0",
+        "map_prefixed_key%0#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "aggregate%extract%0#0"
+      ]
+    },
+    "400": {
+      "op": "txn Sender",
+      "defined_out": [
+        "aggregate%extract%0#0",
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "tmp%0#1"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "aggregate%extract%0#0",
+        "tmp%0#1"
+      ]
+    },
+    "402": {
+      "op": "==",
+      "defined_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "tmp%1#1"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "tmp%1#1"
+      ]
+    },
+    "403": {
+      "error": "not owner",
+      "op": "assert // not owner",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0"
+      ]
+    },
+    "404": {
+      "op": "itxn_begin"
+    },
+    "405": {
+      "op": "txn Sender",
+      "defined_out": [
+        "asset#0",
+        "inner_txn_params%0%%param_AssetReceiver_idx_0#0",
+        "map_prefixed_key%0#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "inner_txn_params%0%%param_AssetReceiver_idx_0#0"
+      ]
+    },
+    "407": {
+      "op": "dup",
+      "defined_out": [
+        "asset#0",
+        "inner_txn_params%0%%param_AssetCloseTo_idx_0#0",
+        "inner_txn_params%0%%param_AssetReceiver_idx_0#0",
+        "map_prefixed_key%0#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "inner_txn_params%0%%param_AssetReceiver_idx_0#0",
+        "inner_txn_params%0%%param_AssetCloseTo_idx_0#0"
+      ]
+    },
+    "408": {
+      "op": "itxn_field AssetCloseTo",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "inner_txn_params%0%%param_AssetReceiver_idx_0#0"
+      ]
+    },
+    "410": {
+      "op": "intc_0 // 1",
+      "defined_out": [
+        "1",
+        "asset#0",
+        "inner_txn_params%0%%param_AssetReceiver_idx_0#0",
+        "map_prefixed_key%0#0"
+      ],
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "inner_txn_params%0%%param_AssetReceiver_idx_0#0",
+        "1"
+      ]
+    },
+    "411": {
+      "op": "itxn_field AssetAmount",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0",
+        "inner_txn_params%0%%param_AssetReceiver_idx_0#0"
+      ]
+    },
+    "413": {
+      "op": "itxn_field AssetReceiver",
+      "stack_out": [
+        "asset#0",
+        "map_prefixed_key%0#0"
+      ]
+    },
+    "415": {
+      "op": "swap",
+      "stack_out": [
+        "map_prefixed_key%0#0",
+        "asset#0"
+      ]
+    },
+    "416": {
+      "op": "itxn_field XferAsset",
+      "stack_out": [
+        "map_prefixed_key%0#0"
+      ]
+    },
+    "418": {
+      "op": "intc_3 // axfer",
+      "defined_out": [
+        "axfer",
+        "map_prefixed_key%0#0"
+      ],
+      "stack_out": [
+        "map_prefixed_key%0#0",
+        "axfer"
+      ]
+    },
+    "419": {
+      "op": "itxn_field TypeEnum",
+      "stack_out": [
+        "map_prefixed_key%0#0"
+      ]
+    },
+    "421": {
+      "op": "intc_1 // 0",
+      "defined_out": [
+        "0",
+        "map_prefixed_key%0#0"
+      ],
+      "stack_out": [
+        "map_prefixed_key%0#0",
+        "0"
+      ]
+    },
+    "422": {
+      "op": "itxn_field Fee",
+      "stack_out": [
+        "map_prefixed_key%0#0"
+      ]
+    },
+    "424": {
+      "op": "itxn_submit"
+    },
+    "425": {
+      "op": "box_del",
+      "defined_out": [
+        "{box_del}"
+      ],
+      "stack_out": [
+        "{box_del}"
+      ]
+    },
+    "426": {
+      "op": "pop",
+      "stack_out": []
+    },
+    "427": {
+      "op": "intc_0 // 1",
+      "stack_out": [
+        "1"
+      ]
+    },
+    "428": {
+      "op": "return",
+      "stack_out": []
+    }
+  }
+}
