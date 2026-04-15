@@ -1,4 +1,5 @@
 import type { Asset } from '../sdk/DeShopSDK'
+import { normalizeRarity } from '../sdk/DeShopSDK'
 
 const RARITY_COLORS: Record<string, { bg: string; border: string; glow: string; text: string; badge: string }> = {
   common:    { bg: 'rgba(107,114,128,0.08)', border: 'rgba(107,114,128,0.3)', glow: 'rgba(107,114,128,0.15)', text: '#9ca3af', badge: '#6b7280' },
@@ -17,7 +18,7 @@ type SkinCardProps = {
 }
 
 export default function SkinCard({ asset, isActive, onEquip, onList, onBuy, mode }: SkinCardProps) {
-  const rarity = asset.rarity?.toLowerCase() ?? 'common'
+  const rarity = normalizeRarity(asset.rarity ?? 'common')
   const colors = RARITY_COLORS[rarity] ?? RARITY_COLORS.common
 
   return (

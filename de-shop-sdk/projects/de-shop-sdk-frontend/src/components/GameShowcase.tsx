@@ -50,6 +50,13 @@ export default function GameShowcase() {
     sdk.setWalletSigner(activeAddress ?? null, transactionSigner ?? null)
   }, [activeAddress, transactionSigner])
 
+  // Auto-close wallet modal once connected
+  useEffect(() => {
+    if (activeAddress && showWalletModal) {
+      setShowWalletModal(false)
+    }
+  }, [activeAddress, showWalletModal])
+
   const refreshInventory = useCallback(async () => {
     if (!activeAddress) return
     try {
@@ -151,9 +158,9 @@ export default function GameShowcase() {
     setStatus('Batch minting 3 Operator Skins...')
     try {
       await sdk.batchMint([
-        { wallet: activeAddress, skin_name: 'Ghost Op (Desert)', rarity: 'epic' },
-        { wallet: activeAddress, skin_name: 'Ghost Op (Winter)', rarity: 'rare' },
-        { wallet: activeAddress, skin_name: 'Ghost Op (Night)', rarity: 'legendary' }
+        { wallet: activeAddress, skin_name: 'Ghost Op (Desert)', rarity: 'epic', skin_type: 'character' },
+        { wallet: activeAddress, skin_name: 'Ghost Op (Winter)', rarity: 'rare', skin_type: 'character' },
+        { wallet: activeAddress, skin_name: 'Ghost Op (Night)', rarity: 'legendary', skin_type: 'character' }
       ])
       refreshInventory() // Manually refresh as batch triggers individual mint events anyway
     } catch (e: any) {

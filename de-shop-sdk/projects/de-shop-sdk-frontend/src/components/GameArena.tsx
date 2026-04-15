@@ -1,5 +1,6 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import type { Asset } from '../sdk/DeShopSDK'
+import { normalizeRarity } from '../sdk/DeShopSDK'
 
 type GameArenaProps = {
   activeGunSkin: Asset | null
@@ -47,6 +48,12 @@ const SKIN_PALETTE: Record<string, {
     aura: 'rgba(245,158,11,0.12)', particleColor: '#fbbf24',
     dmgMulti: 3,
   },
+}
+
+function getSkinPalette(asset: Asset | null): typeof SKIN_PALETTE['common'] {
+  if (!asset) return SKIN_PALETTE.common
+  const rarity = normalizeRarity(asset.rarity ?? 'common')
+  return SKIN_PALETTE[rarity] || SKIN_PALETTE.common
 }
 
 // ─── Block tiles ─────────────────────────────────────────────────────────────
@@ -132,8 +139,342 @@ type DmgText = {
   x: number; y: number; text: string; color: string; life: number
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+//  START SCREEN — Animated Character + Weapon Preview
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function StartScreen({
+  activeGunSkin,
+  activeCharSkin,
+  onStart,
+}: {
+  activeGunSkin: Asset | null
+  activeCharSkin: Asset | null
+  onStart: () => void
+}) {
+  const previewRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const cvs = previewRef.current; if (!cvs) return
+    const ctx = cvs.getContext('2d'); if (!ctx) return
+
+    const W = 320, H = 400
+    cvs.width = W; cvs.height = H
+
+    const charSkin = getSkinPalette(activeCharSkin)
+    const gunSkin = getSkinPalette(activeGunSkin)
+
+    let frame = 0
+    let animId: number
+
+    const draw = () => {
+      frame++
+      ctx.clearRect(0, 0, W, H)
+
+      // Background gradient
+      const bgGrad = ctx.createRadialGradient(W / 2, H / 2, 20, W / 2, H / 2, 200)
+      bgGrad.addColorStop(0, 'rgba(10,20,14,0.95)')
+      bgGrad.addColorStop(0.5, 'rgba(7,12,10,0.98)')
+      bgGrad.addColorStop(1, 'rgba(5,8,7,1)')
+      ctx.fillStyle = bgGrad
+      ctx.fillRect(0, 0, W, H)
+
+      // Ground platform
+      const platY = H * 0.72
+      ctx.fillStyle = '#2a5a1a'
+      ctx.fillRect(W * 0.2, platY, W * 0.6, 8)
+      ctx.fillStyle = '#1e4a12'
+      ctx.fillRect(W * 0.2, platY + 8, W * 0.6, 60)
+      // Grass blades on platform
+      ctx.fillStyle = '#3a8a28'
+      for (let i = 0; i < 20; i++) {
+        const gx = W * 0.22 + i * (W * 0.56 / 20)
+        ctx.fillRect(gx, platY - 3, 2, 4)
+      }
+
+      // Draw character (centered, larger — 3x scale)
+      const cx = W / 2
+      const cy = platY - 4
+      const scale = 3
+      const idle = Math.sin(frame * 0.03) * 2 // Idle breathing bob
+      const swordIdle = Math.sin(frame * 0.04) * 0.1 // Gentle sword sway
+
+      ctx.save()
+      ctx.translate(cx, cy + idle)
+      ctx.scale(scale, scale)
+
+      // Character shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.35)'
+      ctx.beginPath()
+      ctx.ellipse(0, 12, 10, 4, 0, 0, Math.PI * 2)
+      ctx.fill()
+
+      // Aura glow (rarity based)
+      if (activeCharSkin) {
+        const auraP = Math.sin(frame * 0.04) * 3
+        ctx.fillStyle = charSkin.aura
+        ctx.beginPath()
+        ctx.ellipse(0, 0, 22 + auraP, 22 + auraP, 0, 0, Math.PI * 2)
+        ctx.fill()
+
+        // Outer glow ring
+        ctx.strokeStyle = charSkin.particleColor
+        ctx.globalAlpha = 0.15 + Math.sin(frame * 0.03) * 0.1
+        ctx.lineWidth = 1
+        ctx.beginPath()
+        ctx.ellipse(0, 0, 26 + auraP, 26 + auraP, 0, 0, Math.PI * 2)
+        ctx.stroke()
+        ctx.globalAlpha = 1
+      }
+
+      // Legs
+      ctx.fillStyle = charSkin.legs
+      ctx.fillRect(-6, 4, 5, 10)
+      ctx.fillRect(1, 4, 5, 10)
+      ctx.fillStyle = charSkin.legsDark
+      ctx.fillRect(-6, 12, 5, 2)
+      ctx.fillRect(1, 12, 5, 2)
+
+      // Body (torso armor)
+      ctx.fillStyle = charSkin.body
+      ctx.fillRect(-7, -8, 14, 14)
+      ctx.fillStyle = charSkin.bodyLight
+      ctx.fillRect(-7, -8, 14, 4)
+      ctx.fillStyle = charSkin.bodyDark
+      ctx.fillRect(-1, -6, 2, 10)
+
+      // Arms
+      ctx.fillStyle = charSkin.body
+      ctx.fillRect(-11, -6, 4, 10)
+      ctx.fillRect(7, -6, 4, 10)
+
+      // Head
+      ctx.fillStyle = charSkin.helmet
+      ctx.fillRect(-6, -20, 12, 12)
+      ctx.fillStyle = charSkin.helmetLight
+      ctx.fillRect(-6, -20, 12, 3)
+      ctx.fillRect(-6, -20, 3, 6)
+
+      // Eyes
+      ctx.fillStyle = charSkin.visor
+      ctx.fillRect(-4, -16, 3, 3)
+      ctx.fillRect(1, -16, 3, 3)
+      ctx.fillStyle = '#fff'
+      ctx.fillRect(-3, -16, 1, 1)
+      ctx.fillRect(2, -16, 1, 1)
+      // Mouth
+      ctx.fillStyle = charSkin.visor
+      ctx.fillRect(-2, -12, 4, 1)
+
+      // ── Weapon (Sword) with idle sway ──
+      ctx.save()
+      ctx.translate(10, -2)
+      ctx.rotate(swordIdle - 0.3)
+
+      // Sword glow
+      ctx.shadowColor = gunSkin.swordGlow
+      ctx.shadowBlur = 8
+
+      // Sword blade
+      ctx.fillStyle = gunSkin.sword
+      ctx.fillRect(-2, -30, 4, 22)
+      ctx.fillStyle = gunSkin.swordLight
+      ctx.fillRect(-1, -28, 2, 18)
+      // Tip
+      ctx.beginPath()
+      ctx.moveTo(-2, -30); ctx.lineTo(2, -30); ctx.lineTo(0, -35)
+      ctx.fillStyle = gunSkin.sword; ctx.fill()
+      // Guard
+      ctx.fillStyle = '#5c3310'
+      ctx.fillRect(-5, -8, 10, 3)
+      // Handle
+      ctx.fillStyle = '#3a2008'
+      ctx.fillRect(-1, -5, 3, 8)
+      ctx.shadowBlur = 0
+
+      // Shimmer on epic/legendary
+      const gRarity = normalizeRarity(activeGunSkin?.rarity ?? 'common')
+      if (gRarity === 'legendary' || gRarity === 'epic') {
+        ctx.globalAlpha = 0.5 + Math.sin(frame * 0.12) * 0.3
+        ctx.fillStyle = gunSkin.swordLight
+        const shimY = (frame * 2) % 22
+        ctx.fillRect(-1, -28 + shimY, 2, 4)
+        ctx.globalAlpha = 1
+      }
+
+      ctx.restore() // sword
+
+      ctx.restore() // character
+
+      // Floating rarity particles
+      if (frame % 8 === 0 && activeCharSkin) {
+        // Create a simple particle effect on canvas
+        const px = cx + (Math.random() - 0.5) * 60
+        const py = cy + (Math.random() - 0.5) * 60 - 20
+        ctx.fillStyle = charSkin.particleColor
+        ctx.globalAlpha = 0.6
+        ctx.fillRect(px, py, 3, 3)
+        ctx.globalAlpha = 1
+      }
+
+      // Skin name labels
+      ctx.textAlign = 'center'
+      ctx.font = 'bold 13px "JetBrains Mono"'
+
+      // Character skin label
+      ctx.fillStyle = '#000'
+      ctx.fillText(`🧑 ${activeCharSkin?.name || 'Steve'}`, cx + 1, H * 0.82 + 1)
+      ctx.fillStyle = charSkin.helmetLight
+      ctx.fillText(`🧑 ${activeCharSkin?.name || 'Steve'}`, cx, H * 0.82)
+
+      // Weapon skin label
+      ctx.fillStyle = '#000'
+      ctx.fillText(`⚔ ${activeGunSkin?.name || 'Stone Sword'}`, cx + 1, H * 0.82 + 21)
+      ctx.fillStyle = gunSkin.sword
+      ctx.fillText(`⚔ ${activeGunSkin?.name || 'Stone Sword'}`, cx, H * 0.82 + 20)
+
+      // Rarity badges
+      const charRarity = normalizeRarity(activeCharSkin?.rarity ?? 'common').toUpperCase()
+      const gunRarity = normalizeRarity(activeGunSkin?.rarity ?? 'common').toUpperCase()
+      ctx.font = '9px "JetBrains Mono"'
+      ctx.fillStyle = charSkin.particleColor
+      ctx.globalAlpha = 0.7
+      ctx.fillText(`[${charRarity}]`, cx, H * 0.82 + 14)
+      ctx.fillStyle = gunSkin.particleColor
+      ctx.fillText(`[${gunRarity}]`, cx, H * 0.82 + 34)
+      ctx.globalAlpha = 1
+
+      animId = requestAnimationFrame(draw)
+    }
+
+    draw()
+    return () => cancelAnimationFrame(animId)
+  }, [activeGunSkin, activeCharSkin])
+
+  const charRarity = normalizeRarity(activeCharSkin?.rarity ?? 'common')
+  const gunRarity = normalizeRarity(activeGunSkin?.rarity ?? 'common')
+  const charColors = SKIN_PALETTE[charRarity] || SKIN_PALETTE.common
+  const gunColors = SKIN_PALETTE[gunRarity] || SKIN_PALETTE.common
+
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 10,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      background: 'radial-gradient(ellipse at 50% 40%, rgba(34,197,94,0.06) 0%, rgba(7,10,13,0.98) 70%)',
+    }}>
+      {/* Title */}
+      <div style={{
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: '11px',
+        fontWeight: 700,
+        letterSpacing: '0.2em',
+        color: 'rgba(34,197,94,0.4)',
+        marginBottom: '8px',
+        textTransform: 'uppercase',
+      }}>
+        ⛏ minecraft world
+      </div>
+
+      {/* Character Preview Canvas */}
+      <canvas
+        ref={previewRef}
+        style={{
+          width: '240px',
+          height: '300px',
+          imageRendering: 'pixelated',
+          borderRadius: '12px',
+          border: '1px solid rgba(34,197,94,0.15)',
+          boxShadow: '0 0 40px rgba(34,197,94,0.08)',
+        }}
+      />
+
+      {/* Equipped Skins Info */}
+      <div style={{
+        display: 'flex',
+        gap: '16px',
+        margin: '16px 0',
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: '10px',
+        letterSpacing: '0.06em',
+      }}>
+        <div style={{
+          padding: '6px 12px',
+          background: 'rgba(0,0,0,0.4)',
+          border: `1px solid ${charColors.body}40`,
+          borderRadius: '6px',
+          color: charColors.helmetLight,
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: '8px', color: 'rgba(34,197,94,0.4)', marginBottom: '2px' }}>CHARACTER</div>
+          {activeCharSkin?.name || 'Steve'}
+        </div>
+        <div style={{
+          padding: '6px 12px',
+          background: 'rgba(0,0,0,0.4)',
+          border: `1px solid ${gunColors.sword}40`,
+          borderRadius: '6px',
+          color: gunColors.swordLight,
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: '8px', color: 'rgba(34,197,94,0.4)', marginBottom: '2px' }}>WEAPON</div>
+          {activeGunSkin?.name || 'Stone Sword'}
+        </div>
+      </div>
+
+      {/* START Button */}
+      <button
+        onClick={onStart}
+        style={{
+          marginTop: '4px',
+          padding: '14px 48px',
+          background: 'rgba(34,197,94,0.12)',
+          border: '2px solid rgba(34,197,94,0.5)',
+          borderRadius: '10px',
+          color: '#73ffa7',
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: '16px',
+          fontWeight: 700,
+          letterSpacing: '0.15em',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease',
+          boxShadow: '0 0 25px rgba(34,197,94,0.15)',
+          animation: 'start-pulse 2s ease-in-out infinite',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(34,197,94,0.25)'
+          e.currentTarget.style.boxShadow = '0 0 40px rgba(34,197,94,0.3)'
+          e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(34,197,94,0.12)'
+          e.currentTarget.style.boxShadow = '0 0 25px rgba(34,197,94,0.15)'
+          e.currentTarget.style.transform = 'translateY(0) scale(1)'
+        }}
+      >
+        ▶ START GAME
+      </button>
+
+      {/* Controls hint */}
+      <div style={{
+        marginTop: '16px',
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: '9px',
+        color: 'rgba(34,197,94,0.25)',
+        letterSpacing: '0.08em',
+      }}>
+        WASD = Move &nbsp;|&nbsp; Click / Space = Attack
+      </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  GAME ARENA — Main Component
+// ═══════════════════════════════════════════════════════════════════════════════
+
 export default function GameArena({ activeGunSkin, activeCharSkin }: GameArenaProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [gameStarted, setGameStarted] = useState(false)
   const stateRef = useRef({
     px: 20, py: 15, facing: 0, // 0=down,1=left,2=up,3=right
     swingT: -1, swingDir: 0,
@@ -147,12 +488,13 @@ export default function GameArena({ activeGunSkin, activeCharSkin }: GameArenaPr
   const keysRef = useRef<Set<string>>(new Set())
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (!gameStarted) return
     keysRef.current.add(e.key.toLowerCase())
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault()
       if (stateRef.current.swingT < 0) stateRef.current.swingT = 0
     }
-  }, [])
+  }, [gameStarted])
   const handleKeyUp = useCallback((e: KeyboardEvent) => {
     keysRef.current.delete(e.key.toLowerCase())
   }, [])
@@ -165,15 +507,17 @@ export default function GameArena({ activeGunSkin, activeCharSkin }: GameArenaPr
 
   // Click to attack
   useEffect(() => {
+    if (!gameStarted) return
     const cvs = canvasRef.current; if (!cvs) return
     const onClick = () => {
       if (stateRef.current.swingT < 0) stateRef.current.swingT = 0
     }
     cvs.addEventListener('click', onClick)
     return () => cvs.removeEventListener('click', onClick)
-  }, [])
+  }, [gameStarted])
 
   useEffect(() => {
+    if (!gameStarted) return
     const canvas = canvasRef.current; if (!canvas) return
     const ctx = canvas.getContext('2d'); if (!ctx) return
 
@@ -200,8 +544,8 @@ export default function GameArena({ activeGunSkin, activeCharSkin }: GameArenaPr
       }
     }
     const map = st.map!
-    const charSkin = SKIN_PALETTE[(activeCharSkin?.rarity?.toLowerCase() as any)] || SKIN_PALETTE.common
-    const gunSkin = SKIN_PALETTE[(activeGunSkin?.rarity?.toLowerCase() as any)] || SKIN_PALETTE.common
+    const charSkin = getSkinPalette(activeCharSkin)
+    const gunSkin = getSkinPalette(activeGunSkin)
 
     const isSolid = (tx: number, ty: number) => {
       const t = map[Math.floor(ty)]?.[Math.floor(tx)]
@@ -582,7 +926,7 @@ export default function GameArena({ activeGunSkin, activeCharSkin }: GameArenaPr
         ctx.fillRect(-1, -5, 3, 8)
         ctx.shadowBlur = 0
 
-        const gRarity = activeGunSkin?.rarity?.toLowerCase()
+        const gRarity = normalizeRarity(activeGunSkin?.rarity ?? 'common')
         if (activeGunSkin && (gRarity === 'legendary' || gRarity === 'epic')) {
           ctx.globalAlpha = 0.5 + Math.sin(st.frame * 0.12) * 0.3
           ctx.fillStyle = gunSkin.swordLight
@@ -687,11 +1031,20 @@ export default function GameArena({ activeGunSkin, activeCharSkin }: GameArenaPr
 
     loop()
     return () => cancelAnimationFrame(animId)
-  }, [activeGunSkin, activeCharSkin])
+  }, [gameStarted, activeGunSkin, activeCharSkin])
 
   return (
-    <div style={{ width: '100%', height: '100%', background: '#2a5a1a', overflow: 'hidden' }}>
-      <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', imageRendering: 'pixelated' }} />
+    <div style={{ width: '100%', height: '100%', background: '#0a0f0d', overflow: 'hidden', position: 'relative' }}>
+      {!gameStarted && (
+        <StartScreen
+          activeGunSkin={activeGunSkin}
+          activeCharSkin={activeCharSkin}
+          onStart={() => setGameStarted(true)}
+        />
+      )}
+      {gameStarted && (
+        <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', imageRendering: 'pixelated' }} />
+      )}
     </div>
   )
 }

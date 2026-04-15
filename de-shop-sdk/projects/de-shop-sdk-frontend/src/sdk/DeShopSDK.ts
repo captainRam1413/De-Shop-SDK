@@ -68,6 +68,25 @@ export type {
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
+/** Canonical rarity values. */
+const CANONICAL_RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'] as const
+
+/** Map known abbreviations/typos (from ASA unitName 8-byte limit) back to canonical rarity. */
+const RARITY_ALIASES: Record<string, string> = {
+  legendry: 'legendary',
+  lege: 'legendary',
+  legend: 'legendary',
+  legenda: 'legendary',
+  legendar: 'legendary',
+}
+
+/** Normalize a rarity string to its canonical form. */
+export function normalizeRarity(raw: string): string {
+  const lower = raw.trim().toLowerCase()
+  if (CANONICAL_RARITIES.includes(lower as any)) return lower
+  return RARITY_ALIASES[lower] ?? lower
+}
+
 /** Default rarity-to-image mapping. Override via `sdk.skinImages`. */
 export const SKIN_IMAGES: Record<string, string> = {
   common: 'https://images.unsplash.com/photo-1618336753974-aae8e04506aa?auto=format&fit=crop&q=80&w=200',
@@ -442,7 +461,10 @@ export class DeShopSDK extends EventEmitter<DeShopEvents> {
         this._recordHistory(assetId, { type: 'list', by: this._activeAddress, price, timestamp: new Date().toISOString() })
       }
 
-      const response = await this._post<{ asset: Asset }>('/list', { wallet, asset_id: assetId, price })
+      const response = await this._postWithRecovery<{ asset: Asset }>(
+        '/list', { wallet, asset_id: assetId, price },
+        assetId, wallet,
+      )
       this._cache.invalidatePrefix('inventory:')
       this._cache.invalidatePrefix('marketplace')
 
@@ -816,22 +838,37 @@ export class DeShopSDK extends EventEmitter<DeShopEvents> {
     try {
       const asaInfo = await this.algorand.asset.getById(BigInt(asaId))
       const name = asaInfo.assetName || `Skin #${asaId}`
-      const unit = (asaInfo.unitName || 'common').toLowerCase()
+      const rarity = normalizeRarity(asaInfo.unitName || 'common')
+      const skinType = this._inferSkinType(name)
       return {
-        id: asaId, asa_id: asaId, name, rarity: unit, owner, creator: asaInfo.creator,
+        id: asaId, asa_id: asaId, name, rarity, owner, creator: asaInfo.creator,
         royalty_bps: 500, listed, list_price: listed ? 0 : null,
         created_at: new Date().toISOString(),
         suggested_price: { price: 0, confidence: 0, trend: 'stable' },
-        metadata: { skin_name: name, rarity: unit, ipfs_uri: '', image_url: this.skinImages[unit] || this.skinImages.common },
+        metadata: { skin_name: name, rarity, skin_type: skinType, ipfs_uri: '', image_url: this.skinImages[rarity] || this.skinImages.common },
       }
     } catch { return null }
   }
 
-  /** @internal Add an image_url to an asset based on rarity. */
+  /** @internal Infer skin_type from asset name using keyword heuristics. */
+  private _inferSkinType(name: string): 'weapon' | 'character' | 'accessory' {
+    const lower = name.toLowerCase()
+    const characterKw = ['operator', 'character', 'soldier', 'ghost', 'phantom', 'warrior',
+      'ninja', 'samurai', 'knight', 'guardian', 'hunter', 'assassin', 'op', 'skin', 'outfit', 'armor', 'suit', 'hero']
+    const weaponKw = ['ak', 'ak-47', 'm4', 'mp5', 'sniper', 'awp', 'shotgun', 'pistol', 'deagle',
+      'knife', 'sword', 'blade', 'katana', 'axe', 'rifle', 'smg', 'lmg', 'rpg', 'gun', 'flame']
+    for (const kw of weaponKw) { if (lower.includes(kw)) return 'weapon' }
+    for (const kw of characterKw) { if (lower.includes(kw)) return 'character' }
+    return 'weapon'
+  }
+
+  /** @internal Add an image_url to an asset based on rarity, normalizing rarity aliases. */
   private _enrichAsset(asset: Asset): Asset {
+    const rarity = normalizeRarity(asset.rarity)
     return {
       ...asset,
-      metadata: { ...asset.metadata, image_url: this.skinImages[asset.rarity] || this.skinImages.common },
+      rarity,
+      metadata: { ...asset.metadata, rarity, image_url: this.skinImages[rarity] || this.skinImages.common },
     }
   }
 
@@ -903,6 +940,41 @@ export class DeShopSDK extends EventEmitter<DeShopEvents> {
       throw new NetworkError(errText, `${this.backendUrl}${endpoint}`, response.status)
     }
     return response.json()
+  }
+
+  /**
+   * @internal POST with auto-recovery for "Asset not found" errors.
+   * After a backend restart, the in-memory store is empty.
+   * This recovers the asset from chain and re-registers it before retrying.
+   */
+  private async _postWithRecovery<T>(endpoint: string, body: any, assetId: number, wallet: string): Promise<T> {
+    try {
+      return await this._post<T>(endpoint, body)
+    } catch (e) {
+      const msg = (e instanceof Error ? e.message : String(e)).toLowerCase()
+      if (!msg.includes('asset not found') && !msg.includes('not found')) throw e
+
+      this._log.info(`Asset #${assetId} not in backend — recovering from chain...`)
+
+      // Recover asset metadata from chain
+      const recovered = await this._recoverAssetFromChain(assetId, wallet)
+      if (!recovered) throw new AssetNotFoundError(assetId)
+
+      // Re-register with backend via /mint
+      await this._post('/mint', {
+        wallet,
+        skin_name: recovered.name,
+        rarity: recovered.rarity,
+        skin_type: recovered.metadata?.skin_type ?? 'weapon',
+        royalty_bps: 500,
+        asa_id: assetId,
+      })
+
+      this._log.success(`Asset #${assetId} re-registered with backend`)
+
+      // Retry the original request
+      return await this._post<T>(endpoint, body)
+    }
   }
 
   /** @internal GET JSON from the backend. */
