@@ -14,10 +14,11 @@ type SkinCardProps = {
   onEquip: (asset: Asset) => void
   onList?: (asset: Asset) => void
   onBuy?: (asset: Asset) => void
+  onWithdraw?: (asset: Asset) => void
   mode: 'inventory' | 'market'
 }
 
-export default function SkinCard({ asset, isActive, onEquip, onList, onBuy, mode }: SkinCardProps) {
+export default function SkinCard({ asset, isActive, onEquip, onList, onBuy, onWithdraw, mode }: SkinCardProps) {
   const rarity = normalizeRarity(asset.rarity ?? 'common')
   const colors = RARITY_COLORS[rarity] ?? RARITY_COLORS.common
 
@@ -68,6 +69,16 @@ export default function SkinCard({ asset, isActive, onEquip, onList, onBuy, mode
                 onClick={() => onList(asset)}
               >
                 LIST
+              </button>
+            )}
+            {onWithdraw && !asset.listed && (
+              <button
+                className="skin-card__btn skin-card__btn--list"
+                style={{ backgroundColor: '#171a21', borderColor: '#171a21', color: 'white', marginTop: '4px' }}
+                onClick={() => onWithdraw(asset)}
+                title="Withdraw to Steam"
+              >
+                STEAM
               </button>
             )}
           </>

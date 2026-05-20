@@ -19,7 +19,7 @@ const sdk = new DeShopSDK({
   debug: true,
 })
 
-type Tab = 'inventory' | 'market'
+type Tab = 'inventory' | 'market' | 'steam_inventory'
 
 export default function GameShowcase() {
   const { wallets, activeAddress, transactionSigner, activeWallet } = useWallet()
@@ -38,6 +38,49 @@ export default function GameShowcase() {
   const [mintType, setMintType] = useState<'weapon' | 'character'>('weapon')
   const [marketFilter, setMarketFilter] = useState('')
   const [showAnalysis, setShowAnalysis] = useState(false)
+  const [steamProfile, setSteamProfile] = useState<any>(null)
+
+  // Parse Steam login callback from hash
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash.includes('steam_id=')) {
+      const params = new URLSearchParams(hash.substring(1))
+      const steamId = params.get('steam_id')
+      if (steamId) {
+        fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/auth/steam/profile/${steamId}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.profile) {
+              setSteamProfile(data.profile)
+            }
+          })
+          .catch(err => console.error("Failed to fetch steam profile:", err))
+        
+        // Clean URL
+        window.history.replaceState(null, '', window.location.pathname)
+      }
+    }
+  }, [])
+
+  const [steamItems, setSteamItems] = useState<any[]>([])
+  
+  const refreshSteamInventory = useCallback(async () => {
+    if (!steamProfile) return
+    setStatus('Loading Steam Inventory...')
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/steam/inventory/${steamProfile.steamid}`)
+      const data = await res.json()
+      setSteamItems(data.items || [])
+      setStatus(`✓ Loaded ${data.items?.length || 0} Steam items`)
+    } catch (e) {
+      console.error(e)
+      setStatus('✗ Failed to load Steam Inventory')
+    }
+  }, [steamProfile])
+
+  useEffect(() => {
+    if (tab === 'steam_inventory') refreshSteamInventory()
+  }, [tab, refreshSteamInventory])
 
   // Skin Intelligence analysis of active skin
   const analysis: SkinAnalysis | null = useMemo(() => {
@@ -203,6 +246,21 @@ export default function GameShowcase() {
     }
   }
 
+  const handleWithdraw = async (asset: Asset) => {
+    if (!activeAddress || !steamProfile) {
+      setStatus('✗ Connect your wallet and Steam account first.')
+      return
+    }
+    setStatus(`Withdrawing "${asset.name}" to Steam...`)
+    try {
+      await sdk.steamWithdraw(activeAddress, steamProfile.steamid, asset.asa_id ?? asset.id)
+      setStatus(`✓ Withdrawn "${asset.name}" to Steam! Check your trade offers.`)
+      refreshInventory()
+    } catch (e: any) {
+      handleErrorDisplay(e)
+    }
+  }
+
   const addr = activeAddress
     ? `${activeAddress.slice(0, 6)}...${activeAddress.slice(-4)}`
     : null
@@ -225,6 +283,12 @@ export default function GameShowcase() {
           </div>
           {activeAddress ? (
             <div className="showcase__wallet-info">
+              {steamProfile && (
+                <div className="showcase__steam-info" style={{marginRight: '15px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                  <img src={steamProfile.avatarfull} alt="Steam Avatar" style={{width: '24px', height: '24px', borderRadius: '50%'}} />
+                  <span style={{color: '#8be9fd', fontWeight: 'bold'}}>{steamProfile.personaname}</span>
+                </div>
+              )}
               <span className="showcase__addr">{addr}</span>
               <button className="showcase__disconnect" onClick={() => activeWallet?.disconnect()}>
                 Disconnect
@@ -233,6 +297,28 @@ export default function GameShowcase() {
           ) : (
             <button className="showcase__connect-btn" onClick={() => setShowWalletModal(true)}>
               Connect Wallet
+            </button>
+          )}
+          {steamProfile ? (
+            <button 
+              className="showcase__connect-btn showcase__connect-btn--steam" 
+              style={{marginLeft: '10px', backgroundColor: '#e74c3c', borderColor: '#e74c3c'}}
+              onClick={() => {
+                setSteamProfile(null)
+                setSteamItems([])
+                if (tab === 'steam_inventory') setTab('inventory')
+                setStatus('Steam account disconnected.')
+              }}
+            >
+              Disconnect Steam
+            </button>
+          ) : (
+            <button 
+              className="showcase__connect-btn showcase__connect-btn--steam" 
+              style={{marginLeft: '10px', backgroundColor: '#171a21'}}
+              onClick={() => window.location.href = `${import.meta.env.VITE_BACKEND_URL}/auth/steam`}
+            >
+              Connect Steam
             </button>
           )}
         </div>
@@ -321,6 +407,11 @@ export default function GameShowcase() {
             <button className={`showcase__tab ${tab === 'market' ? 'active' : ''}`} onClick={() => setTab('market')}>
               🏪 Market ({market.length})
             </button>
+            {steamProfile && (
+              <button className={`showcase__tab ${tab === 'steam_inventory' ? 'active' : ''}`} onClick={() => setTab('steam_inventory')}>
+                ♨️ Steam Items ({steamItems.length || '?'})
+              </button>
+            )}
           </div>
 
           {activeAddress && tab === 'inventory' && (
@@ -394,6 +485,7 @@ export default function GameShowcase() {
                 isActive={activeGunSkin?.id === asset.id || activeCharSkin?.id === asset.id}
                 onEquip={handleEquip}
                 onList={handleList}
+                onWithdraw={steamProfile ? handleWithdraw : undefined}
                 mode="inventory"
               />
             ))}
@@ -414,6 +506,50 @@ export default function GameShowcase() {
                 onBuy={handleBuy}
                 mode="market"
               />
+            ))}
+
+            {activeAddress && tab === 'steam_inventory' && steamItems.length === 0 && (
+              <div className="showcase__empty">
+                <div className="showcase__empty-icon">♨️</div>
+                <div>No marketable items found in your Steam Inventory.</div>
+                <button className="showcase__connect-btn" onClick={refreshSteamInventory}>Reload Steam</button>
+              </div>
+            )}
+
+            {activeAddress && tab === 'steam_inventory' && steamItems.map((item) => (
+               <div key={item.asset_id} className="skin-card">
+                  <div className="skin-card__image-wrap" style={{textAlign: 'center', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
+                    <img src={item.icon_url} className="skin-card__image" alt={item.name} style={{maxHeight: '100px'}} />
+                  </div>
+                  <div className="skin-card__info" style={{padding: '10px'}}>
+                    <div className="skin-card__name" style={{ color: '#fff', fontSize: '14px', marginBottom: '8px' }}>{item.name}</div>
+                    <div className="skin-card__meta">
+                      <span className="skin-card__rarity" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff' }}>
+                        {item.rarity.toUpperCase() || 'COMMON'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="skin-card__actions" style={{padding: '10px', paddingTop: 0}}>
+                     <button 
+                       className="skin-card__btn" 
+                       style={{width: '100%', backgroundColor: '#171a21', borderColor: '#171a21', color: 'white'}}
+                       onClick={async () => {
+                         if (!activeAddress) return
+                         setStatus(`Sending Steam Trade Offer for ${item.name}...`)
+                         try {
+                           await sdk.steamEscrow(activeAddress, steamProfile.steamid, item.name, item.rarity)
+                           setStatus(`✓ Successfully Escrowed ${item.name}! Minted NFT.`)
+                           setTab('inventory')
+                           refreshSteamInventory()
+                         } catch(e: any) {
+                           handleErrorDisplay(e)
+                         }
+                       }}
+                     >
+                       ESCROW & MINT
+                     </button>
+                  </div>
+               </div>
             ))}
           </div>
         </div>

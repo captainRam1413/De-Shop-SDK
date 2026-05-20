@@ -1,0 +1,10 @@
+# Gradle build output and cache
+.gradle/
+build/
+
+# Gradle wrappers / distribution zip files and directories
+gradle-8.*/
+*.zip
+
+# Maven build output
+target/

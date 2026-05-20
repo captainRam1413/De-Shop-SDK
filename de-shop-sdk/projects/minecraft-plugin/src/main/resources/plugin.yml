@@ -1,0 +1,21 @@
+name: DeShopSDK
+version: '${version}'
+main: com.deshop.minecraft.DeShopPlugin
+api-version: '1.21'
+description: De-Shop SDK — Trade NFT game skins on Algorand, equipped live in Minecraft.
+author: DeShop
+website: https://deshop.example.com
+
+commands:
+  deshop:
+    description: De-Shop SDK commands — link wallet, view & equip NFT skins
+    usage: /<command> <link|skins|equip|unequip|market|info>
+    aliases: [ds, shop]
+
+permissions:
+  deshop.use:
+    description: Use basic De-Shop commands
+    default: true
+  deshop.admin:
+    description: Admin commands (reload, etc.)
+    default: op
