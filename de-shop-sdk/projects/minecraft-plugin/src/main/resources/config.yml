@@ -1,0 +1,34 @@
+# ═══════════════════════════════════════════════
+#  De-Shop SDK — Minecraft Plugin Configuration
+# ═══════════════════════════════════════════════
+
+# URL of your De-Shop Flask backend
+backend-url: "http://localhost:5000"
+
+# How often to sync inventory from backend (seconds)
+sync-interval: 60
+
+# Rarity → particle effects mapping
+effects:
+  common: false
+  rare: true
+  epic: true
+  legendary: true
+
+# Rarity → leather armor color (RGB hex)
+rarity-colors:
+  common: "6B7280"
+  rare: "3B82F6"
+  epic: "A855F7"
+  legendary: "F59E0B"
+
+# Messages (supports & color codes and hex §x§r§r§g§g§b§b)
+messages:
+  prefix: "&8[&bDeShop&8] &7"
+  wallet-linked: "&aWallet linked successfully! &7(%wallet%)"
+  wallet-already-linked: "&eYou already have a linked wallet. Use &f/deshop unlink &efirst."
+  no-wallet: "&cLink your wallet first: &f/deshop link <address>"
+  skin-equipped: "&aEquipped &f%skin% &a(%rarity%)"
+  skin-unequipped: "&7Unequipped all skins."
+  no-skins: "&7You don't own any NFT skins yet. Mint some on the De-Shop marketplace!"
+  error: "&cSomething went wrong. Is the backend running?"

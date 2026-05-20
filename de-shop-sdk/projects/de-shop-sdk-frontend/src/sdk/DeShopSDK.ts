@@ -754,6 +754,47 @@ export class DeShopSDK extends EventEmitter<DeShopEvents> {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
+  //  STEAM BOT ESCROW & WITHDRAW
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Simulate escrowing a Steam item and minting a receipt NFT.
+   */
+  async steamEscrow(wallet: string, steamId: string, itemName: string, rarity: string): Promise<Asset> {
+    const done = this._log.time(`Escrowing "${itemName}" from Steam...`)
+    try {
+      const response = await this._post<{ asset: Asset }>('/steam/escrow', {
+        wallet, steam_id: steamId, item_name: itemName, rarity
+      })
+      this._cache.invalidatePrefix('inventory:')
+      done()
+      this.emit('mint', response.asset) // treat it like a mint
+      return response.asset
+    } catch (e) {
+      if (e instanceof DeShopError) throw e
+      throw new TransactionFailedError(`Escrow failed: ${(e as Error).message}`)
+    }
+  }
+
+  /**
+   * Simulate burning the NFT and withdrawing the Steam item.
+   */
+  async steamWithdraw(wallet: string, steamId: string, assetId: number): Promise<{ success: boolean; message: string }> {
+    const done = this._log.time(`Withdrawing #${assetId} to Steam...`)
+    try {
+      const response = await this._post<{ status: string, message: string }>('/steam/withdraw', {
+        wallet, steam_id: steamId, asset_id: assetId
+      })
+      this._cache.invalidatePrefix('inventory:')
+      done()
+      return { success: response.status === 'success', message: response.message }
+    } catch (e) {
+      if (e instanceof DeShopError) throw e
+      throw new TransactionFailedError(`Withdraw failed: ${(e as Error).message}`)
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
   //  CACHE CONTROL
   // ══════════════════════════════════════════════════════════════════════════
 
