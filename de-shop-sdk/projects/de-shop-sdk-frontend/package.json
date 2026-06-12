@@ -30,10 +30,13 @@
     "@txnlab/use-wallet": "^4.0.0",
     "@txnlab/use-wallet-react": "^4.0.0",
     "algosdk": "^3.0.0",
+    "framer-motion": "^12.40.0",
+    "lucide-react": "^1.17.0",
     "notistack": "^3.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "tslib": "^2.6.2"
+    "tslib": "^2.6.2",
+    "zustand": "^5.0.14"
   },
   "scripts": {
     "generate:app-clients": "algokit project link --all",
