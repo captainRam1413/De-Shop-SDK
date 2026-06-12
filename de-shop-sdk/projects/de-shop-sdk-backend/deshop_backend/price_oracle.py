@@ -2,12 +2,20 @@
 De-Shop SDK — Real-Time Skin Price Oracle
 ==========================================
 Fetches live skin prices from Skinport's public API.
+Fetches live crypto prices from CoinGecko's public API.
 
 Skinport Public API Docs:
   https://docs.skinport.com/
   GET https://api.skinport.com/v1/items
     - No API key required for public endpoint!
     - Rate limit: ~10 req/min per IP
+
+CoinGecko Public API Docs:
+  https://www.coingecko.com/en/api/documentation
+  GET https://api.coingecko.com/api/v3/simple/price
+    - No API key required (free tier)
+    - Rate limit: ~30 req/min on free tier
+    - 60-second cache implemented locally
 
 Buff163:
   - No official public API available
@@ -22,13 +30,36 @@ Additional Providers (future):
 from __future__ import annotations
 
 import time
+from collections import deque
 from functools import lru_cache
 from typing import Any
 
 import requests
 
+# ---------------------------------------------------------------------------
+# Skinport configuration
+# ---------------------------------------------------------------------------
+
 SKINPORT_API = "https://api.skinport.com/v1/items"
 PRICE_CACHE_TTL = 300  # 5 minutes
+
+# ---------------------------------------------------------------------------
+# CoinGecko configuration
+# ---------------------------------------------------------------------------
+
+COINGECKO_API = "https://api.coingecko.com/api/v3/simple/price"
+COINGECKO_CACHE_TTL = 60  # 60 seconds
+HARDCODED_ALGO_USD = 0.20  # Last-resort fallback rate
+
+# CoinGecko in-memory cache: {cache_key: (price, timestamp)}
+_cg_cache: dict[str, tuple[float, float]] = {}
+
+# Last known good prices (for 3-tier fallback): {cache_key: float}
+_cg_last_known: dict[str, float] = {"algorand_usd": HARDCODED_ALGO_USD}
+
+# Price history — rolling window of up to 24 data points
+MAX_HISTORY_POINTS = 24
+_price_history: deque[dict[str, Any]] = deque(maxlen=MAX_HISTORY_POINTS)
 
 # Simple in-memory price cache: {(market_hash_name, currency): (price, timestamp)}
 _price_cache: dict[tuple[str, str], tuple[float, float]] = {}
@@ -201,8 +232,8 @@ def map_steam_item_to_sdk_asset(steam_item: dict[str, Any]) -> dict[str, Any]:
     price_data = get_skinport_price(name)
     min_price_usd = price_data.get("min_price")
 
-    # Convert USD → μALGO (approximate: 1 ALGO ≈ $0.20 at time of writing)
-    algo_usd_rate = float(0.20)  # TODO: fetch live from CoinGecko
+    # Convert USD → μALGO using live CoinGecko rate
+    algo_usd_rate = get_algo_usd_price()
     price_micro_algo = round((min_price_usd / algo_usd_rate) * 1_000_000) if min_price_usd else 0
 
     return {
@@ -218,4 +249,216 @@ def map_steam_item_to_sdk_asset(steam_item: dict[str, Any]) -> dict[str, Any]:
         "real_market_price_micro_algo": price_micro_algo,
         "price_source": price_data.get("source"),
         "skinport_quantity": price_data.get("quantity"),
+    }
+
+
+# ===========================================================================
+# CoinGecko — Crypto Price Oracle
+# ===========================================================================
+
+
+def _coingecko_cache_get(cache_key: str) -> float | None:
+    """Return cached CoinGecko price if still within TTL, else None."""
+    if cache_key in _cg_cache:
+        price, ts = _cg_cache[cache_key]
+        if time.time() - ts < COINGECKO_CACHE_TTL:
+            return price
+    return None
+
+
+def _coingecko_cache_set(cache_key: str, price: float) -> None:
+    """Store a CoinGecko price in cache and update last-known-good."""
+    _cg_cache[cache_key] = (price, time.time())
+    _cg_last_known[cache_key] = price
+
+
+def _fetch_coingecko_price(coin_id: str, currency: str = "usd") -> float | None:
+    """
+    Fetch a crypto price from CoinGecko's ``/simple/price`` endpoint.
+
+    Implements a 3-tier fallback:
+      1. Live CoinGecko response
+      2. Last known good price (from previous successful fetch)
+      3. Hardcoded ``$0.20`` for ALGO, or ``None`` for other coins
+
+    Args:
+        coin_id:   CoinGecko coin identifier (e.g. ``"algorand"``).
+        currency:  Target fiat currency (e.g. ``"usd"``).
+
+    Returns:
+        Price as a float, or ``None`` if unavailable.
+    """
+    cache_key = f"{coin_id}_{currency}"
+
+    # 0. Check local cache first
+    cached = _coingecko_cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    # 1. Try live CoinGecko fetch
+    try:
+        resp = requests.get(
+            COINGECKO_API,
+            params={"ids": coin_id, "vs_currencies": currency},
+            timeout=10,
+            headers={"Accept": "application/json"},
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        price = data.get(coin_id, {}).get(currency)
+        if price is not None:
+            price = float(price)
+            _coingecko_cache_set(cache_key, price)
+            # Record in price history
+            _price_history.append({
+                "coin_id": coin_id,
+                "currency": currency,
+                "price": price,
+                "timestamp": time.time(),
+                "source": "coingecko",
+            })
+            return price
+    except Exception:
+        pass  # fall through to fallback
+
+    # 2. Try last known good price
+    if cache_key in _cg_last_known:
+        return _cg_last_known[cache_key]
+
+    # 3. Hardcoded fallback (only for ALGO/USD)
+    if coin_id == "algorand" and currency == "usd":
+        return HARDCODED_ALGO_USD
+
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Public CoinGecko API
+# ---------------------------------------------------------------------------
+
+def get_algo_usd_price() -> float:
+    """
+    Get the current ALGO/USD exchange rate.
+
+    Uses the 3-tier fallback: Live CoinGecko → last known → $0.20.
+
+    Returns:
+        ALGO/USD price as float (always returns a value due to hardcoded fallback).
+    """
+    price = _fetch_coingecko_price("algorand", "usd")
+    if price is not None:
+        return price
+    # Should never reach here for ALGO/USD due to hardcoded fallback
+    return HARDCODED_ALGO_USD
+
+
+def get_crypto_price(coin_id: str, currency: str = "usd") -> float | None:
+    """
+    Get the current price of any cryptocurrency from CoinGecko.
+
+    Args:
+        coin_id:   CoinGecko coin identifier (e.g. ``"bitcoin"``, ``"ethereum"``).
+        currency:  Target fiat currency (default ``"usd"``).
+
+    Returns:
+        Price as float, or ``None`` if unavailable.
+    """
+    return _fetch_coingecko_price(coin_id, currency)
+
+
+def convert_usd_to_microalgo(usd_amount: float) -> int:
+    """
+    Convert a USD amount to microALGO using the live ALGO/USD rate.
+
+    Args:
+        usd_amount: Amount in USD.
+
+    Returns:
+        Equivalent amount in microALGO (1 ALGO = 1,000,000 μALGO).
+    """
+    rate = get_algo_usd_price()
+    if rate <= 0:
+        return 0
+    return round((usd_amount / rate) * 1_000_000)
+
+
+def get_price_history() -> list[dict[str, Any]]:
+    """
+    Return the last 24 price data points recorded from CoinGecko fetches.
+
+    Returns:
+        List of dicts with keys ``coin_id``, ``currency``, ``price``,
+        ``timestamp``, ``source``.
+    """
+    return list(_price_history)
+
+
+def get_price_trend() -> str:
+    """
+    Determine the recent ALGO/USD price trend.
+
+    Compares the most recent data point to the oldest in the history window.
+
+    Returns:
+        ``"rising"``  if latest price > oldest price by ≥1%
+        ``"falling"`` if latest price < oldest price by ≥1%
+        ``"stable"``  otherwise
+    """
+    algo_history = [p for p in _price_history if p["coin_id"] == "algorand"]
+    if len(algo_history) < 2:
+        return "stable"
+    oldest = algo_history[0]["price"]
+    newest = algo_history[-1]["price"]
+    if oldest <= 0:
+        return "stable"
+    change_pct = ((newest - oldest) / oldest) * 100
+    if change_pct >= 1.0:
+        return "rising"
+    if change_pct <= -1.0:
+        return "falling"
+    return "stable"
+
+
+def get_oracle_status() -> dict[str, Any]:
+    """
+    Return a comprehensive status dict for the price oracle.
+
+    Includes current prices, cache ages, trend info, and provider status.
+    """
+    now = time.time()
+
+    # ALGO/USD details
+    algo_price = get_algo_usd_price()
+    algo_cache_key = "algorand_usd"
+    algo_cache_age = None
+    if algo_cache_key in _cg_cache:
+        _, ts = _cg_cache[algo_cache_key]
+        algo_cache_age = round(now - ts, 1)
+
+    # BTC/USD if available
+    btc_price = _coingecko_cache_get("bitcoin_usd")
+    btc_cache_age = None
+    if "bitcoin_usd" in _cg_cache:
+        _, ts = _cg_cache["bitcoin_usd"]
+        btc_cache_age = round(now - ts, 1)
+
+    # Skinport cache age (best-effort)
+    sp_cache_age = None
+    if _price_cache:
+        newest_ts = max(ts for _, ts in _price_cache.values())
+        sp_cache_age = round(now - newest_ts, 1)
+
+    return {
+        "algo_usd": algo_price,
+        "algo_usd_source": "coingecko" if algo_cache_age is not None else "fallback",
+        "algo_cache_age_seconds": algo_cache_age,
+        "btc_usd": btc_price,
+        "btc_cache_age_seconds": btc_cache_age,
+        "algo_price_trend": get_price_trend(),
+        "price_history_points": len(_price_history),
+        "skinport_cache_age_seconds": sp_cache_age,
+        "skinport_cached_items": len(_price_cache),
+        "coingecko_cache_ttl": COINGECKO_CACHE_TTL,
+        "skinport_cache_ttl": PRICE_CACHE_TTL,
+        "hardcoded_fallback_algo_usd": HARDCODED_ALGO_USD,
     }

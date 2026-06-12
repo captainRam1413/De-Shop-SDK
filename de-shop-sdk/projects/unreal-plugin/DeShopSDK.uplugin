@@ -1,0 +1,12 @@
+{
+  "FileVersion": 3,
+  "Version": 2,
+  "VersionName": "2.0.0",
+  "FriendlyName": "De-Shop SDK",
+  "Description": "AI-Powered Decentralized Game Marketplace on Algorand",
+  "Category": "ECommerce",
+  "CanContainContent": false,
+  "IsBetaVersion": true,
+  "Installed": false,
+  "Modules": [{ "Name": "DeShopSDK", "Type": "Runtime", "LoadingPhase": "Default" }]
+}

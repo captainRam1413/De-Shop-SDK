@@ -30,7 +30,10 @@ from deshop_backend.ai_pricing import AIPricingEngine
 from deshop_backend.blockchain import AlgorandAdapter
 from deshop_backend.db_store import DatabaseStore
 from deshop_backend.steam_auth import steam_bp, fetch_steam_inventory, fetch_steam_profile
-from deshop_backend.price_oracle import get_skinport_price, get_bulk_prices, map_steam_item_to_sdk_asset
+from deshop_backend.ws_events import init_socketio, get_connection_count, get_room_memberships
+from deshop_backend.ws_events import broadcast_mint, broadcast_list, broadcast_buy, broadcast_cancel
+from deshop_backend.ipfs_storage import upload_metadata
+from deshop_backend.price_oracle import get_skinport_price, get_bulk_prices, map_steam_item_to_sdk_asset, get_oracle_status
 from deshop_backend.auth import (
     generate_nonce,
     verify_nonce,
@@ -78,6 +81,9 @@ store = DatabaseStore(ai=ai_engine)
 store.init_app(app)  # Initializes SQLAlchemy + creates tables
 
 algorand = AlgorandAdapter.from_env()
+
+socketio = init_socketio(app)
+app.config["DESHOP_STORE"] = store
 
 
 # ─── Health ───────────────────────────────────────────────────────────────────
@@ -208,6 +214,7 @@ def mint() -> tuple[dict, int]:
             asa_id=int(asa_id) if asa_id else None,
             txn_id=str(txn_id) if txn_id else None,
         )
+        broadcast_mint(asset)
         return {"asset": asset, "mode": "testnet" if algorand.enabled else "mock"}, 201
     except Exception as exc:
         return {"error": str(exc)}, 500
@@ -250,6 +257,7 @@ def list_asset() -> tuple[dict, int]:
 
     try:
         asset = store.list_asset(wallet=wallet, asset_id=asset_id, price=price)
+        broadcast_list(asset)
         return {"asset": asset}, 200
     except PermissionError as exc:
         return {"error": str(exc)}, 403
@@ -288,6 +296,7 @@ def buy() -> tuple[dict, int]:
         result = store.buy_asset(buyer_wallet=buyer_wallet, asset_id=asset_id)
         if txn_id and "sale" in result:
             result["sale"]["txn_id"] = str(txn_id)
+        broadcast_buy(result)
         return result, 200
     except ValueError as exc:
         return {"error": str(exc)}, 400
@@ -325,6 +334,7 @@ def cancel() -> tuple[dict, int]:
 
     try:
         asset = store.cancel_listing(wallet=wallet, asset_id=asset_id)
+        broadcast_cancel(asset)
         return {"asset": asset}, 200
     except PermissionError as exc:
         return {"error": str(exc)}, 403
@@ -749,6 +759,48 @@ def steam_withdraw() -> tuple[dict, int]:
     }, 200
 
 
+# ─── WebSocket & Utility Endpoints ──────────────────────────────────────────
+
+@app.get("/ws/status")
+def ws_status() -> tuple[dict, int]:
+    """Return WebSocket connection count and room membership info."""
+    return {
+        "connected_clients": get_connection_count(),
+        "rooms": get_room_memberships(),
+    }, 200
+
+
+@app.post("/ipfs/upload")
+@require_auth
+def ipfs_upload() -> tuple[dict, int]:
+    """Upload metadata to IPFS via Pinata. Requires authentication."""
+    data = request.get_json(silent=True) or {}
+    if not data:
+        return {"error": "metadata payload required"}, 400
+    try:
+        uri = upload_metadata(data)
+        return {"ipfs_uri": uri}, 200
+    except Exception as exc:
+        return {"error": str(exc)}, 500
+
+
+@app.post("/ai/train")
+@require_auth
+def ai_train() -> tuple[dict, int]:
+    """Train the ML pricing model. Requires authentication."""
+    try:
+        result = ai_engine.train_model()
+        return result, 200
+    except Exception as exc:
+        return {"error": str(exc)}, 500
+
+
+@app.get("/oracle/status")
+def oracle_status() -> tuple[dict, int]:
+    """Return comprehensive price oracle status."""
+    return get_oracle_status(), 200
+
+
 # ─── Error Handlers ─────────────────────────────────────────────────────────
 
 @app.errorhandler(404)
@@ -774,4 +826,4 @@ def internal_error(e):
 # ─── Entry Point ─────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    socketio.run(app, debug=True, host="0.0.0.0", port=5000)
