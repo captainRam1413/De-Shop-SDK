@@ -21,7 +21,7 @@ export type Notification = {
 
 // ─── Page Types ──────────────────────────────────────────────────────────────
 
-export type ActivePage = 'game' | 'market' | 'inventory' | 'terminal' | 'profile'
+export type ActivePage = 'dashboard' | 'game' | 'market' | 'inventory' | 'terminal' | 'profile'
 
 export type MintSkinType = 'weapon' | 'character'
 
@@ -125,7 +125,7 @@ export type DeShopStore = DeShopState & DeShopActions
 
 export const useDeShopStore = create<DeShopStore>((set, get) => ({
   // ── Navigation ────────────────────────────────────────────────────────────
-  activePage: 'game',
+  activePage: 'dashboard',
   sidebarCollapsed: false,
 
   // ── Data ──────────────────────────────────────────────────────────────────
