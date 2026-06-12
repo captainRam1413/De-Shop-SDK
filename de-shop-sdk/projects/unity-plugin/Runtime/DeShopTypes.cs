@@ -183,6 +183,140 @@ namespace DeShop
         public string note;
     }
 
+    // ─── Auth Responses ────────────────────────────────────────────────────
+
+    [Serializable]
+    public class NonceResponse
+    {
+        public string nonce;
+        public string wallet;
+    }
+
+    [Serializable]
+    public class AuthResponse
+    {
+        public string token;
+        public int expires_in;
+        public string wallet;
+    }
+
+    // ─── Marketplace Response ──────────────────────────────────────────────
+
+    [Serializable]
+    public class MarketplaceResponse
+    {
+        public List<Asset> marketplace;
+        public List<SaleRecord> sales;
+    }
+
+    // ─── Asset History ─────────────────────────────────────────────────────
+
+    [Serializable]
+    public class HistoryEntry
+    {
+        public string type;
+        public string timestamp;
+        public string txn_id;
+        public string by;
+        public string from;
+        public string to;
+        public int price;
+        public int royalty_paid;
+    }
+
+    [Serializable]
+    public class HistoryResponse
+    {
+        public int asset_id;
+        public List<HistoryEntry> history;
+    }
+
+    // ─── Skin Intelligence / Analyze ───────────────────────────────────────
+
+    [Serializable]
+    public class GameMapping
+    {
+        public string game;
+        public string category;
+        public string weapon_class;
+        public string operator_type;
+    }
+
+    [Serializable]
+    public class AnalyzeResponse
+    {
+        public string type;
+        public GameMapping game_mapping;
+        public float rarity_score;
+        public string visual_style;
+        public int suggested_price;
+        public int confidence;
+        public List<string> tags;
+        public List<string> effects;
+    }
+
+    // ─── WebSocket ─────────────────────────────────────────────────────────
+
+    [Serializable]
+    public class WebSocketMessage
+    {
+        public string event_type;
+        public string data_json;
+    }
+
+    // ─── Request Parameter Types ───────────────────────────────────────────
+
+    [Serializable]
+    public class ListParams
+    {
+        public string wallet;
+        public int asset_id;
+        public int price;
+    }
+
+    [Serializable]
+    public class CancelParams
+    {
+        public string wallet;
+        public int asset_id;
+    }
+
+    [Serializable]
+    public class BuyParams
+    {
+        public string buyer_wallet;
+        public int asset_id;
+    }
+
+    [Serializable]
+    public class AIPriceParams
+    {
+        public string skin_name;
+        public string rarity;
+    }
+
+    [Serializable]
+    public class StringWrapper
+    {
+        public string value;
+
+        public StringWrapper(string v) { value = v; }
+    }
+
+    // ─── List / Cancel Response Wrappers ───────────────────────────────────
+
+    [Serializable]
+    public class ListResponse
+    {
+        public Asset asset;
+    }
+
+    [Serializable]
+    public class CancelResponse
+    {
+        public Asset asset;
+    }
+
     // ─── Events ─────────────────────────────────────────────────────────────
 
     public enum DeShopEventType
