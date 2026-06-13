@@ -1,9 +1,17 @@
 import { useDeShopStore, type ActivePage } from './store/useDeShopStore'
 import { useWallet } from '@txnlab/use-wallet-react'
 import GameShowcase from './components/GameShowcase.premium'
+import MarketplaceV2 from './components/MarketplaceV2.premium'
 import TerminalConsole from './components/TerminalConsole'
 import WalletModal from './components/WalletModal.premium'
+import DashboardPremium from './components/Dashboard.premium'
+import ProfilePage from './components/ProfilePage.premium'
+import ParticleBackground from './components/ParticleBackground'
+import ConfettiEffect from './components/ConfettiEffect'
+import AnimatedBorder from './components/AnimatedBorder'
+import ThemeToggle from './components/ThemeToggle'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
 import {
   Gamepad2,
   Store,
@@ -14,9 +22,11 @@ import {
   ChevronRight,
   Hexagon,
   Zap,
+  LayoutDashboard,
 } from 'lucide-react'
 
 const navItems: { id: ActivePage; label: string; icon: React.ReactNode; color: string }[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" />, color: 'var(--cyan-bright)' },
   { id: 'game', label: 'Game Arena', icon: <Gamepad2 className="h-4 w-4" />, color: 'var(--green-neon)' },
   { id: 'market', label: 'Marketplace', icon: <Store className="h-4 w-4" />, color: 'var(--cyan-bright)' },
   { id: 'inventory', label: 'Inventory', icon: <Backpack className="h-4 w-4" />, color: 'var(--purple-bright)' },
@@ -119,13 +129,16 @@ function Sidebar() {
 
       {/* Status */}
       <div className="premium-sidebar__footer">
-        <div className="premium-sidebar__status">
-          <span className={`status-dot ${activeAddress ? 'connected' : ''}`} />
-          {!sidebarCollapsed && (
-            <span className="premium-sidebar__status-text">
-              {activeAddress ? 'Connected' : 'Offline'}
-            </span>
-          )}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'space-between', width: '100%' }}>
+          <div className="premium-sidebar__status">
+            <span className={`status-dot ${activeAddress ? 'connected' : ''}`} />
+            {!sidebarCollapsed && (
+              <span className="premium-sidebar__status-text">
+                {activeAddress ? 'Connected' : 'Offline'}
+              </span>
+            )}
+          </div>
+          <ThemeToggle />
         </div>
         <button className="premium-sidebar__collapse" onClick={toggleSidebar}>
           {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
@@ -161,6 +174,7 @@ function Header() {
         )}
       </div>
       <div className="premium-header__right">
+        <ThemeToggle />
         {steamProfile && (
           <div className="premium-header__steam">
             <img src={steamProfile.avatarfull} alt="Steam" style={{ width: 22, height: 22, borderRadius: '50%' }} />
@@ -193,23 +207,66 @@ function Header() {
 }
 
 const pageComponents: Record<ActivePage, React.ComponentType> = {
+  dashboard: DashboardPremium,
   game: GameShowcase,
-  market: GameShowcase, // Will use same component with market tab active
+  market: MarketplaceV2, // Enhanced Marketplace V2 with advanced filtering & views
   inventory: GameShowcase, // Will use same component with inventory tab active
   terminal: TerminalConsole,
-  profile: GameShowcase, // Placeholder - uses game showcase for now
+  profile: ProfilePage,
 }
 
 export default function App() {
   const showWalletModal = useDeShopStore((s) => s.showWalletModal)
   const setShowWalletModal = useDeShopStore((s) => s.setShowWalletModal)
   const activePage = useDeShopStore((s) => s.activePage)
+  const notifications = useDeShopStore((s) => s.notifications)
   const { wallets } = useWallet()
   const PageComponent = pageComponents[activePage]
 
+  // ── Mobile detection: skip AnimatedBorder wrapper on small screens ──
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  // ── Confetti state: triggered on success notifications ──
+  const [showConfetti, setShowConfetti] = useState(false)
+  const lastTriggeredTsRef = useRef(0)
+
+  useEffect(() => {
+    // Find the latest success notification by timestamp
+    const successNotifs = notifications.filter((n) => n.type === 'success')
+    if (successNotifs.length === 0) return
+
+    const latestSuccess = successNotifs.reduce((a, b) =>
+      a.timestamp > b.timestamp ? a : b
+    )
+
+    // Only trigger if this success notification is newer than the last one we triggered on
+    if (latestSuccess.timestamp > lastTriggeredTsRef.current && !showConfetti) {
+      lastTriggeredTsRef.current = latestSuccess.timestamp
+      setShowConfetti(true)
+      const timer = setTimeout(() => setShowConfetti(false), 3200)
+      return () => clearTimeout(timer)
+    }
+    return undefined
+  }, [notifications, showConfetti])
+
   return (
     <div className="premium-app">
-      <Sidebar />
+      <ParticleBackground />
+
+      {isMobile ? (
+        <Sidebar />
+      ) : (
+        <AnimatedBorder borderRadius={0} borderWidth={1}>
+          <Sidebar />
+        </AnimatedBorder>
+      )}
+
       <div className="premium-main">
         <Header />
         <div className="premium-content">
@@ -233,6 +290,8 @@ export default function App() {
       )}
 
       <Notifications />
+
+      <ConfettiEffect trigger={showConfetti} />
     </div>
   )
 }

@@ -20,6 +20,7 @@ Critical updates from v2.0:
 from __future__ import annotations
 
 import os
+from datetime import datetime, timedelta, timezone
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -31,7 +32,11 @@ from deshop_backend.blockchain import AlgorandAdapter
 from deshop_backend.db_store import DatabaseStore
 from deshop_backend.steam_auth import steam_bp, fetch_steam_inventory, fetch_steam_profile
 from deshop_backend.ws_events import init_socketio, get_connection_count, get_room_memberships
-from deshop_backend.ws_events import broadcast_mint, broadcast_list, broadcast_buy, broadcast_cancel
+from deshop_backend.ws_events import (
+    broadcast_mint, broadcast_list, broadcast_buy, broadcast_cancel,
+    broadcast_price_update, broadcast_trade_completed, send_user_notification,
+    start_market_stats_broadcast,
+)
 from deshop_backend.ipfs_storage import upload_metadata
 from deshop_backend.price_oracle import get_skinport_price, get_bulk_prices, map_steam_item_to_sdk_asset, get_oracle_status
 from deshop_backend.auth import (
@@ -52,6 +57,7 @@ from deshop_backend.validators import (
     validate_steam_id,
     validate_wallet_param,
 )
+from deshop_backend.models import db
 
 # ─── App Configuration ────────────────────────────────────────────────────────
 
@@ -84,6 +90,9 @@ algorand = AlgorandAdapter.from_env()
 
 socketio = init_socketio(app)
 app.config["DESHOP_STORE"] = store
+
+# Start background market stats broadcast (every 30 seconds)
+start_market_stats_broadcast(app, interval=30)
 
 
 # ─── Health ───────────────────────────────────────────────────────────────────
@@ -297,6 +306,17 @@ def buy() -> tuple[dict, int]:
         if txn_id and "sale" in result:
             result["sale"]["txn_id"] = str(txn_id)
         broadcast_buy(result)
+        # Also broadcast enriched trade_completed event
+        if "sale" in result:
+            trade_data = {
+                **result["sale"],
+                "asset_id": asset_id,
+                "rarity": result.get("asset", {}).get("rarity", ""),
+                "asset_name": result.get("asset", {}).get("name", ""),
+                "buyer_wallet": result["sale"].get("buyer", ""),
+                "seller_wallet": result["sale"].get("seller", ""),
+            }
+            broadcast_trade_completed(trade_data)
         return result, 200
     except ValueError as exc:
         return {"error": str(exc)}, 400
@@ -799,6 +819,682 @@ def ai_train() -> tuple[dict, int]:
 def oracle_status() -> tuple[dict, int]:
     """Return comprehensive price oracle status."""
     return get_oracle_status(), 200
+
+
+# ─── Search API ─────────────────────────────────────────────────────────────
+
+@app.get("/api/search")
+@optional_auth
+def search_assets() -> tuple[dict, int]:
+    """
+    Full-text search across marketplace assets.
+
+    Query params:
+      q          – search string (matched against skin name)
+      rarity     – filter by rarity tier
+      min_price  – minimum price in μALGO
+      max_price  – maximum price in μALGO
+      sort       – newest | price_asc | price_desc | rarest
+      page       – page number (default 1)
+      per_page   – items per page (default 20, max 100)
+    """
+    try:
+        from deshop_backend.models import Asset as AssetModel, Transaction as TxnModel
+
+        query = request.args.get("q", "").strip()
+        rarity = request.args.get("rarity", "").strip().lower()
+        min_price = request.args.get("min_price", type=int)
+        max_price = request.args.get("max_price", type=int)
+        sort = request.args.get("sort", "newest").strip().lower()
+        page = request.args.get("page", 1, type=int)
+        per_page = request.args.get("per_page", 20, type=int)
+
+        # Clamp per_page
+        per_page = max(1, min(100, per_page))
+        page = max(1, page)
+
+        # Build query
+        q = AssetModel.query
+
+        # Full-text search on name
+        if query:
+            q = q.filter(AssetModel.name.ilike(f"%{query}%"))
+
+        # Rarity filter
+        if rarity:
+            q = q.filter(AssetModel.rarity == rarity)
+
+        # Price range filters
+        if min_price is not None:
+            q = q.filter(AssetModel.list_price >= min_price)
+        if max_price is not None:
+            q = q.filter(AssetModel.list_price <= max_price)
+
+        # Only show listed assets
+        q = q.filter(AssetModel.listed == True)  # noqa: E712
+
+        # Sorting
+        rarity_order = {"common": 1, "uncommon": 2, "rare": 3, "epic": 4, "legendary": 5, "mythic": 6}
+        if sort == "price_asc":
+            q = q.order_by(AssetModel.list_price.asc())
+        elif sort == "price_desc":
+            q = q.order_by(AssetModel.list_price.desc())
+        elif sort == "rarest":
+            # Sort by rarity rarity_order mapping via CASE
+            from sqlalchemy import case
+            whens = {r: idx for r, idx in rarity_order.items()}
+            q = q.order_by(case(whens, value=AssetModel.rarity).desc())
+        else:  # newest
+            q = q.order_by(AssetModel.created_at.desc())
+
+        total = q.count()
+        results = q.offset((page - 1) * per_page).limit(per_page).all()
+
+        return {
+            "success": True,
+            "data": {
+                "results": [a.to_dict() for a in results],
+                "total": total,
+                "page": page,
+                "per_page": per_page,
+                "total_pages": (total + per_page - 1) // per_page,
+            },
+        }, 200
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}, 500
+
+
+# ─── Analytics Endpoints ────────────────────────────────────────────────────
+
+@app.get("/api/analytics/market-stats")
+def market_stats() -> tuple[dict, int]:
+    """
+    Get marketplace statistics.
+
+    Returns total_volume, active_listings, floor_price, trades_24h,
+    plus percentage changes for each metric.
+    """
+    try:
+        from deshop_backend.models import Asset as AssetModel, Transaction as TxnModel
+        from datetime import timedelta
+        from sqlalchemy import func
+
+        now = datetime.now(timezone.utc)
+        day_ago = now - timedelta(hours=24)
+
+        # Total volume (sum of all buy transaction amounts)
+        total_volume = db.session.query(func.coalesce(func.sum(TxnModel.amount), 0)).filter(
+            TxnModel.txn_type == "buy"
+        ).scalar() or 0
+
+        # 24h volume
+        volume_24h = db.session.query(func.coalesce(func.sum(TxnModel.amount), 0)).filter(
+            TxnModel.txn_type == "buy",
+            TxnModel.created_at >= day_ago,
+        ).scalar() or 0
+
+        # Active listings count
+        active_listings = AssetModel.query.filter_by(listed=True).count()
+
+        # Floor price (minimum listed price)
+        floor_price = db.session.query(func.min(AssetModel.list_price)).filter(
+            AssetModel.listed == True  # noqa: E712
+        ).scalar()
+
+        # Trades in last 24h
+        trades_24h = TxnModel.query.filter(
+            TxnModel.txn_type == "buy",
+            TxnModel.created_at >= day_ago,
+        ).count()
+
+        # Previous 24h for percentage change
+        two_days_ago = now - timedelta(hours=48)
+        prev_volume_24h = db.session.query(func.coalesce(func.sum(TxnModel.amount), 0)).filter(
+            TxnModel.txn_type == "buy",
+            TxnModel.created_at >= two_days_ago,
+            TxnModel.created_at < day_ago,
+        ).scalar() or 0
+
+        prev_trades_24h = TxnModel.query.filter(
+            TxnModel.txn_type == "buy",
+            TxnModel.created_at >= two_days_ago,
+            TxnModel.created_at < day_ago,
+        ).count()
+
+        def _pct_change(current, previous):
+            if previous == 0:
+                return 100.0 if current > 0 else 0.0
+            return round(((current - previous) / previous) * 100, 1)
+
+        return {
+            "success": True,
+            "data": {
+                "total_volume": total_volume,
+                "volume_24h": volume_24h,
+                "volume_change_pct": _pct_change(volume_24h, prev_volume_24h),
+                "active_listings": active_listings,
+                "floor_price": floor_price,
+                "trades_24h": trades_24h,
+                "trades_change_pct": _pct_change(trades_24h, prev_trades_24h),
+            },
+        }, 200
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}, 500
+
+
+@app.get("/api/analytics/price-history/<int:asset_id>")
+def price_history(asset_id: int) -> tuple[dict, int]:
+    """
+    Get price history for a specific asset.
+
+    Query params:
+      days – number of days to look back (default 7)
+    """
+    try:
+        from deshop_backend.models import Asset as AssetModel, Transaction as TxnModel
+        from sqlalchemy import func
+
+        days = request.args.get("days", 7, type=int)
+        days = max(1, min(365, days))
+
+        asset = AssetModel.query.get(asset_id)
+        if asset is None:
+            return {"success": False, "error": "Asset not found"}, 404
+
+        now = datetime.now(timezone.utc)
+        start_date = now - timedelta(days=days)
+
+        # Get buy transactions for this asset within the date range
+        txns = TxnModel.query.filter(
+            TxnModel.asset_id == asset_id,
+            TxnModel.txn_type == "buy",
+            TxnModel.created_at >= start_date,
+        ).order_by(TxnModel.created_at.asc()).all()
+
+        # Also include list transactions for price reference
+        list_txns = TxnModel.query.filter(
+            TxnModel.asset_id == asset_id,
+            TxnModel.txn_type == "list",
+            TxnModel.created_at >= start_date,
+        ).order_by(TxnModel.created_at.asc()).all()
+
+        # Build daily price history
+        history = []
+        # Group transactions by date
+        from collections import defaultdict
+        daily_data = defaultdict(lambda: {"prices": [], "volumes": 0})
+
+        for t in txns:
+            if t.created_at and t.amount:
+                day_key = t.created_at.strftime("%Y-%m-%d")
+                daily_data[day_key]["prices"].append(t.amount)
+                daily_data[day_key]["volumes"] += 1
+
+        for t in list_txns:
+            if t.created_at and t.amount:
+                day_key = t.created_at.strftime("%Y-%m-%d")
+                if not daily_data[day_key]["prices"]:
+                    daily_data[day_key]["prices"].append(t.amount)
+
+        for day_key in sorted(daily_data.keys()):
+            prices = daily_data[day_key]["prices"]
+            avg_price = sum(prices) // len(prices) if prices else 0
+            history.append({
+                "date": day_key,
+                "price": avg_price,
+                "volume": daily_data[day_key]["volumes"],
+            })
+
+        # If no history, generate realistic mock data
+        if not history:
+            import random
+            base_price = asset.list_price or asset.suggested_price.get("price", 50)
+            for i in range(days):
+                day = (now - timedelta(days=days - 1 - i)).strftime("%Y-%m-%d")
+                variation = random.uniform(0.9, 1.1)
+                history.append({
+                    "date": day,
+                    "price": int(base_price * variation),
+                    "volume": random.randint(0, 5),
+                })
+
+        return {
+            "success": True,
+            "data": {
+                "asset_id": asset_id,
+                "name": asset.name,
+                "rarity": asset.rarity,
+                "days": days,
+                "history": history,
+            },
+        }, 200
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}, 500
+
+
+@app.get("/api/analytics/portfolio/<wallet>")
+@require_auth
+def portfolio_analytics(wallet: str) -> tuple[dict, int]:
+    """
+    Get portfolio analytics for a wallet.
+
+    Returns: total_value, rarity_distribution, performance_history
+    """
+    try:
+        from deshop_backend.models import Asset as AssetModel, Transaction as TxnModel
+        from sqlalchemy import func
+
+        # Authorization: must be the wallet owner
+        if request.auth_wallet != wallet:
+            return {"success": False, "error": "Wallet mismatch: you can only view your own portfolio"}, 403
+
+        # Get all assets owned by wallet
+        assets = AssetModel.query.filter_by(owner_wallet=wallet).all()
+
+        # Total value (sum of suggested prices)
+        total_value = 0
+        rarity_dist = {"common": 0, "uncommon": 0, "rare": 0, "epic": 0, "legendary": 0, "mythic": 0}
+        for a in assets:
+            price = a.suggested_price.get("price", 0) if a.suggested_price else 0
+            total_value += price
+            if a.rarity in rarity_dist:
+                rarity_dist[a.rarity] += 1
+
+        # Performance history (last 7 days based on transactions)
+        now = datetime.now(timezone.utc)
+        perf_history = []
+        for i in range(7):
+            day = now - timedelta(days=6 - i)
+            day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = day_start + timedelta(days=1)
+
+            day_txns = TxnModel.query.filter(
+                TxnModel.txn_type == "buy",
+                TxnModel.from_wallet == wallet,
+                TxnModel.created_at >= day_start,
+                TxnModel.created_at < day_end,
+            ).all()
+
+            day_value = sum(t.amount or 0 for t in day_txns)
+            perf_history.append({
+                "date": day_start.strftime("%Y-%m-%d"),
+                "value": day_value,
+            })
+
+        # If no transaction data, provide mock realistic data
+        if all(p["value"] == 0 for p in perf_history) and total_value > 0:
+            import random
+            running = total_value * 0.8
+            for p in perf_history:
+                running += random.randint(-20, 30)
+                running = max(0, running)
+                p["value"] = running
+
+        return {
+            "success": True,
+            "data": {
+                "wallet": wallet,
+                "total_assets": len(assets),
+                "total_value": total_value,
+                "rarity_distribution": rarity_dist,
+                "performance_history": perf_history,
+            },
+        }, 200
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}, 500
+
+
+@app.get("/api/analytics/rarity-distribution")
+def rarity_distribution() -> tuple[dict, int]:
+    """
+    Get rarity distribution across all assets.
+
+    Returns: {common: N, uncommon: N, rare: N, epic: N, legendary: N, mythic: N}
+    """
+    try:
+        from deshop_backend.models import Asset as AssetModel
+        from sqlalchemy import func
+
+        # Query counts grouped by rarity
+        result = db.session.query(
+            AssetModel.rarity, func.count(AssetModel.id)
+        ).group_by(AssetModel.rarity).all()
+
+        dist = {"common": 0, "uncommon": 0, "rare": 0, "epic": 0, "legendary": 0, "mythic": 0}
+        for rarity, count in result:
+            if rarity in dist:
+                dist[rarity] = count
+            else:
+                dist[rarity] = count
+
+        total = sum(dist.values())
+
+        return {
+            "success": True,
+            "data": {
+                "distribution": dist,
+                "total_assets": total,
+            },
+        }, 200
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}, 500
+
+
+# ─── User Profile Endpoints ─────────────────────────────────────────────────
+
+# In-memory wishlist store: {wallet: set(asset_ids)}
+_wishlist_store: dict[str, set[int]] = {}
+
+# Achievement definitions
+ACHIEVEMENTS = [
+    {
+        "id": "first_mint",
+        "name": "First Mint",
+        "description": "Mint your first NFT skin",
+        "icon": "🎨",
+        "category": "minting",
+    },
+    {
+        "id": "collector",
+        "name": "Collector",
+        "description": "Own 5 or more assets",
+        "icon": "📦",
+        "category": "collection",
+    },
+    {
+        "id": "trader",
+        "name": "Trader",
+        "description": "Complete 3 or more trades",
+        "icon": "🔄",
+        "category": "trading",
+    },
+    {
+        "id": "legendary_hunter",
+        "name": "Legendary Hunter",
+        "description": "Own a legendary or mythic item",
+        "icon": "🏆",
+        "category": "collection",
+    },
+    {
+        "id": "market_maker",
+        "name": "Market Maker",
+        "description": "List 5 or more items for sale",
+        "icon": "💰",
+        "category": "trading",
+    },
+    {
+        "id": "diamond_hands",
+        "name": "Diamond Hands",
+        "description": "Hold an asset for 30+ days",
+        "icon": "💎",
+        "category": "collection",
+    },
+    {
+        "id": "whale",
+        "name": "Whale",
+        "description": "Total portfolio value exceeds 1000 ALGO",
+        "icon": "🐋",
+        "category": "trading",
+    },
+    {
+        "id": "cross_chain",
+        "name": "Cross-Chain Pioneer",
+        "description": "Link your Steam account",
+        "icon": "🔗",
+        "category": "integration",
+    },
+    {
+        "id": "early_adopter",
+        "name": "Early Adopter",
+        "description": "Join during the beta period",
+        "icon": "🚀",
+        "category": "special",
+    },
+    {
+        "id": "streak_master",
+        "name": "Streak Master",
+        "description": "Trade 3 days in a row",
+        "icon": "🔥",
+        "category": "trading",
+    },
+]
+
+
+@app.get("/api/user/<wallet>/achievements")
+def user_achievements(wallet: str) -> tuple[dict, int]:
+    """
+    Get achievement badges for a user.
+
+    Returns list of all achievements with earned status based on
+    the user's activity in the database.
+    """
+    try:
+        from deshop_backend.models import Asset as AssetModel, Transaction as TxnModel, User as UserModel
+        from datetime import timedelta
+        from sqlalchemy import func
+
+        user = UserModel.query.filter_by(wallet_address=wallet).first()
+
+        # Count assets owned
+        asset_count = AssetModel.query.filter_by(owner_wallet=wallet).count()
+
+        # Count buy transactions
+        buy_count = TxnModel.query.filter(
+            TxnModel.txn_type == "buy",
+            db.or_(TxnModel.from_wallet == wallet, TxnModel.to_wallet == wallet),
+        ).count()
+
+        # Count list transactions
+        list_count = TxnModel.query.filter(
+            TxnModel.txn_type == "list",
+            TxnModel.from_wallet == wallet,
+        ).count()
+
+        # Has legendary/mythic?
+        has_legendary = AssetModel.query.filter(
+            AssetModel.owner_wallet == wallet,
+            AssetModel.rarity.in_(["legendary", "mythic"]),
+        ).first() is not None
+
+        # Total portfolio value
+        total_value = 0
+        assets = AssetModel.query.filter_by(owner_wallet=wallet).all()
+        for a in assets:
+            total_value += a.suggested_price.get("price", 0) if a.suggested_price else 0
+
+        # Has linked Steam?
+        has_steam = user is not None and user.steam_id is not None
+
+        # Check holding duration (oldest asset)
+        oldest_asset = AssetModel.query.filter_by(owner_wallet=wallet).order_by(AssetModel.created_at.asc()).first()
+        has_diamond_hands = False
+        if oldest_asset and oldest_asset.created_at:
+            age = datetime.now(timezone.utc) - oldest_asset.created_at
+            has_diamond_hands = age.days >= 30
+
+        # Compute earned status
+        earned_map = {
+            "first_mint": asset_count >= 1,
+            "collector": asset_count >= 5,
+            "trader": buy_count >= 3,
+            "legendary_hunter": has_legendary,
+            "market_maker": list_count >= 5,
+            "diamond_hands": has_diamond_hands,
+            "whale": total_value >= 1_000_000,  # 1 ALGO = 1M μALGO
+            "cross_chain": has_steam,
+            "early_adopter": True,  # Everyone in beta
+            "streak_master": buy_count >= 3,  # Simplified check
+        }
+
+        achievements = []
+        for ach in ACHIEVEMENTS:
+            earned = earned_map.get(ach["id"], False)
+            achievements.append({
+                **ach,
+                "earned": earned,
+                "earned_at": None,  # Would need tracking table for real data
+            })
+
+        earned_count = sum(1 for a in achievements if a["earned"])
+
+        return {
+            "success": True,
+            "data": {
+                "wallet": wallet,
+                "achievements": achievements,
+                "earned_count": earned_count,
+                "total_count": len(achievements),
+            },
+        }, 200
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}, 500
+
+
+@app.get("/api/user/<wallet>/transactions")
+def user_transactions(wallet: str) -> tuple[dict, int]:
+    """
+    Get transaction history for a user.
+
+    Query params:
+      page     – page number (default 1)
+      per_page – items per page (default 20, max 100)
+    """
+    try:
+        from deshop_backend.models import Transaction as TxnModel, Asset as AssetModel
+
+        page = request.args.get("page", 1, type=int)
+        per_page = request.args.get("per_page", 20, type=int)
+        per_page = max(1, min(100, per_page))
+        page = max(1, page)
+
+        # Get all transactions where wallet is involved
+        q = TxnModel.query.filter(
+            db.or_(
+                TxnModel.from_wallet == wallet,
+                TxnModel.to_wallet == wallet,
+            )
+        ).order_by(TxnModel.created_at.desc())
+
+        total = q.count()
+        txns = q.offset((page - 1) * per_page).limit(per_page).all()
+
+        # Enrich with asset info
+        results = []
+        for t in txns:
+            asset = AssetModel.query.get(t.asset_id)
+            entry = t.to_dict()
+            entry["asset_name"] = asset.name if asset else "Unknown"
+            entry["asset_rarity"] = asset.rarity if asset else "unknown"
+            results.append(entry)
+
+        return {
+            "success": True,
+            "data": {
+                "transactions": results,
+                "total": total,
+                "page": page,
+                "per_page": per_page,
+                "total_pages": (total + per_page - 1) // per_page,
+            },
+        }, 200
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}, 500
+
+
+# ─── Wishlist Endpoints ─────────────────────────────────────────────────────
+
+@app.get("/api/wishlist")
+@require_auth
+def get_wishlist() -> tuple[dict, int]:
+    """Get the authenticated user's wishlist."""
+    try:
+        from deshop_backend.models import Asset as AssetModel
+
+        wallet = request.auth_wallet
+        asset_ids = _wishlist_store.get(wallet, set())
+
+        wishlist_items = []
+        for aid in sorted(asset_ids):
+            asset = AssetModel.query.get(aid)
+            if asset:
+                wishlist_items.append(asset.to_dict())
+
+        return {
+            "success": True,
+            "data": {
+                "wallet": wallet,
+                "items": wishlist_items,
+                "count": len(wishlist_items),
+            },
+        }, 200
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}, 500
+
+
+@app.post("/api/wishlist/<int:asset_id>")
+@require_auth
+def add_to_wishlist(asset_id: int) -> tuple[dict, int]:
+    """Add an item to the authenticated user's wishlist."""
+    try:
+        from deshop_backend.models import Asset as AssetModel
+
+        wallet = request.auth_wallet
+
+        # Verify asset exists
+        asset = AssetModel.query.get(asset_id)
+        if asset is None:
+            return {"success": False, "error": "Asset not found"}, 404
+
+        if wallet not in _wishlist_store:
+            _wishlist_store[wallet] = set()
+
+        if asset_id in _wishlist_store[wallet]:
+            return {"success": False, "error": "Asset already in wishlist"}, 409
+
+        _wishlist_store[wallet].add(asset_id)
+
+        # Notify user
+        send_user_notification(wallet, {
+            "type": "wishlist_add",
+            "asset_id": asset_id,
+            "asset_name": asset.name,
+            "message": f"{asset.name} added to your wishlist",
+        })
+
+        return {
+            "success": True,
+            "data": {
+                "wallet": wallet,
+                "asset_id": asset_id,
+                "action": "added",
+            },
+        }, 201
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}, 500
+
+
+@app.delete("/api/wishlist/<int:asset_id>")
+@require_auth
+def remove_from_wishlist(asset_id: int) -> tuple[dict, int]:
+    """Remove an item from the authenticated user's wishlist."""
+    try:
+        wallet = request.auth_wallet
+
+        if wallet not in _wishlist_store or asset_id not in _wishlist_store[wallet]:
+            return {"success": False, "error": "Asset not in wishlist"}, 404
+
+        _wishlist_store[wallet].discard(asset_id)
+
+        return {
+            "success": True,
+            "data": {
+                "wallet": wallet,
+                "asset_id": asset_id,
+                "action": "removed",
+            },
+        }, 200
+    except Exception as exc:
+        return {"success": False, "error": str(exc)}, 500
 
 
 # ─── Error Handlers ─────────────────────────────────────────────────────────

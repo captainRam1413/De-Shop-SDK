@@ -4,6 +4,11 @@
 [![Algorand](https://img.shields.io/badge/Algorand-PuyaPy--AVM-00D4AA?style=for-the-badge&logo=algorand&logoColor=white)](https://developer.algorand.org/)
 [![NPM Version](https://img.shields.io/npm/v/de-shop-sdk?style=for-the-badge&logo=npm&logoColor=white&color=CC3534)](https://www.npmjs.com/package/de-shop-sdk)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+[![Phase 2](https://img.shields.io/badge/Phase%202-Premium%20UI-ff6b6b?style=for-the-badge)]()
+[![Recharts](https://img.shields.io/badge/Charts-Recharts-8884d8?style=for-the-badge)]()
+[![Framer Motion](https://img.shields.io/badge/Animation-Framer%20Motion-0055FF?style=for-the-badge)]()
+[![Zustand](https://img.shields.io/badge/State-Zustand-764abc?style=for-the-badge)]()
+[![Responsive](https://img.shields.io/badge/Design-Responsive-16a34a?style=for-the-badge)]()
 
 **De-Shop SDK** is a production-grade, next-generation toolkit designed to help game developers integrate **secure, AI-powered peer-to-peer NFT marketplaces directly into their games**. By marrying the speed and security of the **Algorand blockchain** with custom **AI pricing and visual analysis engines**, De-Shop enables players to truly own their in-game assets as NFTs while providing developers with intelligent tools to sustain and optimize their virtual economies.
 
@@ -22,6 +27,52 @@ Traditional gaming economies suffer from severe limitations: centralized control
 3. **AI Economy Engine:** A dedicated AI-driven "Skin Intelligence Engine" classifying visual attributes, mapping them to game genres, predicting scarcity, and checking prices.
 4. **Live Price Oracle:** Built-in price oracle integration mapping live Steam items (e.g. CS2) to on-chain prices via Skinport public APIs.
 5. **Cross-Game Bridges:** Seamless integration allowing in-game items to travel across Minecraft and Unity/Unreal Engine runtimes.
+
+---
+
+## 🚀 Phase 2: Premium Enhancement Highlights
+
+### 📊 Dashboard & Analytics
+- Real-time marketplace stats (Volume, Listings, Floor Price, 24h Trades)
+- Interactive price trend charts with Recharts (7-day history)
+- Rarity distribution visualization
+- Live market activity feed with Framer Motion animations
+- Quick action panels for one-click navigation
+
+### 🏪 Marketplace V2
+- Advanced search with full-text filtering
+- Rarity, price range, and sort filters
+- Grid/List view toggle
+- Item detail modal with price history sparkline
+- AI Price Analysis with confidence scoring
+- Wishlist/favorites system
+- 18+ mock listings with realistic data
+
+### 👤 Profile & Achievements
+- User profile with wallet & Steam integration
+- 8 achievement badges (3 earned, 5 locked)
+- Transaction history with status indicators
+- Portfolio analytics with pie chart and performance graph
+- Connected accounts management
+
+### ✨ Premium Animations
+- Canvas-based particle background system
+- Confetti burst effects on successful transactions
+- Animated gradient border component
+- Shimmer, pulse-glow, and floating animations
+- Full `prefers-reduced-motion` accessibility support
+
+### 🎨 Theme System
+- Dark mode (default cyberpunk) and Light mode
+- Persistent theme preference via localStorage
+- System preference detection
+- Smooth icon transitions with Framer Motion
+
+### 📱 Responsive Design
+- Mobile-first approach with 3 breakpoints
+- Bottom navigation bar on mobile
+- Adaptive card layouts for all screen sizes
+- Touch-friendly 44px+ targets
 
 ---
 
@@ -116,6 +167,89 @@ De-Shop-SDK/
 
 ---
 
+## 🔌 API Reference
+
+### Core Marketplace Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/health` | Health check & service status |
+| `POST` | `/mint` | Mint a new NFT asset |
+| `GET` | `/assets/<wallet>` | Get wallet's owned assets |
+| `POST` | `/list` | List an asset for sale |
+| `POST` | `/buy` | Purchase a listed asset |
+| `POST` | `/cancel` | Cancel an active listing |
+| `GET` | `/marketplace` | Browse all active listings |
+
+### Search API (Phase 2)
+
+```
+GET /api/search?q=&rarity=&min_price=&max_price=&sort=&page=&per_page=
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `q` | string | Full-text search query |
+| `rarity` | string | Filter by rarity (common, rare, epic, legendary) |
+| `min_price` | number | Minimum price filter (ALGO) |
+| `max_price` | number | Maximum price filter (ALGO) |
+| `sort` | string | Sort order: `price_asc`, `price_desc`, `newest`, `rarity` |
+| `page` | number | Page number for pagination |
+| `per_page` | number | Items per page (default: 20) |
+
+### Analytics API (Phase 2)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/analytics/market-stats` | Overall marketplace statistics (volume, floor, trades) |
+| `GET` | `/api/analytics/price-history/<id>` | Price history data for a specific asset |
+| `GET` | `/api/analytics/portfolio/<wallet>` | Portfolio analytics for a wallet |
+| `GET` | `/api/analytics/rarity-distribution` | Item distribution across rarity tiers |
+
+### User API (Phase 2)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/user/<wallet>/achievements` | User achievement badges and progress |
+| `GET` | `/api/user/<wallet>/transactions` | User transaction history with pagination |
+
+### Wishlist API (Phase 2)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/wishlist` | Get user's wishlist items |
+| `POST` | `/api/wishlist/<asset_id>` | Add item to wishlist |
+| `DELETE` | `/api/wishlist/<asset_id>` | Remove item from wishlist |
+
+### AI & Price Oracle Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/ai-price` | Get AI-powered price suggestion |
+| `POST` | `/analyze` | AI visual analysis of a skin |
+| `POST` | `/ai/train` | Trigger AI model retraining |
+| `GET` | `/oracle/status` | Price oracle health & last sync |
+| `GET` | `/prices` | Get current Skinport prices |
+| `POST` | `/prices/bulk` | Bulk price lookup |
+| `GET` | `/history/<asset_id>` | Asset price history |
+
+### Authentication & Integration
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/auth/nonce` | Request auth nonce for wallet signing |
+| `POST` | `/auth/verify` | Verify signed message & issue JWT |
+| `GET` | `/auth/me` | Get current authenticated user |
+| `GET` | `/steam/inventory/<steam_id>` | Fetch Steam inventory |
+| `POST` | `/steam/escrow` | Initiate Steam escrow deposit |
+| `POST` | `/steam/withdraw` | Withdraw from Steam escrow |
+| `GET` | `/bridge/minecraft/<wallet>` | Minecraft inventory bridge |
+| `GET` | `/bridge/steam/<wallet>` | Steam inventory bridge |
+| `POST` | `/ipfs/upload` | Upload metadata to IPFS |
+| `GET` | `/ws/status` | WebSocket connection status |
+
+---
+
 ## 📜 Smart Contract Documentation
 
 The De-Shop marketplace is powered by the `Deshopsdk` smart contract, written in **Algorand Python (PuyaPy)** and compiled into secure **TEAL v10 bytecode** conforming to the **ARC-4** standard.
@@ -159,6 +293,26 @@ Completes the trustless swap. Receives payment from the buyer, splits royalties,
 Allows the original seller to abort the listing, returning the NFT to their inventory and deleting the Box record.
 *   **Parameters:**
     *   `asset`: The ASA ID of the listed skin.
+
+---
+
+## 🧰 Technology Stack
+
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| **Blockchain** | Algorand (PuyaPy / AVM) | Smart contracts, ASA NFTs, escrow |
+| **Backend** | Flask + SQLAlchemy | API gateway, auth, business logic |
+| **Frontend** | React 18 + Vite | Web portal & gaming arena |
+| **State Management** | Zustand | Centralized client state store |
+| **Data Visualization** | Recharts | Charts, analytics, price trends |
+| **Animations** | Framer Motion | Page transitions, micro-interactions |
+| **Theme** | CSS Variables + `data-theme` | Dark/Light mode with persistence |
+| **Auth** | JWT + Algorand Wallet Sign | Wallet-based authentication |
+| **AI Engine** | Custom ML Pipeline | Skin pricing, visual analysis |
+| **Price Oracle** | Skinport API | Real-time CS2 price feeds |
+| **NFT Storage** | IPFS + Pinata | Decentralized metadata pinning |
+| **Game Bridges** | Java (Spigot) / C# (Unity) / C++ (Unreal) | Cross-platform in-game integration |
+| **Real-Time** | Flask-SocketIO | WebSocket events & notifications |
 
 ---
 

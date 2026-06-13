@@ -4,10 +4,13 @@ De-Shop SDK — WebSocket Real-Time Events
 SocketIO-based real-time event broadcasting for marketplace mutations.
 
 Features:
-  - Room-based subscriptions (marketplace, wallet:<address>, rarity:<tier>)
+  - Room-based subscriptions (marketplace, wallet:<address>, rarity:<tier>, notifications:<wallet>)
   - Safe broadcast functions (no-op when no clients connected)
   - Connection tracking and room membership introspection
   - On-demand marketplace data via get_marketplace event
+  - Periodic market stats broadcast (every 30s via background thread)
+  - User-targeted notifications (wishlist, price alerts, system messages)
+  - Trade completion events with enriched details
 """
 
 from __future__ import annotations
@@ -35,6 +38,9 @@ EVENT_ASSET_LISTED = "asset_listed"
 EVENT_ASSET_SOLD = "asset_sold"
 EVENT_ASSET_CANCELLED = "asset_cancelled"
 EVENT_PRICE_UPDATE = "price_update"
+EVENT_MARKET_STATS_UPDATE = "market_stats_update"
+EVENT_USER_NOTIFICATION = "user_notification"
+EVENT_TRADE_COMPLETED = "trade_completed"
 
 # ---------------------------------------------------------------------------
 # Connection tracking
@@ -53,7 +59,7 @@ def get_room_memberships() -> dict[str, list[str]]:
     """
     Return a mapping of room name → list of SIDs in that room.
 
-    Only includes rooms that are subscription-based (marketplace, wallet:*, rarity:*).
+    Only includes rooms that are subscription-based (marketplace, wallet:*, rarity:*, notifications:*).
     """
     if socketio is None:
         return {}
@@ -62,7 +68,7 @@ def get_room_memberships() -> dict[str, list[str]]:
     all_rooms = socketio.server.manager.rooms.get("/", {})
     for room_name, sid_set in all_rooms.items():
         # Skip the default room (same as SID) — only include named rooms
-        if room_name.startswith("marketplace") or room_name.startswith("wallet:") or room_name.startswith("rarity:"):
+        if room_name.startswith("marketplace") or room_name.startswith("wallet:") or room_name.startswith("rarity:") or room_name.startswith("notifications:"):
             membership[room_name] = list(sid_set)
     return membership
 
@@ -108,7 +114,7 @@ def init_socketio(app: Flask) -> SocketIO:
         """
         Join a room for targeted event delivery.
 
-        Expected payload: { "room": "marketplace" | "wallet:<address>" | "rarity:<tier>" }
+        Expected payload: { "room": "marketplace" | "wallet:<address>" | "rarity:<tier>" | "notifications:<wallet>" }
         """
         from flask import request as _req
         data = data or {}
@@ -124,7 +130,7 @@ def init_socketio(app: Flask) -> SocketIO:
         """
         Leave a previously joined room.
 
-        Expected payload: { "room": "marketplace" | "wallet:<address>" | "rarity:<tier>" }
+        Expected payload: { "room": "marketplace" | "wallet:<address>" | "rarity:<tier>" | "notifications:<wallet>" }
         """
         from flask import request as _req
         data = data or {}
@@ -261,3 +267,178 @@ def broadcast_price_update(price_data: dict[str, Any]) -> None:
 
     socketio.emit(EVENT_PRICE_UPDATE, price_data, room="marketplace")
     logger.info("Broadcast price_update: %s", price_data.get("name", "unknown"))
+
+
+def broadcast_market_stats(stats_data: dict[str, Any]) -> None:
+    """
+    Broadcast a market_stats_update event to the marketplace room.
+
+    Typically called every 30 seconds by the background task to push
+    live marketplace statistics to all subscribed clients.
+
+    Emitting is a no-op when ``socketio`` is not initialised or no clients exist.
+    """
+    if socketio is None or get_connection_count() == 0:
+        return
+
+    socketio.emit(EVENT_MARKET_STATS_UPDATE, stats_data, room="marketplace")
+    logger.info("Broadcast market_stats_update: %s listings, %d trades_24h",
+                stats_data.get("active_listings", "?"),
+                stats_data.get("trades_24h", 0))
+
+
+def broadcast_trade_completed(trade_data: dict[str, Any]) -> None:
+    """
+    Broadcast a trade_completed event with full details.
+
+    Unlike asset_sold, this event includes enriched trade information
+    such as asset details, price, buyer, seller, and royalty breakdown.
+
+    Emits to:
+      - marketplace room (general feed)
+      - wallet:<buyer> room (buyer notification)
+      - wallet:<seller> room (seller notification)
+
+    Emitting is a no-op when ``socketio`` is not initialised or no clients exist.
+    """
+    if socketio is None or get_connection_count() == 0:
+        return
+
+    # Enrich the trade data with timestamp if not present
+    from datetime import datetime, timezone
+    if "completed_at" not in trade_data:
+        trade_data["completed_at"] = datetime.now(timezone.utc).isoformat()
+
+    # Broadcast to marketplace
+    socketio.emit(EVENT_TRADE_COMPLETED, trade_data, room="marketplace")
+
+    # Notify buyer and seller wallet rooms
+    buyer = trade_data.get("buyer_wallet", trade_data.get("buyer", ""))
+    seller = trade_data.get("seller_wallet", trade_data.get("seller", ""))
+
+    if buyer:
+        socketio.emit(EVENT_TRADE_COMPLETED, trade_data, room=f"wallet:{buyer}")
+    if seller:
+        socketio.emit(EVENT_TRADE_COMPLETED, trade_data, room=f"wallet:{seller}")
+
+    # Also emit to rarity room if present
+    rarity = trade_data.get("rarity", "")
+    if rarity:
+        socketio.emit(EVENT_TRADE_COMPLETED, trade_data, room=f"rarity:{rarity}")
+
+    logger.info("Broadcast trade_completed: asset_id=%s, price=%s",
+                trade_data.get("asset_id"), trade_data.get("price"))
+
+
+def send_user_notification(wallet: str, notification: dict[str, Any]) -> None:
+    """
+    Send a targeted notification to a specific user's wallet room.
+
+    The client must be subscribed to ``notifications:<wallet>`` to receive
+    these events.
+
+    Notification types include:
+      - wishlist_add: item added to wishlist
+      - price_alert: watched item price changed
+      - trade_complete: a trade involving the user completed
+      - system: system-level messages
+
+    Emitting is a no-op when ``socketio`` is not initialised or no clients exist.
+    """
+    if socketio is None or get_connection_count() == 0:
+        return
+
+    from datetime import datetime, timezone
+    if "timestamp" not in notification:
+        notification["timestamp"] = datetime.now(timezone.utc).isoformat()
+
+    # Send to the notifications room for this wallet
+    room = f"notifications:{wallet}"
+    socketio.emit(EVENT_USER_NOTIFICATION, notification, room=room)
+
+    # Also send to the wallet room for broader reach
+    socketio.emit(EVENT_USER_NOTIFICATION, notification, room=f"wallet:{wallet}")
+
+    logger.info("Sent user_notification to %s: type=%s", wallet, notification.get("type", "unknown"))
+
+
+# ---------------------------------------------------------------------------
+# Background task: periodic market stats broadcast
+# ---------------------------------------------------------------------------
+
+_market_stats_thread = None
+
+
+def start_market_stats_broadcast(app: Flask, interval: int = 30) -> None:
+    """
+    Start a background thread that periodically computes and broadcasts
+    marketplace statistics.
+
+    Args:
+        app:       The Flask application instance (used for app context)
+        interval:  Broadcast interval in seconds (default 30)
+    """
+    import threading
+    import time as _time
+
+    global _market_stats_thread
+
+    if _market_stats_thread is not None:
+        return  # Already running
+
+    def _broadcast_loop():
+        """Background loop: compute market stats and broadcast."""
+        while True:
+            try:
+                _time.sleep(interval)
+                if socketio is None or get_connection_count() == 0:
+                    continue
+
+                with app.app_context():
+                    from deshop_backend.models import Asset as AssetModel, Transaction as TxnModel, db as _db
+                    from sqlalchemy import func
+                    from datetime import timedelta, datetime as _dt, timezone as _tz
+
+                    now = _dt.now(_tz.utc)
+                    day_ago = now - timedelta(hours=24)
+
+                    # Compute market stats
+                    total_volume = _db.session.query(
+                        func.coalesce(func.sum(TxnModel.amount), 0)
+                    ).filter(TxnModel.txn_type == "buy").scalar() or 0
+
+                    volume_24h = _db.session.query(
+                        func.coalesce(func.sum(TxnModel.amount), 0)
+                    ).filter(
+                        TxnModel.txn_type == "buy",
+                        TxnModel.created_at >= day_ago,
+                    ).scalar() or 0
+
+                    active_listings = AssetModel.query.filter_by(listed=True).count()
+
+                    floor_price = _db.session.query(
+                        func.min(AssetModel.list_price)
+                    ).filter(AssetModel.listed == True).scalar()  # noqa: E712
+
+                    trades_24h = TxnModel.query.filter(
+                        TxnModel.txn_type == "buy",
+                        TxnModel.created_at >= day_ago,
+                    ).count()
+
+                    stats = {
+                        "total_volume": total_volume,
+                        "volume_24h": volume_24h,
+                        "active_listings": active_listings,
+                        "floor_price": floor_price,
+                        "trades_24h": trades_24h,
+                        "timestamp": now.isoformat(),
+                    }
+
+                    broadcast_market_stats(stats)
+
+            except Exception as exc:
+                logger.error("Error in market stats broadcast loop: %s", exc)
+
+    _market_stats_thread = threading.Thread(target=_broadcast_loop, daemon=True)
+    _market_stats_thread.start()
+    logger.info("Market stats broadcast started (interval=%ds)", interval)
