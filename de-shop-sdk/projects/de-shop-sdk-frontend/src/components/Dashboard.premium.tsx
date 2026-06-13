@@ -267,14 +267,7 @@ export default function DashboardPremium() {
       </motion.div>
 
       {/* ─── Stats Cards Row ─────────────────────────────────────────────── */}
-      <div
-        className="dashboard-stats-grid"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: 14,
-        }}
-      >
+      <div className="dashboard-stats-grid">
         {statsCards.map((card, i) => (
           <motion.div
             key={card.label}
@@ -333,17 +326,9 @@ export default function DashboardPremium() {
       </div>
 
       {/* ─── Main Content: Chart + Activity Feed ─────────────────────────── */}
-      <div
-        className="dashboard-main-grid"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 320px',
-          gap: 14,
-          minHeight: 300,
-        }}
-      >
+      <div className="dashboard-main-grid">
         {/* Price Chart */}
-        <motion.div variants={itemVariants} className="premium-card" style={{ padding: 20 }}>
+        <motion.div variants={itemVariants} className="premium-card dashboard-chart-container" style={{ padding: 20 }}>
           <div
             style={{
               display: 'flex',
@@ -565,16 +550,9 @@ export default function DashboardPremium() {
       </div>
 
       {/* ─── Bottom Row: Rarity Distribution + Quick Actions ─────────────── */}
-      <div
-        className="dashboard-bottom-grid"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 300px',
-          gap: 14,
-        }}
-      >
+      <div className="dashboard-bottom-grid">
         {/* Rarity Distribution */}
-        <motion.div variants={itemVariants} className="premium-card" style={{ padding: 20 }}>
+        <motion.div variants={itemVariants} className="premium-card dashboard-chart-container" style={{ padding: 20 }}>
           <h3
             style={{
               fontSize: 13,

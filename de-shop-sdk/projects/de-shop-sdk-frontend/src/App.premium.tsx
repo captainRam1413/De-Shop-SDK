@@ -223,38 +223,49 @@ export default function App() {
   const { wallets } = useWallet()
   const PageComponent = pageComponents[activePage]
 
+  // ── Mobile detection: skip AnimatedBorder wrapper on small screens ──
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
   // ── Confetti state: triggered on success notifications ──
   const [showConfetti, setShowConfetti] = useState(false)
-  const prevNotifCountRef = useRef(notifications.length)
+  const lastTriggeredTsRef = useRef(0)
 
   useEffect(() => {
-    // Only check when new notifications are added
-    if (notifications.length > prevNotifCountRef.current) {
-      const latestNotifications = notifications.slice(prevNotifCountRef.current)
-      const hasNewSuccess = latestNotifications.some((n) => n.type === 'success')
-      if (hasNewSuccess && !showConfetti) {
-        setShowConfetti(true)
-        const timer = setTimeout(() => setShowConfetti(false), 3200)
-        prevNotifCountRef.current = notifications.length
-        return () => clearTimeout(timer)
-      }
+    // Find the latest success notification by timestamp
+    const successNotifs = notifications.filter((n) => n.type === 'success')
+    if (successNotifs.length === 0) return
+
+    const latestSuccess = successNotifs.reduce((a, b) =>
+      a.timestamp > b.timestamp ? a : b
+    )
+
+    // Only trigger if this success notification is newer than the last one we triggered on
+    if (latestSuccess.timestamp > lastTriggeredTsRef.current && !showConfetti) {
+      lastTriggeredTsRef.current = latestSuccess.timestamp
+      setShowConfetti(true)
+      const timer = setTimeout(() => setShowConfetti(false), 3200)
+      return () => clearTimeout(timer)
     }
-    prevNotifCountRef.current = notifications.length
     return undefined
   }, [notifications, showConfetti])
-
-  // Keep ref in sync even when no confetti is triggered
-  useEffect(() => {
-    prevNotifCountRef.current = notifications.length
-  }, [notifications.length])
 
   return (
     <div className="premium-app">
       <ParticleBackground />
 
-      <AnimatedBorder borderRadius={0} borderWidth={1}>
+      {isMobile ? (
         <Sidebar />
-      </AnimatedBorder>
+      ) : (
+        <AnimatedBorder borderRadius={0} borderWidth={1}>
+          <Sidebar />
+        </AnimatedBorder>
+      )}
 
       <div className="premium-main">
         <Header />

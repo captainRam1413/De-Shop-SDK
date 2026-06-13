@@ -822,6 +822,7 @@ export default function MarketplaceV2() {
                   marginTop: 12,
                   paddingTop: 12,
                   borderTop: '1px solid rgba(255,255,255,0.05)',
+                  flexWrap: 'wrap',
                 }}
               >
                 <span style={{ fontSize: 10, color: 'var(--space-fog)', fontWeight: 600, letterSpacing: '0.05em' }}>
@@ -881,30 +882,31 @@ export default function MarketplaceV2() {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: '60px 20px',
+              padding: '80px 20px',
               textAlign: 'center',
             }}
           >
             <div
               style={{
-                width: 80,
-                height: 80,
+                width: 100,
+                height: 100,
                 borderRadius: '50%',
                 background: 'rgba(0, 255, 136, 0.06)',
                 border: '1px solid rgba(0, 255, 136, 0.15)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: 20,
+                marginBottom: 24,
                 animation: 'float 3s ease-in-out infinite',
+                boxShadow: '0 0 30px rgba(0, 255, 136, 0.08)',
               }}
             >
-              <Search className="h-8 w-8" style={{ color: 'var(--green-neon)', opacity: 0.6 }} />
+              <ShoppingBag className="h-10 w-10" style={{ color: 'var(--green-neon)', opacity: 0.5 }} />
             </div>
             <h3
               style={{
                 color: '#fff',
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: 700,
                 marginBottom: 8,
                 letterSpacing: '0.02em',
@@ -912,12 +914,12 @@ export default function MarketplaceV2() {
             >
               No Items Found
             </h3>
-            <p style={{ color: 'var(--space-fog)', fontSize: 12, maxWidth: 280, lineHeight: 1.5 }}>
-              No marketplace listings match your current filters. Try adjusting your search or rarity criteria.
+            <p style={{ color: 'var(--space-fog)', fontSize: 12, maxWidth: 320, lineHeight: 1.6, marginBottom: 4 }}>
+              No marketplace listings match your current filters. Try adjusting your search criteria or clearing all filters to browse the full marketplace.
             </p>
             <button
               className="premium-btn premium-btn--sm premium-btn--green"
-              style={{ marginTop: 16 }}
+              style={{ marginTop: 20 }}
               onClick={() => {
                 setSearchQuery('')
                 setRarityFilter('all')
@@ -926,7 +928,7 @@ export default function MarketplaceV2() {
               }}
             >
               <X className="h-3.5 w-3.5" />
-              Clear Filters
+              Clear All Filters
             </button>
           </motion.div>
         ) : viewMode === 'grid' ? (
@@ -939,8 +941,9 @@ export default function MarketplaceV2() {
             className="marketplace-grid"
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-              gap: 14,
+              gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+              gap: 16,
+              gridAutoRows: 'auto',
             }}
           >
             {filteredListings.map((item) => {
@@ -964,6 +967,9 @@ export default function MarketplaceV2() {
                     cursor: 'pointer',
                     position: 'relative',
                     transition: 'box-shadow 0.2s ease',
+                    minHeight: 220,
+                    display: 'flex',
+                    flexDirection: 'column',
                   }}
                   onClick={() => setSelectedItem(item)}
                 >
@@ -977,7 +983,7 @@ export default function MarketplaceV2() {
                   />
 
                   {/* Card content */}
-                  <div style={{ padding: '14px 14px 12px' }}>
+                  <div style={{ padding: '14px 14px 12px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     {/* Top: icon + wishlist */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                       <div
@@ -1005,7 +1011,7 @@ export default function MarketplaceV2() {
                           background: 'none',
                           border: 'none',
                           cursor: 'pointer',
-                          padding: 4,
+                          padding: 8,
                           color: isWished ? '#f87171' : 'var(--space-steel)',
                           transition: 'all 0.15s',
                         }}
@@ -1079,7 +1085,7 @@ export default function MarketplaceV2() {
                     {/* Seller */}
                     <div
                       style={{
-                        marginTop: 8,
+                        marginTop: 'auto',
                         paddingTop: 8,
                         borderTop: '1px solid rgba(255,255,255,0.05)',
                         display: 'flex',
@@ -1112,9 +1118,9 @@ export default function MarketplaceV2() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: '44px 1fr 80px 100px 100px 80px 80px',
-                gap: 10,
-                padding: '8px 14px',
+                gridTemplateColumns: '48px 1fr 90px 100px 120px 100px',
+                gap: 12,
+                padding: '10px 16px',
                 borderBottom: '1px solid rgba(0, 255, 136, 0.15)',
                 fontSize: 9,
                 color: 'var(--space-fog)',
@@ -1127,8 +1133,7 @@ export default function MarketplaceV2() {
               <span>Item</span>
               <span>Rarity</span>
               <span>Price</span>
-              <span>Trend</span>
-              <span>Seller</span>
+              <span>Trend / Seller</span>
               <span></span>
             </div>
 
@@ -1141,13 +1146,14 @@ export default function MarketplaceV2() {
                   key={item.id}
                   variants={listVariants}
                   whileHover={{
-                    background: 'rgba(0, 255, 136, 0.04)',
+                    background: 'rgba(34, 197, 94, 0.06)',
                   }}
+                  className="marketplace-list-row"
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '44px 1fr 80px 100px 100px 80px 80px',
-                    gap: 10,
-                    padding: '10px 14px',
+                    gridTemplateColumns: '48px 1fr 90px 100px 120px 100px',
+                    gap: 12,
+                    padding: '12px 16px',
                     alignItems: 'center',
                     background: idx % 2 === 0 ? 'rgba(10, 15, 20, 0.3)' : 'rgba(13, 21, 32, 0.3)',
                     borderBottom: '1px solid rgba(255,255,255,0.03)',
@@ -1187,23 +1193,23 @@ export default function MarketplaceV2() {
                     {item.price.toLocaleString()} <span style={{ fontSize: 8 }}>μA</span>
                   </div>
 
-                  {/* Trend */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    {trend.direction === 'up' && <TrendingUp className="h-3 w-3" style={{ color: '#22c55e' }} />}
-                    {trend.direction === 'down' && <TrendingDown className="h-3 w-3" style={{ color: '#ef4444' }} />}
-                    <span
-                      style={{
-                        fontSize: 10,
-                        color: trend.direction === 'up' ? '#22c55e' : trend.direction === 'down' ? '#ef4444' : 'var(--space-fog)',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {trend.direction !== 'flat' ? `${trend.pct.toFixed(1)}%` : '—'}
-                    </span>
+                  {/* Trend + Seller */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {trend.direction === 'up' && <TrendingUp className="h-3 w-3" style={{ color: '#22c55e' }} />}
+                      {trend.direction === 'down' && <TrendingDown className="h-3 w-3" style={{ color: '#ef4444' }} />}
+                      <span
+                        style={{
+                          fontSize: 10,
+                          color: trend.direction === 'up' ? '#22c55e' : trend.direction === 'down' ? '#ef4444' : 'var(--space-fog)',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {trend.direction !== 'flat' ? `${trend.pct.toFixed(1)}%` : '—'}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: 9, color: 'var(--space-steel)' }}>{item.seller}</span>
                   </div>
-
-                  {/* Seller */}
-                  <span style={{ fontSize: 9, color: 'var(--space-steel)' }}>{item.seller}</span>
 
                   {/* Actions */}
                   <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
@@ -1216,7 +1222,7 @@ export default function MarketplaceV2() {
                         background: 'none',
                         border: 'none',
                         cursor: 'pointer',
-                        padding: 2,
+                        padding: 8,
                         color: isWished ? '#f87171' : 'var(--space-steel)',
                       }}
                     >
@@ -1265,13 +1271,14 @@ export default function MarketplaceV2() {
               initial="hidden"
               animate="visible"
               exit="exit"
+              className="marketplace-detail-modal"
               style={{
                 position: 'fixed',
                 top: '50%',
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
-                width: 'min(560px, calc(100vw - 40px))',
-                maxHeight: 'calc(100vh - 80px)',
+                width: 'min(560px, 90%)',
+                maxHeight: '90vh',
                 overflowY: 'auto',
                 background: 'var(--space-deep)',
                 border: `1px solid ${RARITY_CONFIG[selectedItem.rarity].border}`,

@@ -413,22 +413,52 @@ export default function ProfilePage() {
                   >
                     {ellipseAddress(activeAddress, 10)}
                   </code>
-                  <button
-                    onClick={handleCopyAddress}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: copied ? 'var(--green-neon)' : 'var(--space-fog)',
-                      padding: 2,
-                      display: 'flex',
-                      alignItems: 'center',
-                      transition: 'color 0.2s',
-                    }}
-                    title="Copy address"
-                  >
-                    {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                  </button>
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <AnimatePresence>
+                      {copied && (
+                        <motion.span
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 4 }}
+                          transition={{ duration: 0.15 }}
+                          style={{
+                            position: 'absolute',
+                            top: -24,
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            background: 'rgba(0, 255, 136, 0.15)',
+                            border: '1px solid rgba(0, 255, 136, 0.3)',
+                            color: 'var(--green-neon)',
+                            fontSize: 9,
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: 4,
+                            whiteSpace: 'nowrap',
+                            pointerEvents: 'none',
+                            letterSpacing: '0.04em',
+                          }}
+                        >
+                          Copied!
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                    <button
+                      onClick={handleCopyAddress}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: copied ? 'var(--green-neon)' : 'var(--space-fog)',
+                        padding: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        transition: 'color 0.2s',
+                      }}
+                      title="Copy address"
+                    >
+                      {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
                 </>
               ) : (
                 <span style={{ fontSize: 11, color: 'var(--space-steel)', fontStyle: 'italic' }}>
@@ -498,15 +528,16 @@ export default function ProfilePage() {
           ACHIEVEMENT BADGES SECTION
           ═══════════════════════════════════════════════════════════════════════ */}
       <motion.div variants={itemVariants}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-          <Shield className="h-4 w-4" style={{ color: 'var(--green-neon)' }} />
+        <div className="profile-section-header" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, paddingBottom: 8, borderBottom: '1px solid var(--glass-border)' }}>
+          <Shield className="h-4 w-4 profile-section-header__icon" style={{ color: 'var(--green-neon)' }} />
           <h3
+            className="profile-section-header__title"
             style={{
               fontSize: 14,
               fontWeight: 700,
-              color: 'var(--green-neon)',
+              color: 'var(--green-bright)',
               textTransform: 'uppercase',
-              letterSpacing: '0.04em',
+              letterSpacing: '0.06em',
               margin: 0,
             }}
           >
@@ -523,9 +554,10 @@ export default function ProfilePage() {
           </span>
         </div>
         <div
+          className="achievements-grid"
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
             gap: 12,
           }}
         >
@@ -659,16 +691,17 @@ export default function ProfilePage() {
       >
         {/* ─── Transaction History ────────────────────────────────────────── */}
         <motion.div variants={itemVariants} className="premium-card" style={{ padding: 20, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div className="profile-section-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 8, borderBottom: '1px solid var(--glass-border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Clock className="h-4 w-4" style={{ color: 'var(--cyan-bright)' }} />
+              <Clock className="h-4 w-4 profile-section-header__icon" style={{ color: 'var(--cyan-bright)' }} />
               <h3
+                className="profile-section-header__title"
                 style={{
                   fontSize: 14,
                   fontWeight: 700,
                   color: 'var(--cyan-bright)',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
+                  letterSpacing: '0.06em',
                   margin: 0,
                 }}
               >
@@ -677,6 +710,9 @@ export default function ProfilePage() {
             </div>
             <span style={{ fontSize: 10, color: 'var(--space-fog)' }}>{mockTransactions.length} transactions</span>
           </div>
+
+          {/* Table with horizontal scroll wrapper */}
+          <div className="transaction-table-wrapper">
 
           {/* Table Header */}
           <div
@@ -787,6 +823,7 @@ export default function ProfilePage() {
               )
             })}
           </div>
+          </div>{/* end transaction-table-wrapper */}
 
           {/* View All Button */}
           <button
@@ -826,16 +863,17 @@ export default function ProfilePage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {/* Portfolio Value Card */}
           <motion.div variants={itemVariants} className="premium-card" style={{ padding: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div className="profile-section-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 8, borderBottom: '1px solid var(--glass-border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <TrendingUp className="h-4 w-4" style={{ color: 'var(--green-neon)' }} />
+                <TrendingUp className="h-4 w-4 profile-section-header__icon" style={{ color: 'var(--green-neon)' }} />
                 <h3
+                  className="profile-section-header__title"
                   style={{
                     fontSize: 14,
                     fontWeight: 700,
                     color: 'var(--green-neon)',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
+                    letterSpacing: '0.06em',
                     margin: 0,
                   }}
                 >
@@ -875,16 +913,17 @@ export default function ProfilePage() {
           </motion.div>
 
           {/* Rarity Distribution Pie Chart */}
-          <motion.div variants={itemVariants} className="premium-card" style={{ padding: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <PieChartIcon className="h-4 w-4" style={{ color: 'var(--purple-bright)' }} />
+          <motion.div variants={itemVariants} className="premium-card chart-container" style={{ padding: 20 }}>
+            <div className="profile-section-header" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, paddingBottom: 8, borderBottom: '1px solid var(--glass-border)' }}>
+              <PieChartIcon className="h-4 w-4 profile-section-header__icon" style={{ color: 'var(--purple-bright)' }} />
               <h3
+                className="profile-section-header__title"
                 style={{
                   fontSize: 14,
                   fontWeight: 700,
                   color: 'var(--purple-bright)',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
+                  letterSpacing: '0.06em',
                   margin: 0,
                 }}
               >
@@ -892,7 +931,7 @@ export default function ProfilePage() {
               </h3>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 120, height: 120 }}>
+              <div style={{ width: 140, height: 140 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -945,16 +984,17 @@ export default function ProfilePage() {
           </motion.div>
 
           {/* Performance Area Chart */}
-          <motion.div variants={itemVariants} className="premium-card" style={{ padding: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <BarChart3 className="h-4 w-4" style={{ color: 'var(--cyan-bright)' }} />
+          <motion.div variants={itemVariants} className="premium-card chart-container" style={{ padding: 20 }}>
+            <div className="profile-section-header" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, paddingBottom: 8, borderBottom: '1px solid var(--glass-border)' }}>
+              <BarChart3 className="h-4 w-4 profile-section-header__icon" style={{ color: 'var(--cyan-bright)' }} />
               <h3
+                className="profile-section-header__title"
                 style={{
                   fontSize: 14,
                   fontWeight: 700,
                   color: 'var(--cyan-bright)',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
+                  letterSpacing: '0.06em',
                   margin: 0,
                 }}
               >
@@ -964,7 +1004,7 @@ export default function ProfilePage() {
             <p style={{ fontSize: 10, color: 'var(--space-fog)', marginTop: 0, marginBottom: 8 }}>
               Portfolio value — last 7 days
             </p>
-            <ResponsiveContainer width="100%" height={120}>
+            <ResponsiveContainer width="100%" height={180}>
               <AreaChart data={portfolioPerformance} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="portfolioGradient" x1="0" y1="0" x2="0" y2="1">
@@ -997,15 +1037,16 @@ export default function ProfilePage() {
           CONNECTED ACCOUNTS SECTION
           ═══════════════════════════════════════════════════════════════════════ */}
       <motion.div variants={itemVariants}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-          <Globe className="h-4 w-4" style={{ color: 'var(--gold-bright)' }} />
+        <div className="profile-section-header" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, paddingBottom: 8, borderBottom: '1px solid var(--glass-border)' }}>
+          <Globe className="h-4 w-4 profile-section-header__icon" style={{ color: 'var(--gold-bright)' }} />
           <h3
+            className="profile-section-header__title"
             style={{
               fontSize: 14,
               fontWeight: 700,
               color: 'var(--gold-bright)',
               textTransform: 'uppercase',
-              letterSpacing: '0.04em',
+              letterSpacing: '0.06em',
               margin: 0,
             }}
           >
@@ -1022,7 +1063,7 @@ export default function ProfilePage() {
           {/* Steam Connection */}
           <motion.div
             variants={itemVariants}
-            className="premium-card"
+            className="connected-account-card"
             style={{ padding: 18, display: 'flex', alignItems: 'center', gap: 14 }}
           >
             <div
@@ -1036,9 +1077,25 @@ export default function ProfilePage() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: steamProfile ? 'var(--green-neon)' : 'var(--space-steel)',
+                position: 'relative',
               }}
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.74.45 3.38 1.23 4.81l2.37-1.01A5.48 5.48 0 0 1 5.5 12.5c0-3.04 2.46-5.5 5.5-5.5 2.56 0 4.72 1.75 5.33 4.12l2.79-.49C18.26 6.72 15.44 4 12 4c-4.42 0-8 3.58-8 8 0 .68.09 1.34.24 1.97l-2.15.92C1.42 13.34 1 11.72 1 10 1 5.03 5.03 1 10 1c4.28 0 7.86 3.01 8.78 7.02l-2.79.49C15.42 5.62 13.88 4 12 4zm0 6c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+              {steamProfile && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: -3,
+                    right: -3,
+                    width: 10,
+                    height: 10,
+                    borderRadius: '50%',
+                    background: 'var(--green-neon)',
+                    border: '2px solid var(--space-deep)',
+                    boxShadow: '0 0 6px rgba(0, 255, 136, 0.5)',
+                  }}
+                />
+              )}
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1107,7 +1164,7 @@ export default function ProfilePage() {
           {/* Wallet Connection */}
           <motion.div
             variants={itemVariants}
-            className="premium-card"
+            className="connected-account-card"
             style={{ padding: 18, display: 'flex', alignItems: 'center', gap: 14 }}
           >
             <div
@@ -1121,9 +1178,25 @@ export default function ProfilePage() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: activeAddress ? 'var(--cyan-bright)' : 'var(--space-steel)',
+                position: 'relative',
               }}
             >
               <Wallet className="h-5 w-5" />
+              {activeAddress && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: -3,
+                    right: -3,
+                    width: 10,
+                    height: 10,
+                    borderRadius: '50%',
+                    background: 'var(--cyan-bright)',
+                    border: '2px solid var(--space-deep)',
+                    boxShadow: '0 0 6px rgba(34, 211, 238, 0.5)',
+                  }}
+                />
+              )}
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

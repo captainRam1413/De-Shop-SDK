@@ -43,7 +43,7 @@ export default function AnimatedBorder({
   if (reducedMotion) {
     return (
       <div
-        className={className}
+        className={`animated-border-wrapper ${className || ''}`}
         style={{
           borderRadius,
           border: `${borderWidth}px solid rgba(34, 197, 94, 0.2)`,
@@ -60,7 +60,7 @@ export default function AnimatedBorder({
   // Both use display: flex to properly contain children with dynamic sizing.
   return (
     <div
-      className={className}
+      className={`animated-border-wrapper ${className || ''}`}
       style={{
         position: 'relative',
         borderRadius,
