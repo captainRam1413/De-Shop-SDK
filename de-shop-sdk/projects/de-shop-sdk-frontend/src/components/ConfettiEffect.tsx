@@ -39,17 +39,17 @@ interface ConfettiParticle {
 const PARTICLE_COUNT = 35
 const DURATION = 3 // seconds
 const COLORS = [
-  '#00ff88', // green-neon
-  '#22d3ee', // cyan-bright
-  '#a855f7', // purple
-  '#fbbf24', // gold
-  '#00e67a', // green-matrix
-  '#c084fc', // purple-bright
-  '#73ffa7', // green-bright
-  '#06b6d4', // cyan
+  '#2ECC71', // emerald green
+  '#4AEDD9', // diamond cyan
+  '#a855f7', // netherite purple
+  '#FFD700', // gold
+  '#7CB342', // grass green
+  '#c084fc', // ender purple
+  '#FF1A1A', // redstone
+  '#D4D4D4', // iron gray
 ]
 
-const SHAPES: Array<'circle' | 'rect' | 'diamond'> = ['circle', 'rect', 'diamond']
+const SHAPES: Array<'circle' | 'rect' | 'diamond'> = ['rect', 'rect', 'diamond']
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

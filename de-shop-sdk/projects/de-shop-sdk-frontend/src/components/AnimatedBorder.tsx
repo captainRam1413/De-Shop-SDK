@@ -1,9 +1,10 @@
 /**
- * De-Shop SDK — Animated Gradient Border
+ * De-Shop SDK — Animated Gradient Border (Minecraft Edition)
  * ────────────────────────────────────────
  * A wrapper component that draws an animated gradient border around children.
  * Uses CSS @property for animating gradient angle with conic-gradient.
- * Border colors cycle: green → cyan → purple → gold → green.
+ * Default border colors cycle: emerald → diamond → gold → redstone → emerald.
+ * Custom colors can be passed via the `colors` prop.
  * Respects `prefers-reduced-motion`.
  */
 
@@ -19,7 +20,19 @@ interface AnimatedBorderProps {
   borderWidth?: number
   /** Additional CSS class for the outer wrapper */
   className?: string
+  /** Custom gradient colors (at least 2, first is repeated at end for seamless loop) */
+  colors?: string[]
 }
+
+// ─── Default Minecraft palette ──────────────────────────────────────────────
+
+const MC_DEFAULT_COLORS = [
+  '#22c55e', // emerald
+  '#4da6ff', // diamond
+  '#fbbf24', // gold
+  '#ef4444', // redstone
+  '#22c55e', // emerald (loop back)
+]
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -28,6 +41,7 @@ export default function AnimatedBorder({
   borderRadius = 12,
   borderWidth = 2,
   className,
+  colors = MC_DEFAULT_COLORS,
 }: AnimatedBorderProps) {
   const [reducedMotion, setReducedMotion] = useState(false)
 
@@ -38,6 +52,9 @@ export default function AnimatedBorder({
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
   }, [])
+
+  // Build the conic-gradient color string from the colors array
+  const gradientColors = colors.join(', ')
 
   // For reduced motion, render a static subtle border
   if (reducedMotion) {
@@ -65,7 +82,7 @@ export default function AnimatedBorder({
         position: 'relative',
         borderRadius,
         padding: borderWidth,
-        background: `conic-gradient(from var(--border-angle, 0deg), #00ff88, #22d3ee, #a855f7, #fbbf24, #00ff88)`,
+        background: `conic-gradient(from var(--border-angle, 0deg), ${gradientColors})`,
         animation: 'border-rotate 4s linear infinite',
         display: 'flex',
       }}

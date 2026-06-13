@@ -20,18 +20,18 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
-  Hexagon,
+  Pickaxe,
   Zap,
-  LayoutDashboard,
+  BarChart3,
 } from 'lucide-react'
 
 const navItems: { id: ActivePage; label: string; icon: React.ReactNode; color: string }[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" />, color: 'var(--cyan-bright)' },
-  { id: 'game', label: 'Game Arena', icon: <Gamepad2 className="h-4 w-4" />, color: 'var(--green-neon)' },
-  { id: 'market', label: 'Marketplace', icon: <Store className="h-4 w-4" />, color: 'var(--cyan-bright)' },
-  { id: 'inventory', label: 'Inventory', icon: <Backpack className="h-4 w-4" />, color: 'var(--purple-bright)' },
-  { id: 'terminal', label: 'Terminal', icon: <Terminal className="h-4 w-4" />, color: 'var(--green-bright)' },
-  { id: 'profile', label: 'Profile', icon: <User className="h-4 w-4" />, color: 'var(--gold-bright)' },
+  { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 className="h-4 w-4" />, color: 'var(--mc-diamond)' },
+  { id: 'game', label: 'World', icon: <Gamepad2 className="h-4 w-4" />, color: 'var(--mc-emerald)' },
+  { id: 'market', label: 'Trading Hall', icon: <Store className="h-4 w-4" />, color: 'var(--mc-gold)' },
+  { id: 'inventory', label: 'Inventory', icon: <Backpack className="h-4 w-4" />, color: 'var(--mc-lapis)' },
+  { id: 'terminal', label: 'Command Block', icon: <Terminal className="h-4 w-4" />, color: 'var(--mc-redstone)' },
+  { id: 'profile', label: 'Player', icon: <User className="h-4 w-4" />, color: 'var(--mc-gold)' },
 ]
 
 function Notifications() {
@@ -41,7 +41,7 @@ function Notifications() {
   if (notifications.length === 0) return null
 
   return (
-    <div className="premium-notifications">
+    <div className="premium-notifications mc-notifications">
       <AnimatePresence>
         {notifications.slice(-5).map((n) => (
           <motion.div
@@ -50,7 +50,7 @@ function Notifications() {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 80, scale: 0.9 }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
-            className={`premium-toast premium-toast--${n.type}`}
+            className={`premium-toast mc-toast premium-toast--${n.type}`}
             onClick={() => removeNotification(n.id)}
           >
             <span className="premium-toast__icon">
@@ -73,11 +73,15 @@ function Sidebar() {
       initial={false}
       animate={{ width: sidebarCollapsed ? 60 : 240 }}
       transition={{ duration: 0.2, ease: 'easeInOut' }}
-      className="premium-sidebar"
+      className="premium-sidebar mc-sidebar"
     >
       {/* Logo */}
-      <div className="premium-sidebar__brand">
-        <Hexagon className="h-6 w-6" style={{ color: 'var(--green-neon)' }} />
+      <div className="premium-sidebar__brand mc-sidebar__brand">
+        <img
+          src="/minecraft/logo.png"
+          alt="Minecraft"
+          style={{ width: 28, height: 28, imageRendering: 'pixelated' }}
+        />
         {!sidebarCollapsed && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -85,24 +89,24 @@ function Sidebar() {
             exit={{ opacity: 0 }}
             className="premium-sidebar__brand-text"
           >
-            <span className="premium-sidebar__title">DE-SHOP</span>
-            <span className="premium-sidebar__subtitle">SDK v2.0</span>
+            <span className="premium-sidebar__title mc-sidebar__title">DE-SHOP</span>
+            <span className="premium-sidebar__subtitle mc-sidebar__subtitle">⛏ BLOCKCHAIN</span>
           </motion.div>
         )}
       </div>
 
       {/* Nav items */}
-      <nav className="premium-sidebar__nav">
+      <nav className="premium-sidebar__nav mc-sidebar__nav">
         {navItems.map((item) => {
           const isActive = activePage === item.id
           return (
             <button
               key={item.id}
-              className={`premium-sidebar__item ${isActive ? 'premium-sidebar__item--active' : ''}`}
+              className={`premium-sidebar__item mc-sidebar__item ${isActive ? 'premium-sidebar__item--active mc-sidebar__item--active' : ''}`}
               onClick={() => setActivePage(item.id)}
               title={item.label}
             >
-              <span style={{ color: isActive ? item.color : 'var(--green-dim)' }}>
+              <span style={{ color: isActive ? item.color : 'var(--mc-stone, var(--green-dim))' }}>
                 {item.icon}
               </span>
               {!sidebarCollapsed && (
@@ -117,7 +121,7 @@ function Sidebar() {
               {isActive && (
                 <motion.div
                   layoutId="sidebarActive"
-                  className="premium-sidebar__active-bar"
+                  className="premium-sidebar__active-bar mc-sidebar__active-bar"
                   style={{ background: item.color }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 />
@@ -128,19 +132,22 @@ function Sidebar() {
       </nav>
 
       {/* Status */}
-      <div className="premium-sidebar__footer">
+      <div className="premium-sidebar__footer mc-sidebar__footer">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'space-between', width: '100%' }}>
-          <div className="premium-sidebar__status">
-            <span className={`status-dot ${activeAddress ? 'connected' : ''}`} />
+          <div className="premium-sidebar__status mc-sidebar__status">
+            <span className={`status-dot mc-status-dot ${activeAddress ? 'connected mc-connected' : 'mc-offline'}`} />
             {!sidebarCollapsed && (
-              <span className="premium-sidebar__status-text">
+              <span
+                className="premium-sidebar__status-text mc-sidebar__status-text"
+                style={{ color: activeAddress ? 'var(--mc-emerald, #22c55e)' : 'var(--mc-redstone, #ef4444)' }}
+              >
                 {activeAddress ? 'Connected' : 'Offline'}
               </span>
             )}
           </div>
           <ThemeToggle />
         </div>
-        <button className="premium-sidebar__collapse" onClick={toggleSidebar}>
+        <button className="premium-sidebar__collapse mc-sidebar__collapse" onClick={toggleSidebar}>
           {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
       </div>
@@ -156,11 +163,11 @@ function Header() {
     : null
 
   return (
-    <header className="premium-header">
-      <div className="premium-header__left">
-        <div className="premium-header__net-badge">
-          <span className="status-dot connected" />
-          TESTNET
+    <header className="premium-header mc-header">
+      <div className="premium-header__left mc-header__left">
+        <div className="premium-header__net-badge mc-header__net-badge">
+          <span className={`status-dot mc-status-dot ${activeAddress ? 'connected mc-connected' : ''}`} />
+          ⛏ OVERWORLD
         </div>
         {status && (
           <motion.div
@@ -173,20 +180,24 @@ function Header() {
           </motion.div>
         )}
       </div>
-      <div className="premium-header__right">
+      <div className="premium-header__right mc-header__right">
         <ThemeToggle />
         {steamProfile && (
-          <div className="premium-header__steam">
-            <img src={steamProfile.avatarfull} alt="Steam" style={{ width: 22, height: 22, borderRadius: '50%' }} />
-            <span style={{ color: 'var(--cyan-bright)', fontSize: 11, fontWeight: 600 }}>{steamProfile.personaname}</span>
+          <div className="premium-header__steam mc-header__player">
+            <img
+              src={steamProfile.avatarfull}
+              alt="Player"
+              style={{ width: 22, height: 22, imageRendering: 'pixelated' }}
+            />
+            <span style={{ color: 'var(--mc-gold, #fbbf24)', fontSize: 11, fontWeight: 600 }}>{steamProfile.personaname}</span>
           </div>
         )}
         {activeAddress ? (
-          <div className="premium-header__wallet-info">
-            <Zap className="h-3.5 w-3.5" style={{ color: 'var(--green-neon)' }} />
+          <div className="premium-header__wallet-info mc-header__wallet-info">
+            <Pickaxe className="h-3.5 w-3.5" style={{ color: 'var(--mc-diamond, #4da6ff)' }} />
             <span className="premium-header__addr">{addr}</span>
             <button
-              className="premium-header__disconnect"
+              className="premium-header__disconnect mc-header__disconnect"
               onClick={() => activeWallet?.disconnect()}
             >
               Disconnect
@@ -194,10 +205,10 @@ function Header() {
           </div>
         ) : (
           <button
-            className="premium-btn premium-btn--sm"
+            className="premium-btn premium-btn--sm mc-btn-wallet"
             onClick={() => setShowWalletModal(true)}
           >
-            <Zap className="h-3.5 w-3.5" />
+            <Pickaxe className="h-3.5 w-3.5" />
             Connect Wallet
           </button>
         )}
@@ -209,11 +220,20 @@ function Header() {
 const pageComponents: Record<ActivePage, React.ComponentType> = {
   dashboard: DashboardPremium,
   game: GameShowcase,
-  market: MarketplaceV2, // Enhanced Marketplace V2 with advanced filtering & views
+  market: MarketplaceV2, // Trading Hall — Enhanced Marketplace V2 with advanced filtering & views
   inventory: GameShowcase, // Will use same component with inventory tab active
-  terminal: TerminalConsole,
-  profile: ProfilePage,
+  terminal: TerminalConsole, // Command Block
+  profile: ProfilePage, // Player Profile
 }
+
+// Minecraft palette for animated border: emerald → diamond → gold → redstone → emerald
+const mcBorderColors = [
+  'var(--mc-emerald, #22c55e)',
+  'var(--mc-diamond, #4da6ff)',
+  'var(--mc-gold, #fbbf24)',
+  'var(--mc-redstone, #ef4444)',
+  'var(--mc-emerald, #22c55e)',
+]
 
 export default function App() {
   const showWalletModal = useDeShopStore((s) => s.showWalletModal)
@@ -256,20 +276,20 @@ export default function App() {
   }, [notifications, showConfetti])
 
   return (
-    <div className="premium-app">
+    <div className="premium-app mc-app">
       <ParticleBackground />
 
       {isMobile ? (
         <Sidebar />
       ) : (
-        <AnimatedBorder borderRadius={0} borderWidth={1}>
+        <AnimatedBorder borderRadius={0} borderWidth={1} colors={mcBorderColors}>
           <Sidebar />
         </AnimatedBorder>
       )}
 
-      <div className="premium-main">
+      <div className="premium-main mc-main">
         <Header />
-        <div className="premium-content">
+        <div className="premium-content mc-content">
           <AnimatePresence mode="wait">
             <motion.div
               key={activePage}
