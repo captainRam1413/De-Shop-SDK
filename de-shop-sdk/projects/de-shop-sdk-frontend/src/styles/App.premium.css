@@ -2597,6 +2597,8 @@ a:focus-visible,
   overflow-y: auto;
   overflow-x: hidden;
   padding: 20px 24px;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ─── Dashboard Specific Styles ─────────────────────────────────────────────── */
@@ -2676,7 +2678,7 @@ a:focus-visible,
 .premium-sidebar__footer {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   padding: 12px;
   border-top: 1px solid var(--glass-border);
   flex-shrink: 0;
@@ -2745,7 +2747,8 @@ a:focus-visible,
 .premium-header__right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .premium-header__net-badge {
@@ -2828,6 +2831,20 @@ a:focus-visible,
   padding: 6px 14px;
   font-size: 10px;
   gap: 6px;
+}
+
+/* ─── Premium Button Extra-Small Variant ─────────────────────────────────── */
+.premium-btn--xs {
+  padding: 4px 10px;
+  font-size: 9px;
+  gap: 4px;
+}
+
+/* ─── Marketplace Card Button ────────────────────────────────────────────── */
+.marketplace-card-btn {
+  padding: 6px 12px;
+  font-size: 10px;
+  gap: 4px;
 }
 
 /* ─── Notifications Container ────────────────────────────────────────────── */
@@ -3285,6 +3302,29 @@ a:focus-visible,
   /* Marketplace: 2 columns */
   .skin-card-grid {
     grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Dashboard stats: 2x2 grid on medium screens */
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Dashboard chart grids: stack on medium screens */
+  .dashboard-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Header right: tighter spacing on medium screens */
+  .premium-header__right {
+    gap: 8px;
+  }
+
+  .premium-header__steam span {
+    display: none;
   }
 }
 
@@ -3811,5 +3851,28 @@ a:focus-visible,
 @media (max-width: 768px) {
   .premium-header__right > .theme-toggle {
     display: flex;
+  }
+
+  /* Marketplace filter bar stacks vertically on mobile */
+  .marketplace-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .marketplace-filter-bar > * {
+    width: 100%;
+  }
+}
+
+/* ─── Connected Accounts Grid (responsive) ────────────────────────────────── */
+.connected-accounts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .connected-accounts-grid {
+    grid-template-columns: 1fr;
   }
 }
