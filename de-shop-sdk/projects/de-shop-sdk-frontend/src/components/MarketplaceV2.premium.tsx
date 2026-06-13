@@ -1071,7 +1071,7 @@ export default function MarketplaceV2() {
                         </div>
                       </div>
                       <button
-                        className="premium-btn premium-btn--xs premium-btn--green"
+                        className="premium-btn premium-btn--xs premium-btn--green marketplace-card-btn"
                         onClick={(e) => {
                           e.stopPropagation()
                           handleBuy(item)
@@ -1229,7 +1229,7 @@ export default function MarketplaceV2() {
                       <Heart className="h-3.5 w-3.5" style={isWished ? { fill: '#f87171' } : {}} />
                     </button>
                     <button
-                      className="premium-btn premium-btn--xs premium-btn--green"
+                      className="premium-btn premium-btn--xs premium-btn--green marketplace-card-btn"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleBuy(item)

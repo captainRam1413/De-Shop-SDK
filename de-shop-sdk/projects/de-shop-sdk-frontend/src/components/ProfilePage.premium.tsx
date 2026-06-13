@@ -5,7 +5,7 @@
  * and connected accounts — all in cyberpunk dark theme.
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Hexagon,
@@ -257,8 +257,36 @@ function formatMicroAlgo(val: number): string {
 
 export default function ProfilePage() {
   const { activeAddress } = useWallet()
-  const { steamProfile, inventory } = useDeShopStore()
+  const { steamProfile, inventory, setSteamProfile } = useDeShopStore()
   const [copied, setCopied] = useState(false)
+
+  // Theme detection for Recharts tick colors (CSS vars not supported in SVG fill)
+  const [isLightTheme, setIsLightTheme] = useState(false)
+  useEffect(() => {
+    const checkTheme = () => setIsLightTheme(document.documentElement.getAttribute('data-theme') === 'light')
+    checkTheme()
+    const observer = new MutationObserver(checkTheme)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => observer.disconnect()
+  }, [])
+
+  // Parse Steam login callback from URL hash fragment
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash.includes('steam_id=')) {
+      const params = new URLSearchParams(hash.substring(1))
+      const steamId = params.get('steam_id')
+      if (steamId) {
+        fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/auth/steam/profile/${steamId}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.profile) setSteamProfile(data.profile)
+          })
+          .catch(err => console.error('Failed to fetch steam profile:', err))
+        window.history.replaceState(null, '', window.location.pathname)
+      }
+    }
+  }, [setSteamProfile])
   const [hoveredBadge, setHoveredBadge] = useState<string | null>(null)
 
   const displayName = steamProfile?.personaname || (activeAddress ? ellipseAddress(activeAddress, 8) : 'Anonymous')
@@ -1014,8 +1042,8 @@ export default function ProfilePage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(34, 211, 238, 0.06)" vertical={false} />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: 'var(--space-fog)' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: 'var(--space-fog)' }} domain={['dataMin - 5', 'dataMax + 5']} />
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: isLightTheme ? '#334155' : '#94a3b8' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: isLightTheme ? '#334155' : '#94a3b8' }} domain={['dataMin - 5', 'dataMax + 5']} />
                 <Tooltip content={<CustomTooltip />} />
                 <Area
                   type="monotone"
@@ -1053,13 +1081,7 @@ export default function ProfilePage() {
             Connected Accounts
           </h3>
         </div>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: 12,
-          }}
-        >
+        <div className="connected-accounts-grid">
           {/* Steam Connection */}
           <motion.div
             variants={itemVariants}
@@ -1099,7 +1121,7 @@ export default function ProfilePage() {
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <p style={{ fontSize: 12, fontWeight: 700, color: '#fff', margin: 0 }}>Steam</p>
+                <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--green-bright)', margin: 0 }}>Steam</p>
                 {steamProfile ? (
                   <span
                     style={{
@@ -1155,6 +1177,9 @@ export default function ProfilePage() {
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = 'rgba(0, 255, 136, 0.08)'
                 }}
+                onClick={() => {
+                  window.location.href = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/auth/steam?wallet=${activeAddress || ''}`
+                }}
               >
                 Connect Steam
               </button>
@@ -1200,7 +1225,7 @@ export default function ProfilePage() {
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <p style={{ fontSize: 12, fontWeight: 700, color: '#fff', margin: 0 }}>Algorand Wallet</p>
+                <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--green-bright)', margin: 0 }}>Algorand Wallet</p>
                 {activeAddress ? (
                   <span
                     style={{
@@ -1235,7 +1260,7 @@ export default function ProfilePage() {
                 {activeAddress ? ellipseAddress(activeAddress, 10) : 'No wallet connected'}
               </p>
             </div>
-            {activeAddress && (
+            {activeAddress ? (
               <div
                 style={{
                   display: 'flex',
@@ -1254,6 +1279,18 @@ export default function ProfilePage() {
                 <Zap className="h-3 w-3" />
                 TESTNET
               </div>
+            ) : (
+              <span
+                style={{
+                  fontSize: 9,
+                  color: 'var(--space-steel)',
+                  fontStyle: 'italic',
+                  opacity: 0.7,
+                  letterSpacing: '0.02em',
+                }}
+              >
+                Connect via header
+              </span>
             )}
           </motion.div>
         </div>

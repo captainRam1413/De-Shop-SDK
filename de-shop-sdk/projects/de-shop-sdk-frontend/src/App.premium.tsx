@@ -71,7 +71,7 @@ function Sidebar() {
   return (
     <motion.aside
       initial={false}
-      animate={{ width: sidebarCollapsed ? 60 : 220 }}
+      animate={{ width: sidebarCollapsed ? 60 : 240 }}
       transition={{ duration: 0.2, ease: 'easeInOut' }}
       className="premium-sidebar"
     >

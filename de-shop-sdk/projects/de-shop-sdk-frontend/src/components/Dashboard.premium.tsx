@@ -4,6 +4,7 @@
  * Phase 2 Premium: Live marketplace stats, charts, activity feed.
  */
 
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   TrendingUp,
@@ -189,6 +190,16 @@ const slideInRight = {
 export default function DashboardPremium() {
   const setActivePage = useDeShopStore((s) => s.setActivePage)
   const addNotification = useDeShopStore((s) => s.addNotification)
+
+  // Theme detection for Recharts tick colors (CSS vars not supported in SVG fill)
+  const [isLightTheme, setIsLightTheme] = useState(false)
+  useEffect(() => {
+    const check = () => setIsLightTheme(document.documentElement.getAttribute('data-theme') === 'light')
+    check()
+    const observer = new MutationObserver(check)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => observer.disconnect()
+  }, [])
 
   const handleQuickAction = (action: string) => {
     addNotification('info', `${action} initiated from dashboard`)
@@ -385,12 +396,12 @@ export default function DashboardPremium() {
                 dataKey="day"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#2e3d55', fontSize: 10, fontWeight: 600 }}
+                tick={{ fill: isLightTheme ? '#334155' : '#2e3d55', fontSize: 10, fontWeight: 600 }}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#2e3d55', fontSize: 10, fontWeight: 600 }}
+                tick={{ fill: isLightTheme ? '#334155' : '#2e3d55', fontSize: 10, fontWeight: 600 }}
                 domain={['auto', 'auto']}
               />
               <Tooltip content={<CustomTooltip />} />
@@ -579,14 +590,14 @@ export default function DashboardPremium() {
                     type="number"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#2e3d55', fontSize: 10, fontWeight: 600 }}
+                    tick={{ fill: isLightTheme ? '#334155' : '#2e3d55', fontSize: 10, fontWeight: 600 }}
                   />
                   <YAxis
                     type="category"
                     dataKey="name"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
+                    tick={{ fill: isLightTheme ? '#475569' : '#94a3b8', fontSize: 11, fontWeight: 600 }}
                     width={55}
                   />
                   <Tooltip content={<CustomTooltip />} />
@@ -643,8 +654,8 @@ export default function DashboardPremium() {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="premium-btn"
-              style={{ width: '100%', justifyContent: 'flex-start', padding: '10px 16px' }}
+              className="premium-btn premium-btn--sm"
+              style={{ width: '100%', justifyContent: 'flex-start', padding: '6px 14px' }}
               onClick={() => handleQuickAction('Mint Item')}
             >
               <Plus className="h-4 w-4" />
@@ -654,11 +665,11 @@ export default function DashboardPremium() {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="premium-btn"
+              className="premium-btn premium-btn--sm"
               style={{
                 width: '100%',
                 justifyContent: 'flex-start',
-                padding: '10px 16px',
+                padding: '6px 14px',
                 borderColor: 'rgba(192, 132, 252, 0.3)',
                 color: 'var(--purple-bright)',
               }}
@@ -671,11 +682,11 @@ export default function DashboardPremium() {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="premium-btn"
+              className="premium-btn premium-btn--sm"
               style={{
                 width: '100%',
                 justifyContent: 'flex-start',
-                padding: '10px 16px',
+                padding: '6px 14px',
                 borderColor: 'rgba(34, 211, 238, 0.3)',
                 color: 'var(--cyan-bright)',
               }}
@@ -688,11 +699,11 @@ export default function DashboardPremium() {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="premium-btn"
+              className="premium-btn premium-btn--sm"
               style={{
                 width: '100%',
                 justifyContent: 'flex-start',
-                padding: '10px 16px',
+                padding: '6px 14px',
                 borderColor: 'rgba(251, 191, 36, 0.3)',
                 color: 'var(--gold-bright)',
               }}
