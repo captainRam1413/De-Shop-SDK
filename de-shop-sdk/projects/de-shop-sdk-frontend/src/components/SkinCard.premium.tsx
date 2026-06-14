@@ -3,11 +3,12 @@ import { normalizeRarity } from '../sdk/DeShopSDK'
 import { motion } from 'framer-motion'
 import { Zap, ShoppingBag, ArrowUpFromLine, Cloud } from 'lucide-react'
 
+// Minecraft ore theme rarity colors
 const RARITY_COLORS: Record<string, { bg: string; border: string; glow: string; text: string; badge: string }> = {
-  common:    { bg: 'rgba(107,114,128,0.08)', border: 'rgba(107,114,128,0.3)', glow: 'rgba(107,114,128,0.15)', text: '#9ca3af', badge: '#6b7280' },
-  rare:      { bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.3)', glow: 'rgba(59,130,246,0.15)', text: '#60a5fa', badge: '#3b82f6' },
-  epic:      { bg: 'rgba(168,85,247,0.08)', border: 'rgba(168,85,247,0.3)', glow: 'rgba(168,85,247,0.15)', text: '#c084fc', badge: '#a855f7' },
-  legendary: { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.3)', glow: 'rgba(245,158,11,0.15)', text: '#fbbf24', badge: '#f59e0b' },
+  common:    { bg: 'rgba(212,212,212,0.06)', border: 'rgba(160,160,160,0.3)', glow: 'rgba(212,212,212,0.12)', text: '#D4D4D4', badge: '#A0A0A0' },
+  rare:      { bg: 'rgba(74,237,217,0.06)', border: 'rgba(74,237,217,0.3)', glow: 'rgba(74,237,217,0.12)', text: '#4AEDD9', badge: '#2AB5A2' },
+  epic:      { bg: 'rgba(168,85,247,0.06)', border: 'rgba(168,85,247,0.3)', glow: 'rgba(168,85,247,0.12)', text: '#c084fc', badge: '#a855f7' },
+  legendary: { bg: 'rgba(255,215,0,0.06)', border: 'rgba(255,215,0,0.3)', glow: 'rgba(255,215,0,0.12)', text: '#FFD700', badge: '#DAA520' },
 }
 
 type SkinCardProps = {
@@ -27,27 +28,23 @@ export default function SkinCard({ asset, isActive, onEquip, onList, onBuy, onWi
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.25, ease: 'easeOut' }}
-      className={`premium-card skin-card ${isActive ? 'skin-card--active' : ''}`}
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={{ duration: 0.2, ease: 'easeOut' as const }}
+      className={`skin-card ${isActive ? 'skin-card--active' : ''}`}
       style={{
         background: isActive
           ? `linear-gradient(135deg, ${colors.bg}, ${colors.glow})`
           : undefined,
-        borderColor: isActive ? colors.text : colors.border,
-        boxShadow: isActive ? `0 0 20px ${colors.glow}, inset 0 0 30px ${colors.glow}` : undefined,
+        borderColor: isActive ? colors.text : undefined,
         '--rarity-color': colors.text,
       } as React.CSSProperties}
     >
-      {/* Rarity shimmer bar */}
-      <div className="skin-card__shimmer" style={{ background: `linear-gradient(90deg, transparent, ${colors.glow}, transparent)` }} />
-
-      {/* Icon with rarity glow */}
-      <div className="skin-card__icon" style={{ borderColor: colors.border, boxShadow: isActive ? `0 0 12px ${colors.glow}` : 'none' }}>
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-          <path d="M14 2L16 10H24L18 15L20 23L14 18L8 23L10 15L4 10H12L14 2Z" fill={colors.text} opacity="0.8"/>
+      {/* Icon slot */}
+      <div className="skin-card__icon" style={{ borderColor: colors.border }}>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style={{ imageRendering: 'pixelated' }}>
+          <path d="M12 2L13.5 8.5H20L15 12.5L17 19L12 15L7 19L9 12.5L4 8.5H10.5L12 2Z" fill={colors.text} opacity="0.8"/>
         </svg>
       </div>
 
@@ -55,19 +52,19 @@ export default function SkinCard({ asset, isActive, onEquip, onList, onBuy, onWi
       <div className="skin-card__info">
         <div className="skin-card__name" style={{ color: colors.text }}>{asset.name}</div>
         <div className="skin-card__meta">
-          <span className="premium-badge premium-badge--rarity" style={{ 
-            background: colors.glow, 
+          <span className="premium-badge" style={{
+            background: colors.glow,
             color: colors.text,
-            fontSize: '9px',
-            padding: '1px 6px',
-            borderRadius: '3px',
+            border: `1px solid ${colors.border}`,
+            fontSize: '7px',
+            padding: '1px 5px',
             fontWeight: 700,
             letterSpacing: '0.06em',
           }}>
             {rarity.toUpperCase()}
           </span>
           {asset.list_price && (
-            <span style={{ color: 'var(--cyan-bright)', fontSize: '10px', fontWeight: 600 }}>
+            <span style={{ color: 'var(--mc-emerald)', fontSize: '10px', fontWeight: 600 }}>
               {asset.list_price} μA
             </span>
           )}
@@ -99,12 +96,12 @@ export default function SkinCard({ asset, isActive, onEquip, onList, onBuy, onWi
             {onWithdraw && !asset.listed && (
               <button
                 className="premium-btn premium-btn--xs"
-                style={{ background: 'rgba(23,26,33,0.6)', borderColor: '#171a21', color: 'white' }}
+                style={{ background: '#1A1A1A', borderColor: '#555 #222 #222 #555', color: 'var(--mc-diamond)' }}
                 onClick={() => onWithdraw(asset)}
-                title="Withdraw to Steam"
+                title="Withdraw to Steam Portal"
               >
                 <Cloud className="h-3 w-3" />
-                STEAM
+                PORTAL
               </button>
             )}
           </>
@@ -115,7 +112,7 @@ export default function SkinCard({ asset, isActive, onEquip, onList, onBuy, onWi
             onClick={() => onBuy?.(asset)}
           >
             <ArrowUpFromLine className="h-3 w-3" />
-            BUY {asset.list_price} μA
+            TRADE {asset.list_price} μA
           </button>
         )}
       </div>
