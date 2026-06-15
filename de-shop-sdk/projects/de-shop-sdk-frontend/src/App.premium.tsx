@@ -6,6 +6,7 @@ import TerminalConsole from './components/TerminalConsole'
 import WalletModal from './components/WalletModal.premium'
 import DashboardPremium from './components/Dashboard.premium'
 import ProfilePage from './components/ProfilePage.premium'
+import MinecraftVoxelGame from './components/MinecraftVoxelGame'
 import ParticleBackground from './components/ParticleBackground'
 import ConfettiEffect from './components/ConfettiEffect'
 import AnimatedBorder from './components/AnimatedBorder'
@@ -21,12 +22,20 @@ import {
   ChevronLeft,
   ChevronRight,
   Pickaxe,
-  Zap,
   BarChart3,
+  Swords,
+  Bell,
+  Globe,
+  Home,
+  ChevronDown,
+  Github as GithubIcon,
+  MessageCircle,
+  BookOpen,
 } from 'lucide-react'
 
 const navItems: { id: ActivePage; label: string; icon: React.ReactNode; color: string }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 className="h-4 w-4" />, color: 'var(--mc-diamond)' },
+  { id: 'minecraft', label: 'Play', icon: <Swords className="h-4 w-4" />, color: 'var(--mc-emerald)' },
   { id: 'game', label: 'World', icon: <Gamepad2 className="h-4 w-4" />, color: 'var(--mc-emerald)' },
   { id: 'market', label: 'Trading Hall', icon: <Store className="h-4 w-4" />, color: 'var(--mc-gold)' },
   { id: 'inventory', label: 'Inventory', icon: <Backpack className="h-4 w-4" />, color: 'var(--mc-lapis)' },
@@ -71,7 +80,7 @@ function Sidebar() {
   return (
     <motion.aside
       initial={false}
-      animate={{ width: sidebarCollapsed ? 60 : 240 }}
+      animate={{ width: sidebarCollapsed ? 52 : 200 }}
       transition={{ duration: 0.2, ease: 'easeInOut' }}
       className="premium-sidebar mc-sidebar"
     >
@@ -80,7 +89,7 @@ function Sidebar() {
         <img
           src="/minecraft/logo.png"
           alt="Minecraft"
-          style={{ width: 28, height: 28, imageRendering: 'pixelated' }}
+          style={{ width: 24, height: 24, imageRendering: 'pixelated' }}
         />
         {!sidebarCollapsed && (
           <motion.div
@@ -133,7 +142,7 @@ function Sidebar() {
 
       {/* Status */}
       <div className="premium-sidebar__footer mc-sidebar__footer">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'space-between', width: '100%' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'space-between', width: '100%', gap: 4 }}>
           <div className="premium-sidebar__status mc-sidebar__status">
             <span className={`status-dot mc-status-dot ${activeAddress ? 'connected mc-connected' : 'mc-offline'}`} />
             {!sidebarCollapsed && (
@@ -141,14 +150,14 @@ function Sidebar() {
                 className="premium-sidebar__status-text mc-sidebar__status-text"
                 style={{ color: activeAddress ? 'var(--mc-emerald, #22c55e)' : 'var(--mc-redstone, #ef4444)' }}
               >
-                {activeAddress ? 'Connected' : 'Offline'}
+                {activeAddress ? 'Online' : 'Offline'}
               </span>
             )}
           </div>
-          <ThemeToggle />
+          {!sidebarCollapsed && <ThemeToggle />}
         </div>
-        <button className="premium-sidebar__collapse mc-sidebar__collapse" onClick={toggleSidebar}>
-          {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        <button className="premium-sidebar__collapse mc-sidebar__collapse" onClick={toggleSidebar} title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+          {sidebarCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
         </button>
       </div>
     </motion.aside>
@@ -157,17 +166,38 @@ function Sidebar() {
 
 function Header() {
   const { activeAddress, activeWallet } = useWallet()
-  const { steamProfile, setShowWalletModal, status } = useDeShopStore()
+  const { steamProfile, setShowWalletModal, status, notifications, activePage } = useDeShopStore()
   const addr = activeAddress
     ? `${activeAddress.slice(0, 6)}...${activeAddress.slice(-4)}`
     : null
 
+  const pageLabels: Record<ActivePage, string> = {
+    dashboard: 'Village Ledger',
+    minecraft: 'Play',
+    game: 'World',
+    market: 'Trading Hall',
+    inventory: 'Inventory',
+    terminal: 'Command Block',
+    profile: 'Player',
+  }
+
+  const unreadCount = notifications.length
+
   return (
     <header className="premium-header mc-header">
       <div className="premium-header__left mc-header__left">
-        <div className="premium-header__net-badge mc-header__net-badge">
-          <span className={`status-dot mc-status-dot ${activeAddress ? 'connected mc-connected' : ''}`} />
-          ⛏ OVERWORLD
+        {/* Network Badge */}
+        <div className="premium-header__network-badge premium-header__network-badge--testnet">
+          <Globe className="h-3 w-3" />
+          TESTNET
+        </div>
+        {/* Breadcrumb */}
+        <div className="premium-header__breadcrumb">
+          <Home className="h-3 w-3" style={{ opacity: 0.5 }} />
+          <span className="premium-header__breadcrumb-sep">/</span>
+          <span className="premium-header__breadcrumb-current">
+            {pageLabels[activePage] || activePage}
+          </span>
         </div>
         {status && (
           <motion.div
@@ -182,6 +212,15 @@ function Header() {
       </div>
       <div className="premium-header__right mc-header__right">
         <ThemeToggle />
+        {/* Notification Bell */}
+        <div className="premium-header__bell" title={`${unreadCount} notification${unreadCount !== 1 ? 's' : ''}`}>
+          <Bell className="h-3.5 w-3.5" />
+          {unreadCount > 0 && (
+            <span className="premium-header__bell-badge">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </div>
         {steamProfile && (
           <div className="premium-header__steam mc-header__player">
             <img
@@ -219,6 +258,7 @@ function Header() {
 
 const pageComponents: Record<ActivePage, React.ComponentType> = {
   dashboard: DashboardPremium,
+  minecraft: MinecraftVoxelGame,
   game: GameShowcase,
   market: MarketplaceV2, // Trading Hall — Enhanced Marketplace V2 with advanced filtering & views
   inventory: GameShowcase, // Will use same component with inventory tab active
@@ -303,6 +343,33 @@ export default function App() {
             </motion.div>
           </AnimatePresence>
         </div>
+        {/* Professional Footer */}
+        <footer className="premium-footer">
+          <div className="premium-footer__brand">
+            <span>⛏ DE-SHOP SDK</span>
+            <span style={{ color: 'var(--mc-text-dim)', fontSize: 6 }}>v2.0</span>
+          </div>
+          <div className="premium-footer__links">
+            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="premium-footer__link">
+              <Github className="h-3 w-3" />
+              GitHub
+            </a>
+            <a href="#" className="premium-footer__link">
+              <BookOpen className="h-3 w-3" />
+              Docs
+            </a>
+            <a href="#" className="premium-footer__link">
+              <MessageCircle className="h-3 w-3" />
+              Discord
+            </a>
+          </div>
+          <div className="premium-footer__status">
+            <div className="premium-footer__network">
+              <span style={{ width: 5, height: 5, background: 'var(--mc-emerald)', boxShadow: '0 0 4px var(--mc-emerald)' }} />
+              Algorand Testnet
+            </div>
+          </div>
+        </footer>
       </div>
 
       {showWalletModal && (

@@ -22,6 +22,9 @@ import {
   Eye,
   ShoppingBag,
   BarChart3,
+  Clock,
+  ArrowUpRight,
+  Activity,
 } from 'lucide-react'
 import {
   ResponsiveContainer,
@@ -406,6 +409,40 @@ const MOCK_LISTINGS: MarketplaceListing[] = [
     type: 'material',
     description: 'Dropped by the fearsome Wither boss. Used to craft a Beacon — the ultimate status symbol.',
   },
+]
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FLOOR PRICE DATA — Per Rarity
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const floorPriceData: Record<Rarity, { price: number; change24h: number; listCount: number }> = {
+  common:   { price: 15,   change24h: -2.1, listCount: 42 },
+  rare:     { price: 100,  change24h: +4.8, listCount: 28 },
+  epic:     { price: 800,  change24h: +12.3, listCount: 14 },
+  legendary:{ price: 2500, change24h: +8.7, listCount: 6 },
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RECENTLY SOLD DATA
+// ═══════════════════════════════════════════════════════════════════════════════
+
+interface RecentSale {
+  id: string
+  name: string
+  icon: string
+  rarity: Rarity
+  salePrice: number
+  buyer: string
+  soldAt: string
+}
+
+const recentSales: RecentSale[] = [
+  { id: 's1', name: 'Nether Star', icon: '✴️', rarity: 'legendary', salePrice: 9800, buyer: 'Wither_Slayer', soldAt: '3m ago' },
+  { id: 's2', name: 'Elytra Wings', icon: '✨', rarity: 'legendary', salePrice: 4750, buyer: 'SkyRider_22', soldAt: '8m ago' },
+  { id: 's3', name: 'Golden Apple', icon: '🍎', rarity: 'epic', salePrice: 920, buyer: 'PvP_Master', soldAt: '15m ago' },
+  { id: 's4', name: 'Enchanted Bow', icon: '🏹', rarity: 'epic', salePrice: 1180, buyer: 'Archer_King', soldAt: '22m ago' },
+  { id: 's5', name: 'Diamond Sword', icon: '⚔️', rarity: 'legendary', salePrice: 2400, buyer: 'BladeRunner', soldAt: '35m ago' },
+  { id: 's6', name: 'Emerald', icon: '💚', rarity: 'rare', salePrice: 95, buyer: 'Trader_Joe', soldAt: '42m ago' },
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -943,6 +980,124 @@ export default function MarketplaceV2() {
         </AnimatePresence>
       </div>
 
+      {/* ═══ FLOOR PRICE BAR ═══ */}
+      <div
+        style={{
+          padding: '8px 20px',
+          display: 'flex',
+          gap: 6,
+          overflowX: 'auto',
+          background: 'rgba(26, 10, 46, 0.6)',
+          borderBottom: '2px solid rgba(80, 0, 170, 0.2)',
+        }}
+      >
+        {(Object.keys(floorPriceData) as Rarity[]).map((rarity) => {
+          const fp = floorPriceData[rarity]
+          const rc = RARITY_CONFIG[rarity]
+          return (
+            <motion.div
+              key={rarity}
+              whileHover={{ y: -2, boxShadow: `0 0 16px ${rc.glow}` }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '6px 12px',
+                background: rc.gradient,
+                border: `2px solid ${rc.border}`,
+                cursor: 'pointer',
+                flexShrink: 0,
+                imageRendering: 'pixelated',
+                transition: 'box-shadow 0.2s ease',
+              }}
+            >
+              <span style={{ fontSize: 8, color: rc.color, fontWeight: 700, ...pixelFont, textTransform: 'uppercase' }}>
+                {rarity}
+              </span>
+              <span style={{ fontSize: 10, color: '#4AEDD9', fontWeight: 700, ...pixelFont }}>
+                {fp.price.toLocaleString()} <span style={{ fontSize: 7 }}>μA</span>
+              </span>
+              <span style={{
+                fontSize: 8,
+                color: fp.change24h >= 0 ? '#22c55e' : '#ef4444',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                fontWeight: 600,
+              }}>
+                {fp.change24h >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+                {Math.abs(fp.change24h)}%
+              </span>
+              <span style={{ fontSize: 7, color: '#7c5eaa', ...pixelFont }}>{fp.listCount} listed</span>
+            </motion.div>
+          )
+        })}
+      </div>
+
+      {/* ═══ RECENTLY SOLD ═══ */}
+      <div
+        style={{
+          padding: '10px 20px',
+          background: 'rgba(26, 10, 46, 0.4)',
+          borderBottom: '2px solid rgba(80, 0, 170, 0.15)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+          <Activity className="h-3.5 w-3.5" style={{ color: '#22c55e' }} />
+          <span style={{ fontSize: 9, color: '#22c55e', fontWeight: 700, letterSpacing: '0.06em', ...pixelFont }}>
+            RECENTLY SOLD
+          </span>
+          <span
+            style={{
+              width: 5,
+              height: 5,
+              background: '#22c55e',
+              boxShadow: '0 0 4px #22c55e',
+              animation: 'mc-pulse 2s infinite',
+            }}
+          />
+        </div>
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+          {recentSales.map((sale) => {
+            const rc = RARITY_CONFIG[sale.rarity]
+            return (
+              <motion.div
+                key={sale.id}
+                whileHover={{ y: -2, boxShadow: `0 0 12px ${rc.glow}` }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '6px 10px',
+                  background: rc.gradient,
+                  border: `2px solid ${rc.border}`,
+                  flexShrink: 0,
+                  cursor: 'pointer',
+                  imageRendering: 'pixelated',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <span style={{ fontSize: 16 }}>{sale.icon}</span>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 9, color: rc.color, fontWeight: 700, ...pixelFont }}>{sale.name}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 1 }}>
+                    <span style={{ fontSize: 9, color: '#4AEDD9', fontWeight: 700, ...pixelFont }}>
+                      {sale.salePrice.toLocaleString()} μA
+                    </span>
+                    <span style={{ fontSize: 7, color: '#7c5eaa', display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Clock className="h-2 w-2" />
+                      {sale.soldAt}
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            )
+          })}
+        </div>
+      </div>
+
       {/* ═══ CONTENT AREA ═══ */}
       <div style={{ flex: 1, overflow: 'auto', padding: '16px 20px' }}>
         {filteredListings.length === 0 ? (
@@ -1031,7 +1186,7 @@ export default function MarketplaceV2() {
                   layout
                   whileHover={{
                     y: -4,
-                    boxShadow: `0 8px 20px ${rc.glow}, 0 0 0 2px ${rc.border}`,
+                    boxShadow: `0 8px 24px ${rc.glow}, 0 0 0 2px ${rc.border}, 0 0 32px ${rc.glow.replace('0.15', '0.08')}`,
                   }}
                   style={{
                     background: rc.gradient,
@@ -1040,19 +1195,35 @@ export default function MarketplaceV2() {
                     overflow: 'hidden',
                     cursor: 'pointer',
                     position: 'relative',
-                    transition: 'box-shadow 0.2s ease',
+                    transition: 'box-shadow 0.25s ease, transform 0.2s ease',
                     imageRendering: 'pixelated',
                     display: 'flex',
                     flexDirection: 'column',
+                    backdropFilter: 'blur(4px)',
                   }}
                   onClick={() => setSelectedItem(item)}
                 >
-                  {/* Rarity shimmer bar */}
+                  {/* Rarity shimmer bar with glow */}
                   <div
                     style={{
                       height: 2,
                       background: `linear-gradient(90deg, transparent, ${rc.color}, transparent)`,
-                      opacity: 0.6,
+                      opacity: 0.7,
+                      boxShadow: `0 0 6px ${rc.glow}`,
+                    }}
+                  />
+                  {/* Rarity corner indicator */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      width: 8,
+                      height: 8,
+                      background: rc.color,
+                      border: '1px solid rgba(0,0,0,0.3)',
+                      boxShadow: `0 0 8px ${rc.glow}`,
+                      zIndex: 2,
                     }}
                   />
 

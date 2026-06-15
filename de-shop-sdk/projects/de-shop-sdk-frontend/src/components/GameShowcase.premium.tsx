@@ -213,7 +213,7 @@ export default function GameShowcase() {
               >
                 <div className="showcase__analysis-header">
                   <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Sparkles className="h-3.5 w-3.5" style={{ color: 'var(--purple-bright)' }} />
+                    <Sparkles className="h-3 w-3" style={{ color: 'var(--purple-bright)' }} />
                     SKIN INTELLIGENCE
                   </span>
                   <button className="showcase__analysis-close" onClick={() => store.setShowAnalysis(false)}>×</button>
@@ -275,9 +275,9 @@ export default function GameShowcase() {
           {/* Tabs */}
           <div className="showcase__tabs">
             {[
-              { id: 'inventory' as Tab, label: 'Inventory', icon: <Backpack className="h-3.5 w-3.5" />, count: store.inventory.length },
-              { id: 'market' as Tab, label: 'Market', icon: <Store className="h-3.5 w-3.5" />, count: store.market.length },
-              ...(store.steamProfile ? [{ id: 'steam_inventory' as Tab, label: 'Steam', icon: <Cloud className="h-3.5 w-3.5" />, count: store.steamItems.length || 0 }] : []),
+              { id: 'inventory' as Tab, label: 'Inventory', icon: <Backpack className="h-3 w-3" />, count: store.inventory.length },
+              { id: 'market' as Tab, label: 'Market', icon: <Store className="h-3 w-3" />, count: store.market.length },
+              ...(store.steamProfile ? [{ id: 'steam_inventory' as Tab, label: 'Steam', icon: <Cloud className="h-3 w-3" />, count: store.steamItems.length || 0 }] : []),
             ].map((t) => (
               <button
                 key={t.id}
@@ -299,7 +299,7 @@ export default function GameShowcase() {
                 placeholder="e.g. Dragon Flame AK"
                 value={store.mintName}
                 onChange={(e) => store.setMintName(e.target.value)}
-                style={{ flex: 1, fontSize: 11 }}
+                style={{ flex: 1, fontSize: 11, minWidth: 80 }}
               />
               <select className="premium-select" value={store.mintRarity} onChange={(e) => store.setMintRarity(e.target.value)} style={{ fontSize: 11 }}>
                 <option value="common">Common</option>
@@ -311,12 +311,12 @@ export default function GameShowcase() {
                 <option value="weapon">Weapon</option>
                 <option value="character">Character</option>
               </select>
-              <button className="premium-btn premium-btn--sm premium-btn--green" onClick={handleMint} disabled={store.isMinting}>
-                {store.isMinting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              <button className="premium-btn premium-btn--sm premium-btn--green" onClick={handleMint} disabled={store.isMinting} style={{ flexShrink: 0 }}>
+                {store.isMinting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                 Mint
               </button>
-              <button className="premium-btn premium-btn--sm premium-btn--cyan" onClick={handleBatchMint} disabled={store.isMinting} title="Batch Mint 3 Skins">
-                <Package className="h-3.5 w-3.5" />
+              <button className="premium-btn premium-btn--sm premium-btn--cyan" onClick={handleBatchMint} disabled={store.isMinting} title="Batch Mint 3 Skins" style={{ flexShrink: 0 }}>
+                <Package className="h-3 w-3" />
                 Batch
               </button>
             </div>
@@ -325,7 +325,7 @@ export default function GameShowcase() {
           {/* Market Filter */}
           {activeAddress && tab === 'market' && (
             <div className="showcase__mint-bar">
-              <Search className="h-3.5 w-3.5" style={{ color: 'var(--cyan-bright)' }} />
+              <Search className="h-3 w-3" style={{ color: 'var(--cyan-bright)', flexShrink: 0 }} />
               <select className="premium-select" value={store.marketFilter} onChange={(e) => store.setMarketFilter(e.target.value)} style={{ flex: 1, fontSize: 11 }}>
                 <option value="">Any Rarity</option>
                 <option value="common">Common</option>
@@ -435,7 +435,7 @@ export default function GameShowcase() {
                       }
                     }}
                   >
-                    <Cloud className="h-3.5 w-3.5" />
+                  <Cloud className="h-3 w-3" />
                     ESCROW & MINT
                   </button>
                 </div>
