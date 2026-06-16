@@ -125,6 +125,13 @@ export class DeShopSDK extends EventEmitter<DeShopEvents> {
   /** @internal */ private _activeAddress: string | null = null
   /** @internal */ private _signer: algosdk.TransactionSigner | null = null
   /** @internal */ private _history = new Map<number, AssetHistoryEntry[]>()
+  /**
+   * @internal JWT auth token obtained from the backend's /auth/verify flow.
+   * When non-null, every backend request carries `Authorization: Bearer <token>`,
+   * satisfying the `@require_auth` decorator on protected routes (mint/list/buy/
+   * cancel/escrow/withdraw/ipfs-upload/ai-train). Cleared on wallet disconnect.
+   */
+  private authToken: string | null = null
 
   // ══════════════════════════════════════════════════════════════════════════
   //  CONSTRUCTOR
@@ -220,12 +227,39 @@ export class DeShopSDK extends EventEmitter<DeShopEvents> {
     this._activeAddress = null
     this._signer = null
     this._appClient = null
+    this.authToken = null
     this._cache.clear()
 
     if (prev) {
       this._log.info('Wallet disconnected')
       this.emit('walletChanged', null)
     }
+  }
+
+  /**
+   * Store (or clear) the JWT auth token returned by the backend's
+   * `/auth/nonce` → `/auth/verify` flow. When set, every subsequent
+   * `_post()` and `_fetchJson()` call sends an `Authorization: Bearer <token>`
+   * header so requests reach protected routes (`/mint`, `/list`, `/buy`,
+   * `/cancel`, `/steam/escrow`, `/steam/withdraw`, `/ipfs/upload`, `/ai/train`).
+   *
+   * Pass `null` to clear (e.g. on wallet disconnect).
+   */
+  setAuthToken(token: string | null): void {
+    this.authToken = token
+    if (token) {
+      this._log.info('Auth token set — protected routes now authenticated')
+    } else {
+      this._log.info('Auth token cleared')
+    }
+  }
+
+  /**
+   * Convenience accessor used by callers (e.g. SDKProvider) to inspect the
+   * current auth state without exposing the mutable field.
+   */
+  get hasAuthToken(): boolean {
+    return this.authToken !== null
   }
 
   /**
@@ -971,9 +1005,11 @@ export class DeShopSDK extends EventEmitter<DeShopEvents> {
   /** @internal POST JSON to the backend. */
   private async _post<T>(endpoint: string, body: any): Promise<T> {
     if (!this.backendUrl) throw new NetworkError('No backend URL configured', endpoint)
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (this.authToken) headers['Authorization'] = `Bearer ${this.authToken}`
     const response = await fetch(`${this.backendUrl}${endpoint}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(body),
     })
     if (!response.ok) {
@@ -1021,7 +1057,9 @@ export class DeShopSDK extends EventEmitter<DeShopEvents> {
   /** @internal GET JSON from the backend. */
   private async _fetchJson<T>(path: string): Promise<T> {
     if (!this.backendUrl) throw new NetworkError('No backend URL configured', path)
-    const response = await fetch(`${this.backendUrl}${path}`)
+    const headers: Record<string, string> = {}
+    if (this.authToken) headers['Authorization'] = `Bearer ${this.authToken}`
+    const response = await fetch(`${this.backendUrl}${path}`, { headers })
     if (!response.ok) throw new NetworkError(await this._errorText(response), path, response.status)
     return response.json()
   }

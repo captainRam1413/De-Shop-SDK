@@ -114,6 +114,67 @@ export function SDKProvider({ children }: SDKProviderProps) {
     sdk.setWalletSigner(activeAddress ?? null, transactionSigner ?? null)
   }, [sdk, activeAddress, transactionSigner])
 
+  // ── Authenticate with backend on wallet connect ─────────────────────────
+  // Flow: POST /auth/nonce → sign nonce with wallet → POST /auth/verify → JWT
+  // The JWT is then injected as `Authorization: Bearer <token>` on every
+  // subsequent backend call (see DeShopSDK._post / _fetchJson).
+  //
+  // TODO: The sign-and-verify step is not yet implemented because the
+  // @txnlab/use-wallet `transactionSigner` only signs algosdk transactions,
+  // not arbitrary bytes. The proper approach is to use `activeWallet.signBytes`
+  // (available on Pera/Defly adapters) to sign the SHA-256 of the nonce, then
+  // base64-encode the signature and send it to /auth/verify. Until that wiring
+  // is added, this hook fetches the nonce but does NOT request a token —
+  // protected endpoints will continue to return 401. Auth is opt-in/demo-mode
+  // so the rest of the marketplace flow still works for read-only operations.
+  useEffect(() => {
+    if (!activeAddress || !sdk.backendUrl) {
+      // No wallet or no backend → clear any stale token.
+      sdk.setAuthToken(null)
+      return
+    }
+
+    let cancelled = false
+    const controller = new AbortController()
+
+    fetch(`${sdk.backendUrl}/auth/nonce`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wallet: activeAddress }),
+      signal: controller.signal,
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.nonce) return
+        // TODO: implement signBytes → /auth/verify → sdk.setAuthToken(jwt)
+        // Example sketch:
+        //   const bytes = new TextEncoder().encode(data.nonce)
+        //   const sigBytes = await activeWallet?.signBytes(bytes, activeAddress)
+        //   const signature = base64(sigBytes)
+        //   const verify = await fetch(`${sdk.backendUrl}/auth/verify`, {
+        //     method: 'POST',
+        //     headers: { 'Content-Type': 'application/json' },
+        //     body: JSON.stringify({ wallet: activeAddress, signature }),
+        //   }).then((r) => r.json())
+        //   if (verify?.token) sdk.setAuthToken(verify.token)
+      })
+      .catch(() => {
+        // Auth is optional in demo mode — protected routes will 401 silently.
+      })
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [sdk, activeAddress])
+
+  // ── Clear auth token on disconnect ──────────────────────────────────────
+  useEffect(() => {
+    if (!activeAddress) {
+      sdk.setAuthToken(null)
+    }
+  }, [sdk, activeAddress])
+
   // ── Auto-close wallet modal on connect ──────────────────────────────────
   useEffect(() => {
     if (activeAddress && store.getState().showWalletModal) {

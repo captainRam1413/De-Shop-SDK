@@ -1,19 +1,15 @@
 import { useDeShopStore, type ActivePage } from './store/useDeShopStore'
 import { useWallet } from '@txnlab/use-wallet-react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import GameShowcase from './components/GameShowcase.premium'
-import MarketplaceV2 from './components/MarketplaceV2.premium'
 import TerminalConsole from './components/TerminalConsole'
 import WalletModal from './components/WalletModal.premium'
-import DashboardPremium from './components/Dashboard.premium'
-import ProfilePage from './components/ProfilePage.premium'
-import MinecraftVoxelGame from './components/MinecraftVoxelGame'
 import ParticleBackground from './components/ParticleBackground'
 import ConfettiEffect from './components/ConfettiEffect'
 import AnimatedBorder from './components/AnimatedBorder'
 import ThemeToggle from './components/ThemeToggle'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useEffect, useRef, useState } from 'react'
-import {
+import { Loader2,
   Gamepad2,
   Store,
   Backpack,
@@ -27,10 +23,18 @@ import {
   Bell,
   Globe,
   Home,
-  ChevronDown,
   MessageCircle,
   BookOpen,
 } from 'lucide-react'
+
+// ─── Code-splitting: heavy page components are loaded on demand via React.lazy
+//     so the initial bundle stays small. Three.js (MinecraftVoxelGame) and
+//     Recharts (MarketplaceV2) are the biggest wins — they only download when
+//     the user navigates to the corresponding page.
+const MinecraftVoxelGame = lazy(() => import('./components/MinecraftVoxelGame'))
+const MarketplaceV2 = lazy(() => import('./components/MarketplaceV2.premium'))
+const DashboardPremium = lazy(() => import('./components/Dashboard.premium'))
+const ProfilePage = lazy(() => import('./components/ProfilePage.premium'))
 
 // GitHub brand icon was removed from lucide-react (brand icons dropped).
 // Inline SVG keeps the GitHub logo in the footer link without extra deps.
@@ -281,6 +285,21 @@ const pageComponents: Record<ActivePage, React.ComponentType> = {
   profile: ProfilePage, // Player Profile
 }
 
+// Shared suspense fallback — a centered spinning loader in the premium theme.
+function PageSuspense({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-full" style={{ minHeight: 240 }}>
+          <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'var(--mc-emerald, #22c55e)' }} />
+        </div>
+      }
+    >
+      {children}
+    </Suspense>
+  )
+}
+
 // Minecraft palette for animated border: emerald → diamond → gold → redstone → emerald
 const mcBorderColors = [
   'var(--mc-emerald, #22c55e)',
@@ -354,7 +373,9 @@ export default function App() {
               transition={{ duration: 0.2 }}
               style={{ height: '100%' }}
             >
-              <PageComponent />
+              <PageSuspense>
+                <PageComponent />
+              </PageSuspense>
             </motion.div>
           </AnimatePresence>
         </div>

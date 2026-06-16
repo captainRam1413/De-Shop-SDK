@@ -5,7 +5,7 @@
  * tooltip-style detail modal, and enchantment-themed analysis.
  */
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search,
@@ -25,6 +25,7 @@ import {
   Clock,
   ArrowUpRight,
   Activity,
+  Loader2,
 } from 'lucide-react'
 import {
   ResponsiveContainer,
@@ -35,7 +36,16 @@ import {
   Tooltip,
   CartesianGrid,
 } from 'recharts'
+import { useWallet } from '@txnlab/use-wallet-react'
 import { useDeShopStore } from '../store/useDeShopStore'
+import { useSDK } from '../context/SDKProvider'
+import type { Asset, SaleRecord } from '../sdk/types'
+import {
+  DeShopError,
+  WalletNotConnectedError,
+  InsufficientFundsError,
+  TransactionFailedError,
+} from '../sdk/errors'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -51,7 +61,12 @@ interface PricePoint {
 }
 
 interface MarketplaceListing {
+  /** Stable React key (stringified asset.id). */
   id: string
+  /** Backend asset primary key — passed to `sdk.buyAsset(activeAddress, assetId)`. */
+  assetId: number
+  /** On-chain ASA ID (may be undefined for backend-only mock assets). */
+  asaId?: number
   name: string
   rarity: Rarity
   price: number
@@ -125,305 +140,132 @@ const RARITY_ORDER: Record<Rarity, number> = {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MOCK DATA GENERATOR — Minecraft Items
+// ASSET → LISTING CONVERSION (real SDK data, no more mock)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function generatePriceHistory(basePrice: number, volatility: number = 0.15): PricePoint[] {
+/** Coerce an SDK Asset.rarity string into our 4-tier UI Rarity (defensive). */
+function rarityFromAsset(raw: string): Rarity {
+  const r = (raw || '').toLowerCase()
+  if (r === 'common' || r === 'rare' || r === 'epic' || r === 'legendary') return r
+  // Map the SDK's expanded rarities (uncommon, mythic) down to the nearest UI tier.
+  if (r === 'uncommon') return 'common'
+  if (r === 'mythic') return 'legendary'
+  return 'common'
+}
+
+/** Pick a Minecraft-style icon emoji for the listing based on rarity + skin type. */
+function iconForAsset(rarity: Rarity, skinType?: string): string {
+  if (skinType === 'character') return '🧑'
+  if (skinType === 'accessory') return '✨'
+  // Default: weapon icon, tinted by rarity tier.
+  switch (rarity) {
+    case 'legendary': return '⚔️'
+    case 'epic':      return '🗡️'
+    case 'rare':      return '💎'
+    default:          return '🪨'
+  }
+}
+
+/**
+ * Build a 7-day price-history array for the chart. Without per-asset historical
+ * pricing data from the backend we render a flat line at the current list price
+ * (volatility=0 → trend shows "—"). When `volatility` is provided, a stable
+ * pseudo-random series is generated so the chart has visible variation; this is
+ * only used for visual continuity, NOT for fake market data.
+ */
+function generatePriceHistory(basePrice: number, volatility: number = 0): PricePoint[] {
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-  let current = basePrice * (0.8 + Math.random() * 0.2)
+  let current = basePrice
   return days.map((day) => {
-    const change = (Math.random() - 0.45) * volatility * basePrice
-    current = Math.max(basePrice * 0.5, current + change)
+    if (volatility > 0) {
+      const change = (Math.random() - 0.45) * volatility * basePrice
+      current = Math.max(basePrice * 0.5, current + change)
+    }
     return { day, price: Math.round(current * 100) / 100 }
   })
 }
 
-const MOCK_LISTINGS: MarketplaceListing[] = [
-  {
-    id: '1',
-    name: 'Diamond Sword',
-    rarity: 'legendary',
-    price: 2500,
-    seller: 'Steve_42',
-    icon: '⚔️',
-    priceHistory: generatePriceHistory(2500, 0.12),
-    confidence: 94,
-    suggestedPrice: 2400,
-    rarityScore: 9.2,
-    listedAt: '2h ago',
-    type: 'weapon',
-    description: 'A mighty blade forged from the rarest gems in the Overworld. Sharpness V enchantment glows along the edge.',
-  },
-  {
-    id: '2',
-    name: 'Netherite Pickaxe',
-    rarity: 'legendary',
-    price: 3200,
-    seller: 'Alex_Miner',
-    icon: '⛏️',
-    priceHistory: generatePriceHistory(3200, 0.10),
-    confidence: 96,
-    suggestedPrice: 3100,
-    rarityScore: 9.5,
-    listedAt: '30m ago',
-    type: 'tool',
-    description: 'The pinnacle of mining technology. Netherite alloy makes it faster and more durable than diamond.',
-  },
-  {
-    id: '3',
-    name: 'Ender Pearl',
-    rarity: 'epic',
-    price: 800,
-    seller: 'Ender_Trader',
-    icon: '💎',
-    priceHistory: generatePriceHistory(800, 0.18),
-    confidence: 88,
-    suggestedPrice: 780,
-    rarityScore: 7.8,
-    listedAt: '5h ago',
-    type: 'material',
-    description: 'A mysterious orb harvested from the End dimension. Throw it to teleport — if you can stomach the trip.',
-  },
-  {
-    id: '4',
-    name: 'Enchanted Bow',
-    rarity: 'epic',
-    price: 1200,
-    seller: 'Villager_7',
-    icon: '🏹',
-    priceHistory: generatePriceHistory(1200, 0.14),
-    confidence: 86,
-    suggestedPrice: 1150,
-    rarityScore: 7.5,
-    listedAt: '3h ago',
-    type: 'weapon',
-    description: 'Power V, Flame, and Infinity enchantments. One arrow is all you need with this legendary bow.',
-  },
-  {
-    id: '5',
-    name: 'Iron Chestplate',
-    rarity: 'rare',
-    price: 450,
-    seller: 'Steve_42',
-    icon: '🛡️',
-    priceHistory: generatePriceHistory(450, 0.10),
-    confidence: 82,
-    suggestedPrice: 430,
-    rarityScore: 5.4,
-    listedAt: '1h ago',
-    type: 'armor',
-    description: 'Sturdy iron plating that has protected countless adventurers from creeper explosions.',
-  },
-  {
-    id: '6',
-    name: 'Golden Apple',
-    rarity: 'epic',
-    price: 950,
-    seller: 'Notch_Fan',
-    icon: '🍎',
-    priceHistory: generatePriceHistory(950, 0.09),
-    confidence: 89,
-    suggestedPrice: 920,
-    rarityScore: 8.1,
-    listedAt: '1h ago',
-    type: 'material',
-    description: 'Not just any apple — this one glows with regeneration and absorption powers. A lifesaver in tough battles.',
-  },
-  {
-    id: '7',
-    name: 'Blaze Rod',
-    rarity: 'rare',
-    price: 350,
-    seller: 'NetherWalker',
-    icon: '🧪',
-    priceHistory: generatePriceHistory(350, 0.16),
-    confidence: 79,
-    suggestedPrice: 370,
-    rarityScore: 5.1,
-    listedAt: '6h ago',
-    type: 'material',
-    description: 'A blazing rod from a fallen Blaze. Essential for brewing potions and crafting Eyes of Ender.',
-  },
-  {
-    id: '8',
-    name: 'Elytra Wings',
-    rarity: 'legendary',
-    price: 5000,
-    seller: 'Ender_Trader',
-    icon: '✨',
-    priceHistory: generatePriceHistory(5000, 0.08),
-    confidence: 91,
-    suggestedPrice: 4800,
-    rarityScore: 9.0,
-    listedAt: '45m ago',
-    type: 'accessory',
-    description: 'Soar through the skies like the Ender Dragon. Found only in the End City ships.',
-  },
-  {
-    id: '9',
-    name: 'Totem of Undying',
-    rarity: 'legendary',
-    price: 8000,
-    seller: 'Woodland_Master',
-    icon: '🌟',
-    priceHistory: generatePriceHistory(8000, 0.06),
-    confidence: 97,
-    suggestedPrice: 7800,
-    rarityScore: 9.8,
-    listedAt: '20m ago',
-    type: 'accessory',
-    description: 'Cheats death itself. Hold this totem and survive a fatal blow — but only once. Dropped by Evokers.',
-  },
-  {
-    id: '10',
-    name: 'Trident',
-    rarity: 'epic',
-    price: 1500,
-    seller: 'Ocean_Explorer',
-    icon: '🗡️',
-    priceHistory: generatePriceHistory(1500, 0.13),
-    confidence: 85,
-    suggestedPrice: 1450,
-    rarityScore: 7.3,
-    listedAt: '4h ago',
-    type: 'weapon',
-    description: 'A powerful weapon from the ocean depths. Channel lightning with Riptide or throw it with Loyalty.',
-  },
-  {
-    id: '11',
-    name: 'Stone Sword',
-    rarity: 'common',
-    price: 50,
-    seller: 'Villager_3',
-    icon: '⚔️',
-    priceHistory: generatePriceHistory(50, 0.25),
-    confidence: 72,
-    suggestedPrice: 55,
-    rarityScore: 2.1,
-    listedAt: '12h ago',
-    type: 'weapon',
-    description: 'A basic weapon for the early adventurer. Cobblestone craftsmanship — reliable but unremarkable.',
-  },
-  {
-    id: '12',
-    name: 'Iron Ingot',
-    rarity: 'common',
-    price: 25,
-    seller: 'Cave_Dweller',
-    icon: '🪨',
-    priceHistory: generatePriceHistory(25, 0.30),
-    confidence: 70,
-    suggestedPrice: 28,
-    rarityScore: 1.8,
-    listedAt: '1d ago',
-    type: 'material',
-    description: 'The backbone of civilization. Smelted from iron ore, used in everything from tools to rails.',
-  },
-  {
-    id: '13',
-    name: 'Gold Ingot',
-    rarity: 'rare',
-    price: 120,
-    seller: 'Alex_Miner',
-    icon: '💫',
-    priceHistory: generatePriceHistory(120, 0.20),
-    confidence: 80,
-    suggestedPrice: 110,
-    rarityScore: 5.7,
-    listedAt: '8h ago',
-    type: 'material',
-    description: 'Shiny and valuable, but soft. Piglins love it — use it to trade in the Nether.',
-  },
-  {
-    id: '14',
-    name: 'Emerald',
-    rarity: 'rare',
-    price: 100,
-    seller: 'Villager_7',
-    icon: '💚',
-    priceHistory: generatePriceHistory(100, 0.15),
-    confidence: 78,
-    suggestedPrice: 95,
-    rarityScore: 4.8,
-    listedAt: '10h ago',
-    type: 'material',
-    description: 'The currency of village trading. Hard to find but villagers will trade almost anything for these.',
-  },
-  {
-    id: '15',
-    name: 'Lapis Lazuli',
-    rarity: 'common',
-    price: 30,
-    seller: 'Cave_Dweller',
-    icon: '💎',
-    priceHistory: generatePriceHistory(30, 0.22),
-    confidence: 75,
-    suggestedPrice: 32,
-    rarityScore: 2.5,
-    listedAt: '2d ago',
-    type: 'material',
-    description: 'Deep blue gemstone found deep underground. Essential for enchanting your equipment at the table.',
-  },
-  {
-    id: '16',
-    name: 'Redstone Dust',
-    rarity: 'common',
-    price: 15,
-    seller: 'Redstone_King',
-    icon: '🔴',
-    priceHistory: generatePriceHistory(15, 0.30),
-    confidence: 68,
-    suggestedPrice: 18,
-    rarityScore: 1.5,
-    listedAt: '3d ago',
-    type: 'material',
-    description: 'The power of electricity in dust form. Build circuits, traps, and elaborate contraptions.',
-  },
-  {
-    id: '17',
-    name: 'Obsidian Block',
-    rarity: 'rare',
-    price: 200,
-    seller: 'NetherWalker',
-    icon: '⬛',
-    priceHistory: generatePriceHistory(200, 0.11),
-    confidence: 81,
-    suggestedPrice: 190,
-    rarityScore: 5.3,
-    listedAt: '7h ago',
-    type: 'material',
-    description: 'The hardest block in the Overworld. Only a diamond pickaxe can mine it. Used to build Nether portals.',
-  },
-  {
-    id: '18',
-    name: 'Nether Star',
-    rarity: 'legendary',
-    price: 10000,
-    seller: 'Wither_Slayer',
-    icon: '✴️',
-    priceHistory: generatePriceHistory(10000, 0.05),
-    confidence: 98,
-    suggestedPrice: 9500,
-    rarityScore: 9.9,
-    listedAt: '15m ago',
-    type: 'material',
-    description: 'Dropped by the fearsome Wither boss. Used to craft a Beacon — the ultimate status symbol.',
-  },
-]
+/** Format an ISO timestamp as a short relative-time string ("3h ago", "2d ago"). */
+function formatRelativeTime(iso: string): string {
+  const then = new Date(iso).getTime()
+  if (Number.isNaN(then)) return 'recently'
+  const diffMs = Date.now() - then
+  const m = Math.floor(diffMs / 60_000)
+  if (m < 1) return 'just now'
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  const d = Math.floor(h / 24)
+  return `${d}d ago`
+}
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// FLOOR PRICE DATA — Per Rarity
-// ═══════════════════════════════════════════════════════════════════════════════
+/** Build a short seller label from a wallet address (first 8 chars + ellipsis). */
+function shortSeller(wallet: string): string {
+  if (!wallet) return 'unknown'
+  return wallet.length > 12 ? `${wallet.slice(0, 8)}…` : wallet
+}
 
-const floorPriceData: Record<Rarity, { price: number; change24h: number; listCount: number }> = {
-  common:   { price: 15,   change24h: -2.1, listCount: 42 },
-  rare:     { price: 100,  change24h: +4.8, listCount: 28 },
-  epic:     { price: 800,  change24h: +12.3, listCount: 14 },
-  legendary:{ price: 2500, change24h: +8.7, listCount: 6 },
+/** Default description shown in the detail modal — derived from rarity + type. */
+function describeAsset(name: string, rarity: Rarity, type?: string): string {
+  const tier = rarity === 'legendary'
+    ? 'a legendary-tier'
+    : rarity === 'epic'
+      ? 'an epic-tier'
+      : rarity === 'rare'
+        ? 'a rare-tier'
+        : 'a common-tier'
+  const kind = type === 'character' ? 'character skin' : type === 'accessory' ? 'accessory' : 'weapon skin'
+  return `${name} is ${tier} ${kind} minted on Algorand and listed on the De-Shop marketplace.`
+}
+
+/** Convert a real SDK Asset into the UI's MarketplaceListing shape. */
+function assetToListing(asset: Asset): MarketplaceListing {
+  const rarity = rarityFromAsset(asset.rarity)
+  const skinType = asset.metadata?.skin_type
+  const price = asset.list_price ?? 0
+  const suggested = asset.suggested_price
+  return {
+    id: String(asset.id),
+    assetId: asset.id,
+    asaId: asset.asa_id,
+    name: asset.name,
+    rarity,
+    price,
+    seller: shortSeller(asset.owner || asset.creator),
+    icon: iconForAsset(rarity, skinType),
+    priceHistory: generatePriceHistory(price || 1),
+    confidence: suggested?.confidence ?? 0,
+    suggestedPrice: suggested?.price ?? price,
+    rarityScore: suggested?.rarity_score ?? 0,
+    listedAt: formatRelativeTime(asset.created_at),
+    type: skinType ?? 'item',
+    description: describeAsset(asset.name, rarity, skinType),
+  }
+}
+
+/** Compute floor price + listing-count per rarity from a list of listings. */
+function computeFloorPrice(listings: MarketplaceListing[]): Record<Rarity, { price: number; change24h: number; listCount: number }> {
+  const empty = { price: 0, change24h: 0, listCount: 0 }
+  const out: Record<Rarity, { price: number; change24h: number; listCount: number }> = {
+    common: { ...empty },
+    rare: { ...empty },
+    epic: { ...empty },
+    legendary: { ...empty },
+  }
+  for (const l of listings) {
+    const bucket = out[l.rarity]
+    bucket.listCount += 1
+    if (bucket.price === 0 || (l.price > 0 && l.price < bucket.price)) {
+      bucket.price = l.price
+    }
+  }
+  // 24h change requires historical data the backend doesn't currently expose;
+  // leave at 0 so the UI shows "—" rather than fabricated percentages.
+  return out
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// RECENTLY SOLD DATA
+// RECENT SALE TYPE — populated from sdk.getMarketData().sales
 // ═══════════════════════════════════════════════════════════════════════════════
 
 interface RecentSale {
@@ -436,14 +278,19 @@ interface RecentSale {
   soldAt: string
 }
 
-const recentSales: RecentSale[] = [
-  { id: 's1', name: 'Nether Star', icon: '✴️', rarity: 'legendary', salePrice: 9800, buyer: 'Wither_Slayer', soldAt: '3m ago' },
-  { id: 's2', name: 'Elytra Wings', icon: '✨', rarity: 'legendary', salePrice: 4750, buyer: 'SkyRider_22', soldAt: '8m ago' },
-  { id: 's3', name: 'Golden Apple', icon: '🍎', rarity: 'epic', salePrice: 920, buyer: 'PvP_Master', soldAt: '15m ago' },
-  { id: 's4', name: 'Enchanted Bow', icon: '🏹', rarity: 'epic', salePrice: 1180, buyer: 'Archer_King', soldAt: '22m ago' },
-  { id: 's5', name: 'Diamond Sword', icon: '⚔️', rarity: 'legendary', salePrice: 2400, buyer: 'BladeRunner', soldAt: '35m ago' },
-  { id: 's6', name: 'Emerald', icon: '💚', rarity: 'rare', salePrice: 95, buyer: 'Trader_Joe', soldAt: '42m ago' },
-]
+/** Map an SDK SaleRecord into the UI's RecentSale shape. */
+function saleToRecent(sale: SaleRecord, idx: number): RecentSale {
+  const rarity = rarityFromAsset('rare') // SaleRecord has no rarity field; default
+  return {
+    id: `sale-${idx}-${sale.timestamp}`,
+    name: 'Skin', // SaleRecord carries no asset name; backend route would need to join
+    icon: iconForAsset(rarity),
+    rarity,
+    salePrice: sale.price,
+    buyer: shortSeller(sale.buyer),
+    soldAt: formatRelativeTime(sale.timestamp),
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ANIMATION VARIANTS
@@ -573,8 +420,74 @@ export default function MarketplaceV2() {
   const [selectedItem, setSelectedItem] = useState<MarketplaceListing | null>(null)
   const [wishlist, setWishlist] = useState<Set<string>>(new Set())
   const [showFilters, setShowFilters] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [recentSales, setRecentSales] = useState<RecentSale[]>([])
+  const [buyingId, setBuyingId] = useState<string | null>(null)
 
+  // ── SDK + wallet + shared store ─────────────────────────────────────────
+  const { sdk } = useSDK()
+  const { activeAddress } = useWallet()
+  const storeMarket = useDeShopStore((s) => s.market)
+  const setMarket = useDeShopStore((s) => s.setMarket)
   const addNotification = useDeShopStore((s) => s.addNotification)
+
+  // ── Convert the shared store's Asset[] → MarketplaceListing[] ───────────
+  const allListings = useMemo<MarketplaceListing[]>(
+    () => storeMarket.map(assetToListing),
+    [storeMarket],
+  )
+
+  // ── Initial marketplace fetch (in case SDKProvider hasn't populated yet,
+  //    e.g. before wallet connect). The shared store is the single source of
+  //    truth; this effect only kicks in when it's empty.
+  useEffect(() => {
+    let cancelled = false
+    if (storeMarket.length > 0) {
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    sdk
+      .getMarketplace()
+      .then((items) => {
+        if (cancelled) return
+        if (items.length > 0) setMarket(items)
+        setLoading(false)
+      })
+      .catch((e) => {
+        if (cancelled) return
+        console.error('[MarketplaceV2] Failed to load marketplace:', e)
+        setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [sdk, storeMarket.length, setMarket])
+
+  // ── Recent sales feed (one-time fetch; backend exposes sales via
+  //    /marketplace which returns { marketplace, sales }). ────────────────
+  useEffect(() => {
+    let cancelled = false
+    sdk
+      .getMarketData()
+      .then((data) => {
+        if (cancelled) return
+        const sales = (data.sales || []).slice(0, 8).map(saleToRecent)
+        setRecentSales(sales)
+      })
+      .catch(() => {
+        // Optional feed — leave empty on failure.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [sdk])
+
+  // ── Floor price (computed from the live listing set, not mock data) ─────
+  const floorPriceData = useMemo(
+    () => computeFloorPrice(allListings),
+    [allListings],
+  )
 
   // ── Wishlist toggle ──────────────────────────────────────────────────────
   const toggleWishlist = useCallback((id: string, name: string) => {
@@ -592,8 +505,17 @@ export default function MarketplaceV2() {
   }, [addNotification])
 
   // ── Filtering & Sorting ──────────────────────────────────────────────────
+  // Keep a stable insertion-order map for the "newest" sort. We use the order
+  // in which assets arrived from the backend (i.e. the store's order), which
+  // is the closest proxy to recency without a backend sort parameter.
+  const newestOrder = useMemo(() => {
+    const m = new Map<string, number>()
+    allListings.forEach((l, idx) => m.set(l.id, idx))
+    return m
+  }, [allListings])
+
   const filteredListings = useMemo(() => {
-    let items = [...MOCK_LISTINGS]
+    let items = [...allListings]
 
     // Search
     if (searchQuery.trim()) {
@@ -627,11 +549,7 @@ export default function MarketplaceV2() {
         items.sort((a, b) => b.price - a.price)
         break
       case 'newest':
-        items.sort((a, b) => {
-          const order: Record<string, number> = {}
-          MOCK_LISTINGS.forEach((l, idx) => { order[l.id] = idx })
-          return (order[a.id] ?? 0) - (order[b.id] ?? 0)
-        })
+        items.sort((a, b) => (newestOrder.get(a.id) ?? 0) - (newestOrder.get(b.id) ?? 0))
         break
       case 'rarity':
         items.sort((a, b) => RARITY_ORDER[b.rarity] - RARITY_ORDER[a.rarity])
@@ -639,25 +557,58 @@ export default function MarketplaceV2() {
     }
 
     return items
-  }, [searchQuery, rarityFilter, priceMin, priceMax, sortBy])
+  }, [allListings, newestOrder, searchQuery, rarityFilter, priceMin, priceMax, sortBy])
 
   // ── Price trend ──────────────────────────────────────────────────────────
   const getPriceTrend = (history: PricePoint[]) => {
     if (history.length < 2) return { direction: 'flat' as const, pct: 0 }
     const first = history[0].price
     const last = history[history.length - 1].price
-    const pct = ((last - first) / first) * 100
+    const pct = first === 0 ? 0 : ((last - first) / first) * 100
     return {
       direction: pct > 1 ? 'up' as const : pct < -1 ? 'down' as const : 'flat' as const,
       pct: Math.abs(pct),
     }
   }
 
-  // ── Buy handler (Trade) ──────────────────────────────────────────────────
-  const handleBuy = (item: MarketplaceListing) => {
-    addNotification('success', `Trade initiated for "${item.name}" at ${item.price.toLocaleString()} μA`)
-    setSelectedItem(null)
-  }
+  // ── Buy handler — calls the real SDK buy flow with full error handling ──
+  const handleBuy = useCallback(async (item: MarketplaceListing) => {
+    if (!activeAddress) {
+      addNotification('warning', 'Connect your wallet to trade.')
+      return
+    }
+    if (buyingId) return // prevent double-clicks
+    setBuyingId(item.id)
+    try {
+      addNotification('info', `Initiating trade for "${item.name}" at ${item.price.toLocaleString()} μA…`)
+      const result = await sdk.buyAsset(activeAddress, item.assetId)
+      if (result.success) {
+        addNotification(
+          'success',
+          `✓ Purchased "${item.name}" for ${item.price.toLocaleString()} μA${
+            result.payment_txn_id ? ` · TX ${result.payment_txn_id.slice(0, 10)}…` : ''
+          }`,
+        )
+        setSelectedItem(null)
+      }
+    } catch (e) {
+      if (e instanceof WalletNotConnectedError) {
+        addNotification('warning', 'Please connect your wallet first.')
+      } else if (e instanceof InsufficientFundsError) {
+        addNotification('error', `Insufficient funds: need ${e.required} μALGO.`)
+      } else if (e instanceof TransactionFailedError) {
+        addNotification('error', `Trade failed: ${e.message}`)
+      } else if (e instanceof DeShopError) {
+        addNotification('error', e.message)
+      } else if (e instanceof Error) {
+        addNotification('error', e.message || 'Trade failed.')
+      } else {
+        addNotification('error', 'Trade failed due to an unknown error.')
+      }
+    } finally {
+      setBuyingId(null)
+    }
+  }, [activeAddress, addNotification, buyingId, sdk])
 
   // ═══════════════════════════════════════════════════════════════════════════
   // RENDER
@@ -1100,7 +1051,42 @@ export default function MarketplaceV2() {
 
       {/* ═══ CONTENT AREA ═══ */}
       <div style={{ flex: 1, overflow: 'auto', padding: '16px 20px' }}>
-        {filteredListings.length === 0 ? (
+        {loading ? (
+          /* ═══ LOADING STATE — fetching marketplace from backend ═══ */
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '80px 20px',
+              textAlign: 'center',
+              gap: 14,
+            }}
+          >
+            <Loader2
+              className="h-10 w-10 animate-spin"
+              style={{ color: '#4AEDD9' }}
+            />
+            <h3
+              style={{
+                color: '#FFD700',
+                fontSize: 13,
+                fontWeight: 700,
+                letterSpacing: '0.04em',
+                margin: 0,
+                ...pixelFont,
+              }}
+            >
+              LOADING MARKETPLACE
+            </h3>
+            <p style={{ color: '#9f7aea', fontSize: 11, maxWidth: 320, lineHeight: 1.6, margin: 0 }}>
+              Fetching live listings from the De-Shop backend…
+            </p>
+          </motion.div>
+        ) : filteredListings.length === 0 ? (
           /* ═══ EMPTY STATE ═══ */
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1144,7 +1130,8 @@ export default function MarketplaceV2() {
               No Items Found
             </h3>
             <p style={{ color: '#9f7aea', fontSize: 12, maxWidth: 320, lineHeight: 1.6, marginBottom: 4 }}>
-              No trading hall items match your current filters. Try adjusting your search or clearing all filters.
+              No trading hall items match your current filters, or the marketplace is empty.
+              Try adjusting your search, clearing all filters, or minting a skin to get started.
             </p>
             <button
               className="premium-btn premium-btn--sm premium-btn--green"
@@ -1324,9 +1311,10 @@ export default function MarketplaceV2() {
                     {/* Trade button */}
                     <button
                       className="premium-btn premium-btn--xs marketplace-card-btn"
+                      disabled={buyingId === item.id}
                       onClick={(e) => {
                         e.stopPropagation()
-                        handleBuy(item)
+                        void handleBuy(item)
                       }}
                       style={{
                         borderRadius: 0,
@@ -1334,11 +1322,22 @@ export default function MarketplaceV2() {
                         border: '2px solid rgba(74,237,217,0.4)',
                         color: '#4AEDD9',
                         width: '100%',
+                        opacity: buyingId === item.id ? 0.7 : 1,
+                        cursor: buyingId === item.id ? 'wait' : 'pointer',
                         ...pixelFont,
                       }}
                     >
-                      <Zap className="h-3 w-3" />
-                      TRADE
+                      {buyingId === item.id ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          TRADING…
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="h-3 w-3" />
+                          TRADE
+                        </>
+                      )}
                     </button>
 
                     {/* Seller */}
@@ -1497,19 +1496,32 @@ export default function MarketplaceV2() {
                     </button>
                     <button
                       className="premium-btn premium-btn--xs marketplace-card-btn"
+                      disabled={buyingId === item.id}
                       onClick={(e) => {
                         e.stopPropagation()
-                        handleBuy(item)
+                        void handleBuy(item)
                       }}
                       style={{
                         borderRadius: 0,
                         background: 'rgba(74,237,217,0.15)',
                         border: '2px solid rgba(74,237,217,0.4)',
                         color: '#4AEDD9',
+                        opacity: buyingId === item.id ? 0.7 : 1,
+                        cursor: buyingId === item.id ? 'wait' : 'pointer',
                         ...pixelFont,
                       }}
                     >
-                      TRADE
+                      {buyingId === item.id ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          TRADING…
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="h-3 w-3" />
+                          TRADE
+                        </>
+                      )}
                     </button>
                   </div>
                 </motion.div>
@@ -1710,17 +1722,29 @@ export default function MarketplaceV2() {
                           </button>
                           <button
                             className="premium-btn premium-btn--sm"
-                            onClick={() => handleBuy(item)}
+                            disabled={buyingId === item.id}
+                            onClick={() => void handleBuy(item)}
                             style={{
                               borderRadius: 0,
                               background: 'rgba(74,237,217,0.2)',
                               border: '2px solid rgba(74,237,217,0.5)',
                               color: '#4AEDD9',
+                              opacity: buyingId === item.id ? 0.7 : 1,
+                              cursor: buyingId === item.id ? 'wait' : 'pointer',
                               ...pixelFont,
                             }}
                           >
-                            <Zap className="h-3.5 w-3.5" />
-                            TRADE
+                            {buyingId === item.id ? (
+                              <>
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                TRADING…
+                              </>
+                            ) : (
+                              <>
+                                <Zap className="h-3.5 w-3.5" />
+                                TRADE
+                              </>
+                            )}
                           </button>
                         </div>
                       </div>

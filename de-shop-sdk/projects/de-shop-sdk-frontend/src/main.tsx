@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client'
 import { NetworkId, WalletId, WalletManager, WalletProvider } from '@txnlab/use-wallet-react'
 import { SDKProvider } from './context/SDKProvider'
 import App from './App.premium'
-import './styles/App.css'
 import './styles/App.premium.css'
 import ErrorBoundary from './components/ErrorBoundary'
 

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useWallet } from '@txnlab/use-wallet-react'
 import GameDemo from './GameDemo'
-import WalletModal from './WalletModal'
-import { DeShopSDK, type Asset } from '../sdk/DeShopSDK'
+import WalletModal from './WalletModal.premium'
+import { useSDK } from '../context/SDKProvider'
+import type { Asset } from '../sdk/DeShopSDK'
 import { skinIntelligence } from '../sdk/SkinIntelligence'
 import {
   DeShopError,
@@ -10,11 +11,6 @@ import {
   InsufficientFundsError,
   TransactionFailedError,
 } from '../sdk/errors'
-
-const sdk = new DeShopSDK({
-  network: 'testnet',
-  backendUrl: import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000',
-})
 
 type LogLine = {
   id: number
@@ -38,7 +34,8 @@ const BANNER = [
 ]
 
 export default function TerminalConsole() {
-  const { wallets, activeAddress, transactionSigner, activeWallet } = useWallet()
+  const { wallets, activeAddress, activeWallet } = useWallet()
+  const { sdk } = useSDK()
 
   const [showWalletModal, setShowWalletModal] = useState(false)
   const [logs, setLogs] = useState<LogLine[]>(
@@ -54,10 +51,8 @@ export default function TerminalConsole() {
   const terminalEndRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
-  // Sync wallet signer with SDK
-  useEffect(() => {
-    sdk.setWalletSigner(activeAddress ?? null, transactionSigner ?? null)
-  }, [activeAddress, transactionSigner])
+  // NOTE: SDK wallet signer sync is handled centrally by <SDKProvider>.
+  // TerminalConsole now consumes the shared SDK instance via useSDK().
 
   const push = useCallback((text: string, type?: LogLine['type']) => {
     setLogs((prev) => [...prev, { id: nextId.current++, text, type }])
@@ -86,7 +81,9 @@ export default function TerminalConsole() {
     [],
   )
 
-  // Polling for real-time updates
+  // Polling for real-time updates (local terminal view of market/inventory).
+  // SDKProvider also polls and writes to the global Zustand store, but this
+  // local copy powers the terminal's own status bar + sidebar info panel.
   useEffect(() => {
     const interval = window.setInterval(async () => {
       await refreshMarket()
@@ -95,7 +92,7 @@ export default function TerminalConsole() {
       }
     }, 5000)
     return () => window.clearInterval(interval)
-  }, [activeAddress, refreshMarket, refreshInventory])
+  }, [activeAddress, refreshMarket, refreshInventory, sdk])
 
   // SDK Events
   useEffect(() => {
@@ -105,7 +102,7 @@ export default function TerminalConsole() {
     const unsubTransfer = sdk.on('transfer', (res) => push(`[SDK Event] Transferred Asset #${res.asset_id}`, 'system'))
 
     return () => { unsubMint(); unsubList(); unsubBuy(); unsubTransfer() }
-  }, [push])
+  }, [push, sdk])
 
   // Auto-scroll
   useEffect(() => {

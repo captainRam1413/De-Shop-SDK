@@ -25,10 +25,8 @@
   "include": [
     "src/vite-env.d.ts",
     "src/main.tsx",
-    "src/App.tsx",
-    "src/components/TerminalConsole.tsx",
-    "src/components/GameSimulation.tsx",
-    "src/sdk/DeShopSDK.ts"
+    "src/**/*.tsx",
+    "src/**/*.ts"
   ],
   "references": [
     {
