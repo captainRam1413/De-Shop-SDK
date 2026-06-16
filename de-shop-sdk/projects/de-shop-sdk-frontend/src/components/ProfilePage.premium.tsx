@@ -295,7 +295,7 @@ function formatTimeAgo(dateStr: string): string {
 
 export default function ProfilePage() {
   const { activeAddress } = useWallet()
-  const { steamProfile, inventory, setSteamProfile } = useDeShopStore()
+  const { steamProfile, inventory, setSteamProfile, addNotification } = useDeShopStore()
   const [copied, setCopied] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [displayNameValue, setDisplayNameValue] = useState('')
@@ -341,9 +341,27 @@ export default function ProfilePage() {
     }
   }
 
-  const handleSteamConnect = () => {
+  const [steamConnecting, setSteamConnecting] = useState(false)
+
+  const handleSteamConnect = async () => {
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'
-    window.location.href = `${backendUrl}/auth/steam`
+    setSteamConnecting(true)
+    try {
+      // Check if the backend is reachable before redirecting
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000)
+      const res = await fetch(`${backendUrl}/auth/steam/health`, { method: 'GET', signal: controller.signal })
+      clearTimeout(timeoutId)
+      if (res.ok) {
+        window.location.href = `${backendUrl}/auth/steam`
+      } else {
+        addNotification('error', 'Backend not available. Please start the Flask server first.')
+      }
+    } catch {
+      addNotification('error', 'Backend not available. Please start the Flask server first.')
+    } finally {
+      setSteamConnecting(false)
+    }
   }
 
   const handleStartEditName = () => {
@@ -1378,29 +1396,17 @@ export default function ProfilePage() {
             {!steamProfile ? (
               <button
                 onClick={handleSteamConnect}
+                disabled={steamConnecting}
+                className="premium-btn premium-btn--sm premium-btn--green"
                 style={{
-                  padding: '6px 14px',
-                  background: `${MC.emerald}20`,
-                  border: `2px solid ${MC.emerald}`,
-                  color: MC.emerald,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  letterSpacing: '0.03em',
-                  transition: 'all 0.2s',
-                  whiteSpace: 'nowrap',
-                  fontFamily: "'Courier New', monospace",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = `${MC.emerald}35`
-                  e.currentTarget.style.boxShadow = `0 0 10px ${MC.emeraldGlow}`
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = `${MC.emerald}20`
-                  e.currentTarget.style.boxShadow = 'none'
+                  flexShrink: 0,
+                  fontSize: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
                 }}
               >
-                🔗 Link Steam Portal
+                {steamConnecting ? '⏳ Checking...' : '🔗 Link Steam'}
               </button>
             ) : (
               <button

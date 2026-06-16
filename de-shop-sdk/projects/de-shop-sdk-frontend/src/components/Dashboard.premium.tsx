@@ -1,7 +1,8 @@
 /**
- * De-Shop SDK — Dashboard / Analytics Page (Minecraft Theme)
+ * De-Shop SDK — Dashboard / Analytics Page (Professional Web3 Minecraft Theme)
  * ────────────────────────────────────────────
  * Village Ledger: Live marketplace stats, charts, village crier feed.
+ * Enhanced with web3 metrics, glow effects, and professional polish.
  */
 
 import { useState, useEffect } from 'react'
@@ -18,6 +19,13 @@ import {
   Zap,
   Tag,
   Flame,
+  Wallet,
+  Globe,
+  Fuel,
+  Link2,
+  FileText,
+  BookOpen,
+  ExternalLink,
 } from 'lucide-react'
 import {
   XAxis,
@@ -56,21 +64,22 @@ interface ActivityItem {
   price: number
   timeAgo: string
   rarity: string
+  txHash: string
 }
 
 const activityItems: ActivityItem[] = [
-  { id: '1', type: 'mint', item: 'Diamond Sword', price: 0, timeAgo: '2m ago', rarity: 'legendary' },
-  { id: '2', type: 'buy', item: 'Netherite Pickaxe', price: 58.4, timeAgo: '5m ago', rarity: 'epic' },
-  { id: '3', type: 'list', item: 'Ender Pearl', price: 34.2, timeAgo: '8m ago', rarity: 'rare' },
-  { id: '4', type: 'buy', item: 'Blaze Rod', price: 112.0, timeAgo: '12m ago', rarity: 'legendary' },
-  { id: '5', type: 'mint', item: 'Phantom Membrane', price: 0, timeAgo: '15m ago', rarity: 'epic' },
-  { id: '6', type: 'list', item: 'Glowstone', price: 22.8, timeAgo: '20m ago', rarity: 'rare' },
-  { id: '7', type: 'cancel', item: 'Elytra Wings', price: 89.5, timeAgo: '25m ago', rarity: 'epic' },
-  { id: '8', type: 'buy', item: 'Iron Golem Core', price: 45.0, timeAgo: '32m ago', rarity: 'rare' },
-  { id: '9', type: 'mint', item: 'Cobblestone Shield', price: 0, timeAgo: '38m ago', rarity: 'common' },
-  { id: '10', type: 'buy', item: 'Diamond Sword', price: 76.3, timeAgo: '45m ago', rarity: 'legendary' },
-  { id: '11', type: 'list', item: 'Torch Bundle', price: 19.9, timeAgo: '52m ago', rarity: 'common' },
-  { id: '12', type: 'buy', item: 'Netherite Pickaxe', price: 64.7, timeAgo: '1h ago', rarity: 'epic' },
+  { id: '1', type: 'mint', item: 'Diamond Sword', price: 0, timeAgo: '2m ago', rarity: 'legendary', txHash: '0x7f3a...b2c1' },
+  { id: '2', type: 'buy', item: 'Netherite Pickaxe', price: 58.4, timeAgo: '5m ago', rarity: 'epic', txHash: '0x2d8e...f4a7' },
+  { id: '3', type: 'list', item: 'Ender Pearl', price: 34.2, timeAgo: '8m ago', rarity: 'rare', txHash: '0x9c1f...d3e8' },
+  { id: '4', type: 'buy', item: 'Blaze Rod', price: 112.0, timeAgo: '12m ago', rarity: 'legendary', txHash: '0x4b5a...c6d2' },
+  { id: '5', type: 'mint', item: 'Phantom Membrane', price: 0, timeAgo: '15m ago', rarity: 'epic', txHash: '0x1e7d...a8f3' },
+  { id: '6', type: 'list', item: 'Glowstone', price: 22.8, timeAgo: '20m ago', rarity: 'rare', txHash: '0x6f2c...e1b4' },
+  { id: '7', type: 'cancel', item: 'Elytra Wings', price: 89.5, timeAgo: '25m ago', rarity: 'epic', txHash: '0x3a8b...d5c9' },
+  { id: '8', type: 'buy', item: 'Iron Golem Core', price: 45.0, timeAgo: '32m ago', rarity: 'rare', txHash: '0xc4d7...a2f1' },
+  { id: '9', type: 'mint', item: 'Cobblestone Shield', price: 0, timeAgo: '38m ago', rarity: 'common', txHash: '0x8e1f...b7d3' },
+  { id: '10', type: 'buy', item: 'Diamond Sword', price: 76.3, timeAgo: '45m ago', rarity: 'legendary', txHash: '0x5b9c...e4a6' },
+  { id: '11', type: 'list', item: 'Torch Bundle', price: 19.9, timeAgo: '52m ago', rarity: 'common', txHash: '0xd2a8...f1c5' },
+  { id: '12', type: 'buy', item: 'Netherite Pickaxe', price: 64.7, timeAgo: '1h ago', rarity: 'epic', txHash: '0xf6c3...b9d7' },
 ]
 
 const rarityData = [
@@ -80,45 +89,62 @@ const rarityData = [
   { name: 'Netherite', count: 9, color: '#3C3C4E' },
 ]
 
-// ─── Stats Card Data ──────────────────────────────────────────────────────────
+// ─── Stats Card Data — Web3 + Minecraft Hybrid ───────────────────────────────
 
 const statsCards = [
   {
-    label: 'EMERALDS TRADED',
+    label: 'TOTAL VALUE LOCKED',
     emoji: '💎',
-    value: '12,847 ALGO',
+    value: '$2.4M',
+    subtext: '12,847 ALGO',
     change: +14.2,
     icon: <Gem className="h-5 w-5" />,
     color: '#2ECC71',
     bgColor: 'rgba(46, 204, 113, 0.12)',
+    glowColor: 'rgba(46, 204, 113, 0.15)',
   },
   {
-    label: 'DAY/NIGHT CYCLE',
-    emoji: '☀️',
-    value: '+8.7%',
+    label: 'ACTIVE WALLETS',
+    emoji: '🔗',
+    value: '1,847',
+    subtext: '+128 today',
     change: +8.7,
-    icon: <Sun className="h-5 w-5" />,
-    color: '#F1C40F',
-    bgColor: 'rgba(241, 196, 15, 0.12)',
+    icon: <Wallet className="h-5 w-5" />,
+    color: '#4AEDD9',
+    bgColor: 'rgba(74, 237, 217, 0.12)',
+    glowColor: 'rgba(74, 237, 217, 0.15)',
   },
   {
-    label: 'CHEST ITEMS',
-    emoji: '📦',
-    value: '1,234',
-    change: +5.3,
-    icon: <Package className="h-5 w-5" />,
+    label: 'GAS FEES (24H)',
+    emoji: '⛽',
+    value: '342 ALGO',
+    subtext: 'Avg 0.028/tx',
+    change: -3.1,
+    icon: <Fuel className="h-5 w-5" />,
     color: '#E67E22',
     bgColor: 'rgba(230, 126, 34, 0.12)',
+    glowColor: 'rgba(230, 126, 34, 0.15)',
   },
   {
-    label: 'VILLAGERS',
-    emoji: '🧑‍🌾',
-    value: '389',
+    label: 'CROSS-CHAIN VOL',
+    emoji: '🌐',
+    value: '$847K',
+    subtext: '5 chains',
     change: +23.5,
-    icon: <Users className="h-5 w-5" />,
-    color: '#9B59B6',
-    bgColor: 'rgba(155, 89, 182, 0.12)',
+    icon: <Globe className="h-5 w-5" />,
+    color: '#c084fc',
+    bgColor: 'rgba(192, 132, 252, 0.12)',
+    glowColor: 'rgba(192, 132, 252, 0.15)',
   },
+]
+
+// ─── Quick Actions ────────────────────────────────────────────────────────────
+
+const quickActions = [
+  { label: 'Mint NFT', desc: 'Forge new item', icon: <Sparkles className="h-4 w-4" />, color: '#2ECC71', action: 'Mint NFT' },
+  { label: 'List Item', desc: 'Place in chest', icon: <Package className="h-4 w-4" />, color: '#4AEDD9', action: 'List Item' },
+  { label: 'Connect Wallet', desc: 'Link account', icon: <Link2 className="h-4 w-4" />, color: '#c084fc', action: 'Connect Wallet' },
+  { label: 'View Docs', desc: 'SDK reference', icon: <BookOpen className="h-4 w-4" />, color: '#FFD700', action: 'View Docs' },
 ]
 
 // ─── Activity Icon Map ────────────────────────────────────────────────────────
@@ -126,14 +152,14 @@ const statsCards = [
 const activityIconMap: Record<ActivityType, { icon: React.ReactNode; color: string; label: string }> = {
   mint: { icon: <Sparkles className="h-3.5 w-3.5" />, color: '#2ECC71', label: 'FORGE' },
   buy: { icon: <Zap className="h-3.5 w-3.5" />, color: '#4AEDD9', label: 'TRADE' },
-  list: { icon: <Tag className="h-3.5 w-3.5" />, color: '#9B59B6', label: 'DISPLAY' },
+  list: { icon: <Tag className="h-3.5 w-3.5" />, color: '#c084fc', label: 'DISPLAY' },
   cancel: { icon: <Flame className="h-3.5 w-3.5" />, color: '#E74C3C', label: 'CANCEL' },
 }
 
 const rarityColorMap: Record<string, string> = {
   common: '#9E9E9E',
   rare: '#4AEDD9',
-  epic: '#9B59B6',
+  epic: '#c084fc',
   legendary: '#FFD700',
 }
 
@@ -146,7 +172,9 @@ function CustomTooltip({ active, payload, label }: any) {
       className="mc-card"
       style={{
         background: 'rgba(20, 16, 12, 0.95)',
-        border: '3px solid rgba(46, 204, 113, 0.4)',
+        backdropFilter: 'blur(8px)',
+        border: '2px solid rgba(46, 204, 113, 0.4)',
+        boxShadow: '0 0 16px rgba(46, 204, 113, 0.15)',
         padding: '10px 14px',
         imageRendering: 'pixelated',
       }}
@@ -154,7 +182,7 @@ function CustomTooltip({ active, payload, label }: any) {
       <p style={{ color: '#8B7355', fontSize: 11, marginBottom: 4, fontWeight: 700, textTransform: 'uppercase' }}>{label}</p>
       {payload.map((entry: any, idx: number) => (
         <p key={idx} style={{ color: entry.color, fontSize: 13, fontWeight: 700 }}>
-          {entry.name === 'price' ? '💎 Emeralds' : '📦 Volume'}: {entry.name === 'price' ? `${entry.value} ALGO` : entry.value}
+          {entry.name === 'price' ? '💎 Price' : '📦 Volume'}: {entry.name === 'price' ? `${entry.value} ALGO` : entry.value}
         </p>
       ))}
     </div>
@@ -184,8 +212,7 @@ const slideInRight = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function DashboardPremium() {
-  const setActivePage = useDeShopStore((s) => s.setActivePage)
-  const addNotification = useDeShopStore((s) => s.addNotification)
+  const { setActivePage, addNotification, setShowWalletModal } = useDeShopStore()
 
   // Theme detection for Recharts tick colors (CSS vars not supported in SVG fill)
   const [isLightTheme, setIsLightTheme] = useState(false)
@@ -198,9 +225,13 @@ export default function DashboardPremium() {
   }, [])
 
   const handleQuickAction = (action: string) => {
+    if (action === 'Connect Wallet') {
+      setShowWalletModal(true)
+      return
+    }
     addNotification('info', `${action} initiated from village ledger`)
-    if (action === 'Browse Market') setActivePage('market')
-    if (action === 'Game Arena') setActivePage('game')
+    if (action === 'List Item') setActivePage('market')
+    if (action === 'View Docs') setActivePage('terminal')
   }
 
   return (
@@ -243,7 +274,7 @@ export default function DashboardPremium() {
             ⛏ VILLAGE LEDGER
           </h2>
           <p style={{ fontSize: 11, color: '#8B7355', marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            🧱 Live trading post analytics &amp; village insights
+            🧱 Live trading post analytics &amp; web3 insights
           </p>
         </div>
         <div
@@ -253,8 +284,10 @@ export default function DashboardPremium() {
             alignItems: 'center',
             gap: 6,
             padding: '4px 12px',
-            background: 'rgba(46, 204, 113, 0.1)',
+            background: 'rgba(46, 204, 113, 0.08)',
+            backdropFilter: 'blur(8px)',
             border: '2px solid rgba(46, 204, 113, 0.3)',
+            boxShadow: '0 0 12px rgba(46, 204, 113, 0.1)',
             fontSize: 10,
             color: '#2ECC71',
             fontWeight: 700,
@@ -274,19 +307,25 @@ export default function DashboardPremium() {
         </div>
       </motion.div>
 
-      {/* ─── Stats Cards Row ─────────────────────────────────────────────── */}
+      {/* ─── Stats Cards Row — Professional Glow ─────────────────────────── */}
       <div className="dash-stats">
         {statsCards.map((card, i) => (
           <motion.div
             key={card.label}
             variants={itemVariants}
-            className="premium-card dash-stat-card mc-card"
+            className="premium-card dash-stat-card mc-card dash-stat-glow"
             style={{
-              padding: 16,
+              padding: 14,
               cursor: 'default',
               display: 'flex',
               flexDirection: 'column',
-              gap: 10,
+              gap: 8,
+              boxShadow: `0 0 20px ${card.glowColor}, inset 0 1px 0 rgba(255,255,255,0.05)`,
+              transition: 'box-shadow 0.3s ease, transform 0.2s ease',
+            }}
+            whileHover={{
+              boxShadow: `0 0 30px ${card.glowColor.replace('0.15', '0.3')}, 0 4px 12px rgba(0,0,0,0.3)`,
+              y: -2,
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -300,6 +339,7 @@ export default function DashboardPremium() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: card.color,
+                  boxShadow: `0 0 10px ${card.glowColor}`,
                 }}
               >
                 {card.icon}
@@ -326,16 +366,20 @@ export default function DashboardPremium() {
               <p style={{ fontSize: 10, color: '#8B7355', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 {card.emoji} {card.label}
               </p>
-              <p style={{ fontSize: 20, fontWeight: 800, color: card.color, marginTop: 2 }}>{card.value}</p>
+              <p style={{ fontSize: 20, fontWeight: 800, color: card.color, marginTop: 2, textShadow: `0 0 12px ${card.glowColor}` }}>
+                {card.value}
+              </p>
+              <p style={{ fontSize: 9, color: '#6B5B3E', marginTop: 1 }}>{card.subtext}</p>
             </div>
-            {/* XP bar style progress */}
-            <div style={{ width: '100%', height: 4, background: 'rgba(0,0,0,0.3)', overflow: 'hidden' }}>
+            {/* XP bar style progress with glow */}
+            <div style={{ width: '100%', height: 3, background: 'rgba(0,0,0,0.3)', overflow: 'hidden', borderRadius: 2 }}>
               <div
                 style={{
                   width: `${Math.min(100, Math.abs(card.change) * 3)}%`,
                   height: '100%',
-                  background: card.color,
+                  background: `linear-gradient(90deg, ${card.color}80, ${card.color})`,
                   boxShadow: `0 0 6px ${card.color}80`,
+                  borderRadius: 2,
                 }}
               />
             </div>
@@ -343,10 +387,70 @@ export default function DashboardPremium() {
         ))}
       </div>
 
+      {/* ─── Quick Actions — Professional Web3 SDK Feel ──────────────────── */}
+      <motion.div variants={itemVariants}>
+        <div className="quick-actions-grid">
+          {quickActions.map((action) => (
+            <motion.button
+              key={action.label}
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.97 }}
+              className="premium-card mc-card quick-action-btn"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '10px 14px',
+                cursor: 'pointer',
+                background: 'rgba(13, 13, 31, 0.8)',
+                backdropFilter: 'blur(8px)',
+                border: `2px solid ${action.color}25`,
+                boxShadow: `0 0 12px ${action.color}10`,
+                transition: 'all 0.25s ease',
+              }}
+              onClick={() => handleQuickAction(action.action)}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget as HTMLButtonElement
+                el.style.borderColor = `${action.color}50`
+                el.style.boxShadow = `0 0 20px ${action.color}20, 0 4px 12px rgba(0,0,0,0.2)`
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget as HTMLButtonElement
+                el.style.borderColor = `${action.color}25`
+                el.style.boxShadow = `0 0 12px ${action.color}10`
+              }}
+            >
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  background: `${action.color}15`,
+                  border: `2px solid ${action.color}30`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: action.color,
+                  flexShrink: 0,
+                }}
+              >
+                {action.icon}
+              </div>
+              <div style={{ textAlign: 'left', minWidth: 0 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: action.color, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                  {action.label}
+                </div>
+                <div style={{ fontSize: 9, color: '#6B5B3E', marginTop: 1 }}>{action.desc}</div>
+              </div>
+              <ExternalLink className="h-3 w-3" style={{ marginLeft: 'auto', color: '#6B5B3E', opacity: 0.5, flexShrink: 0 }} />
+            </motion.button>
+          ))}
+        </div>
+      </motion.div>
+
       {/* ─── Main Content: Chart + Activity Feed ─────────────────────────── */}
       <div className="dashboard-main-grid">
         {/* Price Chart — Trading Post */}
-        <motion.div variants={itemVariants} className="premium-card mc-card dash-chart dashboard-chart-container" style={{ padding: 20 }}>
+        <motion.div variants={itemVariants} className="premium-card mc-card dash-chart dashboard-chart-container" style={{ padding: 20, boxShadow: '0 0 16px rgba(46, 204, 113, 0.06)' }}>
           <div
             style={{
               display: 'flex',
@@ -364,7 +468,7 @@ export default function DashboardPremium() {
                   textTransform: 'uppercase',
                   letterSpacing: '0.06em',
                   margin: 0,
-                  textShadow: '1px 1px 0px rgba(0,0,0,0.5)',
+                  textShadow: '1px 1px 0px rgba(0,0,0,0.5), 0 0 12px rgba(46, 204, 113, 0.2)',
                 }}
               >
                 ⛏ TRADING POST
@@ -373,11 +477,11 @@ export default function DashboardPremium() {
             </div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 10, height: 4, background: '#2ECC71' }} />
+                <span style={{ width: 10, height: 3, background: '#2ECC71', boxShadow: '0 0 4px rgba(46, 204, 113, 0.4)' }} />
                 <span style={{ fontSize: 9, color: '#8B7355', fontWeight: 600, textTransform: 'uppercase' }}>💎 Price</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 10, height: 4, background: '#4AEDD9', opacity: 0.6 }} />
+                <span style={{ width: 10, height: 3, background: '#4AEDD9', opacity: 0.6 }} />
                 <span style={{ fontSize: 9, color: '#8B7355', fontWeight: 600, textTransform: 'uppercase' }}>📦 Volume</span>
               </div>
             </div>
@@ -444,8 +548,8 @@ export default function DashboardPremium() {
           </ResponsiveContainer>
         </motion.div>
 
-        {/* Activity Feed — Village Crier */}
-        <motion.div variants={slideInRight} className="premium-card mc-card dash-activity" style={{ padding: 0, display: 'flex', flexDirection: 'column' }}>
+        {/* Activity Feed — Village Crier with Tx Hashes */}
+        <motion.div variants={slideInRight} className="premium-card mc-card dash-activity" style={{ padding: 0, display: 'flex', flexDirection: 'column', boxShadow: '0 0 16px rgba(74, 237, 217, 0.06)' }}>
           <div
             style={{
               padding: '14px 18px 12px',
@@ -463,12 +567,23 @@ export default function DashboardPremium() {
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
                 margin: 0,
-                textShadow: '1px 1px 0px rgba(0,0,0,0.5)',
+                textShadow: '1px 1px 0px rgba(0,0,0,0.5), 0 0 12px rgba(74, 237, 217, 0.2)',
               }}
             >
               📢 VILLAGE CRIER
             </h3>
-            <span style={{ fontSize: 9, color: '#8B7355', fontWeight: 700, textTransform: 'uppercase' }}>RECENT</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span
+                style={{
+                  width: 5,
+                  height: 5,
+                  background: '#2ECC71',
+                  boxShadow: '0 0 6px #2ECC71',
+                  animation: 'mc-pulse 2s infinite',
+                }}
+              />
+              <span style={{ fontSize: 9, color: '#8B7355', fontWeight: 700, textTransform: 'uppercase' }}>LIVE</span>
+            </div>
           </div>
           <div
             style={{
@@ -492,7 +607,7 @@ export default function DashboardPremium() {
                     gap: 10,
                     padding: '8px 18px',
                     borderBottom: '1px solid rgba(139, 115, 85, 0.08)',
-                    transition: 'background 0.15s ease',
+                    transition: 'background 0.2s ease',
                     cursor: 'default',
                   }}
                   onMouseEnter={(e) => {
@@ -514,6 +629,7 @@ export default function DashboardPremium() {
                       justifyContent: 'center',
                       color: meta.color,
                       flexShrink: 0,
+                      boxShadow: `0 0 8px ${meta.color}10`,
                     }}
                   >
                     {meta.icon}
@@ -560,6 +676,12 @@ export default function DashboardPremium() {
                         {item.timeAgo}
                       </span>
                     </div>
+                    {/* Transaction hash */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                      <span style={{ fontSize: 8, color: '#4AEDD9', opacity: 0.6, fontFamily: 'monospace', letterSpacing: '0.02em' }}>
+                        {item.txHash}
+                      </span>
+                    </div>
                   </div>
                 </motion.div>
               )
@@ -568,10 +690,10 @@ export default function DashboardPremium() {
         </motion.div>
       </div>
 
-      {/* ─── Bottom Row: Ore Distribution + Quick Actions ─────────────── */}
+      {/* ─── Bottom Row: Ore Distribution + SDK Stats ──────────────────── */}
       <div className="dashboard-bottom-grid">
         {/* Ore Distribution */}
-        <motion.div variants={itemVariants} className="premium-card mc-card dashboard-chart-container" style={{ padding: 20 }}>
+        <motion.div variants={itemVariants} className="premium-card mc-card dashboard-chart-container" style={{ padding: 20, boxShadow: '0 0 16px rgba(255, 215, 0, 0.06)' }}>
           <h3
             style={{
               fontSize: 13,
@@ -580,7 +702,7 @@ export default function DashboardPremium() {
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
               margin: '0 0 16px 0',
-              textShadow: '1px 1px 0px rgba(0,0,0,0.5)',
+              textShadow: '1px 1px 0px rgba(0,0,0,0.5), 0 0 12px rgba(255, 215, 0, 0.2)',
             }}
           >
             ⛏ ORE DISTRIBUTION
@@ -645,84 +767,73 @@ export default function DashboardPremium() {
           </div>
         </motion.div>
 
-        {/* Quick Actions */}
-        <motion.div variants={slideInRight} className="premium-card mc-card" style={{ padding: 20 }}>
+        {/* SDK Quick Reference */}
+        <motion.div variants={slideInRight} className="premium-card mc-card" style={{ padding: 20, boxShadow: '0 0 16px rgba(192, 132, 252, 0.06)' }}>
           <h3
             style={{
               fontSize: 13,
               fontWeight: 700,
-              color: '#E67E22',
+              color: '#c084fc',
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
               margin: '0 0 16px 0',
-              textShadow: '1px 1px 0px rgba(0,0,0,0.5)',
+              textShadow: '1px 1px 0px rgba(0,0,0,0.5), 0 0 12px rgba(192, 132, 252, 0.2)',
             }}
           >
-            ⚡ QUICK ACTIONS
+            📜 SDK REFERENCE
           </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="premium-btn premium-btn--sm"
-              style={{ width: '100%', justifyContent: 'flex-start', padding: '6px 14px' }}
-              onClick={() => handleQuickAction('Place in Chest')}
-            >
-              <Package className="h-4 w-4" />
-              <span>📦 PLACE IN CHEST</span>
-              <span style={{ marginLeft: 'auto', fontSize: 9, opacity: 0.5 }}>LIST</span>
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="premium-btn premium-btn--sm"
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* Code snippet preview */}
+            <div
               style={{
-                width: '100%',
-                justifyContent: 'flex-start',
-                padding: '6px 14px',
-                borderColor: 'rgba(46, 204, 113, 0.3)',
-                color: '#2ECC71',
+                background: 'rgba(0,0,0,0.4)',
+                border: '2px solid rgba(192, 132, 252, 0.2)',
+                padding: '10px 12px',
+                fontFamily: 'monospace',
+                fontSize: 10,
+                lineHeight: 1.6,
+                color: '#D4C5A9',
+                overflow: 'hidden',
               }}
-              onClick={() => handleQuickAction('Enchant Item')}
             >
-              <Sparkles className="h-4 w-4" />
-              <span>✨ ENCHANT ITEM</span>
-              <span style={{ marginLeft: 'auto', fontSize: 9, opacity: 0.5 }}>MINT</span>
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="premium-btn premium-btn--sm"
-              style={{
-                width: '100%',
-                justifyContent: 'flex-start',
-                padding: '6px 14px',
-                borderColor: 'rgba(155, 89, 182, 0.3)',
-                color: '#9B59B6',
-              }}
-              onClick={() => handleQuickAction('Check Ender Chest')}
-            >
-              <Gem className="h-4 w-4" />
-              <span>🟣 CHECK ENDER CHEST</span>
-              <span style={{ marginLeft: 'auto', fontSize: 9, opacity: 0.5 }}>VAULT</span>
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="premium-btn premium-btn--sm"
-              style={{
-                width: '100%',
-                justifyContent: 'flex-start',
-                padding: '6px 14px',
-                borderColor: 'rgba(241, 196, 15, 0.3)',
-                color: '#F1C40F',
-              }}
-              onClick={() => handleQuickAction('Browse Market')}
-            >
-              <Zap className="h-4 w-4" />
-              <span>🗡️ BAZAAR</span>
-              <span style={{ marginLeft: 'auto', fontSize: 9, opacity: 0.5 }}>SHOP</span>
-            </motion.button>
+              <span style={{ color: '#c084fc' }}>import</span> {'{ DeShopSDK }'} <span style={{ color: '#c084fc' }}>from</span> <span style={{ color: '#2ECC71' }}>'@de-shop/sdk'</span>
+              <br />
+              <span style={{ color: '#c084fc' }}>const</span> sdk = <span style={{ color: '#c084fc' }}>new</span> <span style={{ color: '#4AEDD9' }}>DeShopSDK</span>({'{'}
+              <br />
+              &nbsp;&nbsp;network: <span style={{ color: '#FFD700' }}>'testnet'</span>,{'\n'}
+              &nbsp;&nbsp;wallet: provider
+              {'}'})
+            </div>
+            {/* SDK feature buttons */}
+            {[
+              { label: 'Mint NFT', desc: 'Create game assets on-chain', icon: <Sparkles className="h-4 w-4" />, color: '#2ECC71' },
+              { label: 'Trade Items', desc: 'Peer-to-peer marketplace', icon: <Zap className="h-4 w-4" />, color: '#4AEDD9' },
+              { label: 'Read Docs', desc: 'Full API reference', icon: <FileText className="h-4 w-4" />, color: '#FFD700' },
+            ].map((ref) => (
+              <motion.button
+                key={ref.label}
+                whileHover={{ scale: 1.02, x: 4 }}
+                whileTap={{ scale: 0.98 }}
+                className="premium-btn premium-btn--sm"
+                style={{
+                  width: '100%',
+                  justifyContent: 'flex-start',
+                  padding: '6px 14px',
+                  borderColor: `${ref.color}30`,
+                  color: ref.color,
+                  background: `${ref.color}08`,
+                  transition: 'all 0.2s ease',
+                }}
+                onClick={() => handleQuickAction(ref.label)}
+              >
+                {ref.icon}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: 9, fontWeight: 700 }}>{ref.label.toUpperCase()}</span>
+                  <span style={{ fontSize: 7, color: '#6B5B3E', fontWeight: 400 }}>{ref.desc}</span>
+                </div>
+                <span style={{ marginLeft: 'auto', fontSize: 9, opacity: 0.5 }}>→</span>
+              </motion.button>
+            ))}
           </div>
         </motion.div>
       </div>
