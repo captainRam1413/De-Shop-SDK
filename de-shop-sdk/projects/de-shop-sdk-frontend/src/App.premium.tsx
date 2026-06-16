@@ -35,6 +35,10 @@ const MinecraftVoxelGame = lazy(() => import('./components/MinecraftVoxelGame'))
 const MarketplaceV2 = lazy(() => import('./components/MarketplaceV2.premium'))
 const DashboardPremium = lazy(() => import('./components/Dashboard.premium'))
 const ProfilePage = lazy(() => import('./components/ProfilePage.premium'))
+// Landing page is also lazy-loaded so the very first paint only ships the
+// App shell. The landing bundle (Recharts + Framer Motion) downloads in
+// parallel and shows a themed loader meanwhile.
+const Landing = lazy(() => import('./components/Landing'))
 
 // GitHub brand icon was removed from lucide-react (brand icons dropped).
 // Inline SVG keeps the GitHub logo in the footer link without extra deps.
@@ -183,7 +187,7 @@ function Sidebar() {
   )
 }
 
-function Header() {
+function Header({ onBackToHome }: { onBackToHome?: () => void }) {
   const { activeAddress, activeWallet } = useWallet()
   const { steamProfile, setShowWalletModal, status, notifications, activePage } = useDeShopStore()
   const addr = activeAddress
@@ -205,6 +209,16 @@ function Header() {
   return (
     <header className="premium-header mc-header">
       <div className="premium-header__left mc-header__left">
+        {onBackToHome && (
+          <button
+            className="premium-btn premium-btn--sm premium-header__back"
+            onClick={onBackToHome}
+            title="Back to landing page"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            <span className="premium-header__back-label">Home</span>
+          </button>
+        )}
         {/* Network Badge */}
         <div className="premium-header__network-badge premium-header__network-badge--testnet">
           <Globe className="h-3 w-3" />
@@ -317,6 +331,17 @@ export default function App() {
   const { wallets } = useWallet()
   const PageComponent = pageComponents[activePage]
 
+  // ── Landing vs. dashboard view ──
+  // The landing page is the first thing visitors see. "Launch App" CTAs flip
+  // into the dashboard; the "Home" button in the dashboard header flips back.
+  const [view, setView] = useState<'landing' | 'app'>('landing')
+
+  // Scroll back to top whenever we switch views so neither view inherits the
+  // other's scroll position.
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [view])
+
   // ── Mobile detection: skip AnimatedBorder wrapper on small screens ──
   const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
@@ -349,6 +374,25 @@ export default function App() {
     return undefined
   }, [notifications, showConfetti])
 
+  // ── Landing view: render the standalone landing page (no sidebar/header) ──
+  if (view === 'landing') {
+    return (
+      <Suspense
+        fallback={
+          <div className="ds-landing-fallback" role="status" aria-live="polite">
+            <Loader2 className="h-7 w-7 animate-spin" style={{ color: 'var(--mc-emerald, #22c55e)' }} />
+            <span>Loading De-Shop SDK…</span>
+          </div>
+        }
+      >
+        <Landing onLaunchApp={() => setView('app')} />
+      </Suspense>
+    )
+  }
+
+  // ── Dashboard view ──
+  const goHome = () => setView('landing')
+
   return (
     <div className="premium-app mc-app">
       <ParticleBackground />
@@ -362,7 +406,7 @@ export default function App() {
       )}
 
       <div className="premium-main mc-main">
-        <Header />
+        <Header onBackToHome={goHome} />
         <div className="premium-content mc-content">
           <AnimatePresence mode="wait">
             <motion.div
