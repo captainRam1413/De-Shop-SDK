@@ -158,6 +158,20 @@ def fetch_steam_inventory(steam_id: str, app_id: int = 730, context_id: int = 2)
 
 # ─── Routes ───────────────────────────────────────────────────────────────────
 
+@steam_bp.get("/steam/health")
+def steam_health():
+    """
+    Lightweight health check for the Steam auth blueprint.
+
+    GET /auth/steam/health
+
+    Returns 200 if the Steam auth service is reachable. Used by the
+    frontend (ProfilePage) to verify backend availability before
+    initiating the Steam OpenID redirect.
+    """
+    return jsonify({"ok": True, "service": "steam_auth"}), 200
+
+
 @steam_bp.get("/steam")
 def steam_login():
     """

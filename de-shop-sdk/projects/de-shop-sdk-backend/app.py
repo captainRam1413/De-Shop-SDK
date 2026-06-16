@@ -86,6 +86,25 @@ ai_engine = AIPricingEngine()
 store = DatabaseStore(ai=ai_engine)
 store.init_app(app)  # Initializes SQLAlchemy + creates tables
 
+# Auto-train the AI pricing model on startup if there are enough buy
+# transactions. This ensures the ML path is exercised in production
+# instead of always falling back to rule-based pricing. Safe to skip
+# on cold databases (no buy txns yet) — train_model() returns no_data.
+with app.app_context():
+    try:
+        from deshop_backend.models import Transaction as _TxnModel
+        buy_count = _TxnModel.query.filter_by(txn_type="buy").count()
+        if buy_count >= 5:
+            _train_result = ai_engine.train_model()
+            if _train_result.get("status") == "ok":
+                print(f"AI model auto-trained with {buy_count} buy transactions "
+                      f"(r^2={_train_result.get('r_squared', 0.0):.4f})")
+            else:
+                print(f"AI model auto-train attempted with {buy_count} buy txns "
+                      f"but returned status={_train_result.get('status')}")
+    except Exception as _e:
+        print(f"AI model auto-train skipped: {_e}")
+
 algorand = AlgorandAdapter.from_env()
 
 socketio = init_socketio(app)
@@ -226,7 +245,8 @@ def mint() -> tuple[dict, int]:
         broadcast_mint(asset)
         return {"asset": asset, "mode": "testnet" if algorand.enabled else "mock"}, 201
     except Exception as exc:
-        return {"error": str(exc)}, 500
+        app.logger.error("Unhandled error in route: %s", exc, exc_info=True)
+        return {"error": "Internal server error"}, 500
 
 
 # ─── Assets ───────────────────────────────────────────────────────────────────
@@ -728,7 +748,8 @@ def steam_escrow() -> tuple[dict, int]:
             "asset": asset,
         }, 200
     except Exception as exc:
-        return {"error": str(exc)}, 500
+        app.logger.error("Unhandled error in route: %s", exc, exc_info=True)
+        return {"error": "Internal server error"}, 500
 
 
 @app.post("/steam/withdraw")
@@ -801,7 +822,8 @@ def ipfs_upload() -> tuple[dict, int]:
         uri = upload_metadata(data)
         return {"ipfs_uri": uri}, 200
     except Exception as exc:
-        return {"error": str(exc)}, 500
+        app.logger.error("Unhandled error in route: %s", exc, exc_info=True)
+        return {"error": "Internal server error"}, 500
 
 
 @app.post("/ai/train")
@@ -812,7 +834,8 @@ def ai_train() -> tuple[dict, int]:
         result = ai_engine.train_model()
         return result, 200
     except Exception as exc:
-        return {"error": str(exc)}, 500
+        app.logger.error("Unhandled error in route: %s", exc, exc_info=True)
+        return {"error": "Internal server error"}, 500
 
 
 @app.get("/oracle/status")
@@ -901,7 +924,8 @@ def search_assets() -> tuple[dict, int]:
             },
         }, 200
     except Exception as exc:
-        return {"success": False, "error": str(exc)}, 500
+        app.logger.error("Unhandled error in route: %s", exc, exc_info=True)
+        return {"success": False, "error": "Internal server error"}, 500
 
 
 # ─── Analytics Endpoints ────────────────────────────────────────────────────
@@ -979,7 +1003,8 @@ def market_stats() -> tuple[dict, int]:
             },
         }, 200
     except Exception as exc:
-        return {"success": False, "error": str(exc)}, 500
+        app.logger.error("Unhandled error in route: %s", exc, exc_info=True)
+        return {"success": False, "error": "Internal server error"}, 500
 
 
 @app.get("/api/analytics/price-history/<int:asset_id>")
@@ -1069,7 +1094,8 @@ def price_history(asset_id: int) -> tuple[dict, int]:
             },
         }, 200
     except Exception as exc:
-        return {"success": False, "error": str(exc)}, 500
+        app.logger.error("Unhandled error in route: %s", exc, exc_info=True)
+        return {"success": False, "error": "Internal server error"}, 500
 
 
 @app.get("/api/analytics/portfolio/<wallet>")
@@ -1141,7 +1167,8 @@ def portfolio_analytics(wallet: str) -> tuple[dict, int]:
             },
         }, 200
     except Exception as exc:
-        return {"success": False, "error": str(exc)}, 500
+        app.logger.error("Unhandled error in route: %s", exc, exc_info=True)
+        return {"success": False, "error": "Internal server error"}, 500
 
 
 @app.get("/api/analytics/rarity-distribution")
@@ -1177,7 +1204,8 @@ def rarity_distribution() -> tuple[dict, int]:
             },
         }, 200
     except Exception as exc:
-        return {"success": False, "error": str(exc)}, 500
+        app.logger.error("Unhandled error in route: %s", exc, exc_info=True)
+        return {"success": False, "error": "Internal server error"}, 500
 
 
 # ─── User Profile Endpoints ─────────────────────────────────────────────────
@@ -1261,13 +1289,23 @@ ACHIEVEMENTS = [
 
 
 @app.get("/api/user/<wallet>/achievements")
+@require_auth
 def user_achievements(wallet: str) -> tuple[dict, int]:
     """
     Get achievement badges for a user.
 
     Returns list of all achievements with earned status based on
     the user's activity in the database.
+
+    Requires JWT/API-key auth. The authenticated wallet must match the
+    requested wallet, or be listed in the ``ADMIN_WALLETS`` env var
+    (comma-separated) for cross-wallet admin access.
     """
+    # Authorization: self or admin
+    admin_wallets = {w.strip() for w in os.getenv("ADMIN_WALLETS", "").split(",") if w.strip()}
+    if request.auth_wallet != wallet and request.auth_wallet not in admin_wallets:
+        return {"success": False, "error": "Not authorized to view this wallet's achievements"}, 403
+
     try:
         from deshop_backend.models import Asset as AssetModel, Transaction as TxnModel, User as UserModel
         from datetime import timedelta
@@ -1347,10 +1385,12 @@ def user_achievements(wallet: str) -> tuple[dict, int]:
             },
         }, 200
     except Exception as exc:
-        return {"success": False, "error": str(exc)}, 500
+        app.logger.error("Unhandled error in route: %s", exc, exc_info=True)
+        return {"success": False, "error": "Internal server error"}, 500
 
 
 @app.get("/api/user/<wallet>/transactions")
+@require_auth
 def user_transactions(wallet: str) -> tuple[dict, int]:
     """
     Get transaction history for a user.
@@ -1358,7 +1398,16 @@ def user_transactions(wallet: str) -> tuple[dict, int]:
     Query params:
       page     – page number (default 1)
       per_page – items per page (default 20, max 100)
+
+    Requires JWT/API-key auth. The authenticated wallet must match the
+    requested wallet, or be listed in the ``ADMIN_WALLETS`` env var
+    (comma-separated) for cross-wallet admin access.
     """
+    # Authorization: self or admin
+    admin_wallets = {w.strip() for w in os.getenv("ADMIN_WALLETS", "").split(",") if w.strip()}
+    if request.auth_wallet != wallet and request.auth_wallet not in admin_wallets:
+        return {"success": False, "error": "Not authorized to view this wallet's transactions"}, 403
+
     try:
         from deshop_backend.models import Transaction as TxnModel, Asset as AssetModel
 
@@ -1398,7 +1447,8 @@ def user_transactions(wallet: str) -> tuple[dict, int]:
             },
         }, 200
     except Exception as exc:
-        return {"success": False, "error": str(exc)}, 500
+        app.logger.error("Unhandled error in route: %s", exc, exc_info=True)
+        return {"success": False, "error": "Internal server error"}, 500
 
 
 # ─── Wishlist Endpoints ─────────────────────────────────────────────────────
@@ -1428,7 +1478,8 @@ def get_wishlist() -> tuple[dict, int]:
             },
         }, 200
     except Exception as exc:
-        return {"success": False, "error": str(exc)}, 500
+        app.logger.error("Unhandled error in route: %s", exc, exc_info=True)
+        return {"success": False, "error": "Internal server error"}, 500
 
 
 @app.post("/api/wishlist/<int:asset_id>")
@@ -1470,7 +1521,8 @@ def add_to_wishlist(asset_id: int) -> tuple[dict, int]:
             },
         }, 201
     except Exception as exc:
-        return {"success": False, "error": str(exc)}, 500
+        app.logger.error("Unhandled error in route: %s", exc, exc_info=True)
+        return {"success": False, "error": "Internal server error"}, 500
 
 
 @app.delete("/api/wishlist/<int:asset_id>")
@@ -1494,32 +1546,55 @@ def remove_from_wishlist(asset_id: int) -> tuple[dict, int]:
             },
         }, 200
     except Exception as exc:
-        return {"success": False, "error": str(exc)}, 500
+        app.logger.error("Unhandled error in route: %s", exc, exc_info=True)
+        return {"success": False, "error": "Internal server error"}, 500
 
 
 # ─── Error Handlers ─────────────────────────────────────────────────────────
 
 @app.errorhandler(404)
 def not_found(e):
-    return {"error": "Endpoint not found"}, 404
+    return jsonify({"error": "Endpoint not found"}), 404
 
 
 @app.errorhandler(405)
 def method_not_allowed(e):
-    return {"error": "Method not allowed"}, 405
+    return jsonify({"error": "Method not allowed"}), 405
 
 
 @app.errorhandler(429)
 def rate_limit_exceeded(e):
-    return {"error": "Rate limit exceeded", "retry_after": e.description}, 429
+    return jsonify({"error": "Rate limit exceeded", "retry_after": e.description}), 429
 
 
 @app.errorhandler(500)
 def internal_error(e):
-    return {"error": "Internal server error"}, 500
+    # Log the full exception server-side; return only a generic message to the
+    # client to avoid leaking internal details (DB error text, stack traces, etc.).
+    app.logger.error("Internal server error: %s", e, exc_info=True)
+    return jsonify({"error": "Internal server error"}), 500
+
+
+@app.errorhandler(Exception)
+def unhandled_exception(e):
+    """Catch-all for any exception not handled by a route or a more specific handler.
+
+    Logs the full traceback server-side and returns a generic 500 to the client.
+    HTTPException subclasses are re-raised so Flask's normal routing/4xx handling
+    still works (e.g. abort(404) → not_found above).
+    """
+    from werkzeug.exceptions import HTTPException
+    if isinstance(e, HTTPException):
+        raise e
+    app.logger.error("Unhandled exception: %s", e, exc_info=True)
+    return jsonify({"error": "Internal server error"}), 500
 
 
 # ─── Entry Point ─────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True, host="0.0.0.0", port=5000)
+    # allow_unsafe_werkzeug=True is required for socketio.run() to work on
+    # Werkzeug 3.x (pinned via Flask 3.1.0). Without it, the dev server
+    # refuses to start with: "The Werkzeug web server is not designed to
+    # run in production." For production, use gunicorn + eventlet/gevent.
+    socketio.run(app, debug=True, host="0.0.0.0", port=5000, allow_unsafe_werkzeug=True)

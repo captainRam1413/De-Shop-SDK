@@ -172,11 +172,15 @@ def broadcast_mint(asset_data: dict[str, Any]) -> None:
     Broadcast an asset_minted event to marketplace, wallet, and rarity rooms.
 
     Emitting is a no-op when ``socketio`` is not initialised or no clients exist.
+
+    Note: ``Asset.to_dict()`` returns the wallet under the ``owner`` key
+    (not ``owner_wallet`` / ``wallet``). We prefer ``owner`` and fall back
+    to legacy keys for backward compatibility with older callers.
     """
     if socketio is None or get_connection_count() == 0:
         return
 
-    wallet = asset_data.get("owner_wallet", asset_data.get("wallet", ""))
+    wallet = asset_data.get("owner") or asset_data.get("owner_wallet") or asset_data.get("wallet") or ""
     rarity = asset_data.get("rarity", "")
 
     socketio.emit(EVENT_ASSET_MINTED, asset_data, room="marketplace")
@@ -193,11 +197,15 @@ def broadcast_list(asset_data: dict[str, Any]) -> None:
     Broadcast asset_listed and marketplace_update events.
 
     Emitting is a no-op when ``socketio`` is not initialised or no clients exist.
+
+    Note: ``Asset.to_dict()`` returns the wallet under the ``owner`` key
+    (not ``owner_wallet`` / ``wallet``). We prefer ``owner`` and fall back
+    to legacy keys for backward compatibility with older callers.
     """
     if socketio is None or get_connection_count() == 0:
         return
 
-    wallet = asset_data.get("owner_wallet", asset_data.get("wallet", ""))
+    wallet = asset_data.get("owner") or asset_data.get("owner_wallet") or asset_data.get("wallet") or ""
     rarity = asset_data.get("rarity", "")
 
     socketio.emit(EVENT_ASSET_LISTED, asset_data, room="marketplace")
@@ -222,10 +230,19 @@ def broadcast_buy(sale_data: dict[str, Any]) -> None:
     socketio.emit(EVENT_ASSET_SOLD, sale_data, room="marketplace")
     socketio.emit("marketplace_update", sale_data, room="marketplace")
 
-    # Also notify the buyer and seller wallet rooms if present
+    # Also notify the buyer and seller wallet rooms if present.
+    # ``sale`` payloads from the store use ``buyer`` and ``seller`` keys
+    # (not ``buyer_wallet`` / ``seller_wallet``). We prefer the canonical
+    # keys and fall back to legacy ones for backward compatibility.
     sale = sale_data.get("sale", sale_data)
-    buyer = sale.get("buyer_wallet", "")
-    seller = sale.get("seller_wallet", sale.get("owner_wallet", ""))
+    buyer = sale.get("buyer") or sale.get("buyer_wallet") or ""
+    seller = (
+        sale.get("seller")
+        or sale.get("seller_wallet")
+        or sale.get("owner")
+        or sale.get("owner_wallet")
+        or ""
+    )
     if buyer:
         socketio.emit(EVENT_ASSET_SOLD, sale_data, room=f"wallet:{buyer}")
     if seller:
@@ -239,11 +256,15 @@ def broadcast_cancel(asset_data: dict[str, Any]) -> None:
     Broadcast asset_cancelled and marketplace_update events.
 
     Emitting is a no-op when ``socketio`` is not initialised or no clients exist.
+
+    Note: ``Asset.to_dict()`` returns the wallet under the ``owner`` key
+    (not ``owner_wallet`` / ``wallet``). We prefer ``owner`` and fall back
+    to legacy keys for backward compatibility with older callers.
     """
     if socketio is None or get_connection_count() == 0:
         return
 
-    wallet = asset_data.get("owner_wallet", asset_data.get("wallet", ""))
+    wallet = asset_data.get("owner") or asset_data.get("owner_wallet") or asset_data.get("wallet") or ""
     rarity = asset_data.get("rarity", "")
 
     socketio.emit(EVENT_ASSET_CANCELLED, asset_data, room="marketplace")

@@ -85,8 +85,12 @@ class Asset(db.Model):  # type: ignore[name-defined]
 
     owner_user = db.relationship("User", back_populates="assets", foreign_keys=[owner_wallet])
     nft = db.relationship("NFT", back_populates="asset", uselist=False, cascade="all, delete-orphan")
-    transactions = db.relationship("Transaction", back_populates="asset", lazy="dynamic")
-    listings = db.relationship("Listing", back_populates="asset", lazy="dynamic")
+    # cascade='all, delete-orphan' is required so that deleting an Asset also
+    # deletes its dependent Transaction rows — otherwise SQLAlchemy NULLs out
+    # transactions.asset_id, which violates the NOT NULL constraint and causes
+    # /steam/withdraw (and any asset deletion) to fail with IntegrityError.
+    transactions = db.relationship("Transaction", back_populates="asset", cascade="all, delete-orphan", lazy="dynamic")
+    listings = db.relationship("Listing", back_populates="asset", cascade="all, delete-orphan", lazy="dynamic")
 
     @property
     def suggested_price(self) -> dict[str, Any]:
