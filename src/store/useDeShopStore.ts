@@ -25,6 +25,18 @@ export interface Notification {
 
 export type AppStatus = 'online' | 'offline' | 'connecting'
 
+export interface PriceAlert {
+  id: string
+  assetName: string
+  assetId?: string
+  condition: 'above' | 'below'
+  targetPrice: number
+  createdAt: number
+  triggered?: boolean
+  triggeredAt?: number
+  lastPrice?: number
+}
+
 interface DeShopState {
   // Navigation
   activePage: ActivePage
@@ -41,8 +53,16 @@ interface DeShopState {
   status: AppStatus
   // Command palette
   commandPaletteOpen: boolean
+  // Keyboard shortcuts overlay
+  shortcutsOpen: boolean
+  // Price alert modal
+  priceAlertAsset: { name: string; id?: string; price: number } | null
   // Theme
   theme: TerminalTheme
+  // Watchlist — array of asset IDs persisted to localStorage
+  watchlist: string[]
+  // Price alerts — persisted to localStorage
+  priceAlerts: PriceAlert[]
 
   // Actions
   setActivePage: (page: ActivePage) => void
@@ -56,12 +76,26 @@ interface DeShopState {
   disconnectWallet: () => void
   setStatus: (status: AppStatus) => void
   setCommandPaletteOpen: (open: boolean) => void
+  setShortcutsOpen: (open: boolean) => void
+  setPriceAlertAsset: (asset: { name: string; id?: string; price: number } | null) => void
   setTheme: (theme: TerminalTheme) => void
+  // Watchlist actions
+  toggleWatchlist: (assetId: string) => void
+  isWatched: (assetId: string) => boolean
+  clearWatchlist: () => void
+  // Price alert actions
+  addPriceAlert: (alert: Omit<PriceAlert, 'id' | 'createdAt'>) => void
+  removePriceAlert: (id: string) => void
+  markPriceAlertTriggered: (id: string, lastPrice: number) => void
+  clearPriceAlerts: () => void
 }
 
 let notificationCounter = 0
+let priceAlertCounter = 0
 
 const THEME_STORAGE_KEY = 'deshop-theme'
+const WATCHLIST_STORAGE_KEY = 'deshop-watchlist'
+const PRICE_ALERTS_STORAGE_KEY = 'deshop-price-alerts'
 
 function applyThemeToDocument(theme: TerminalTheme) {
   if (typeof document === 'undefined') return
@@ -83,7 +117,53 @@ function loadInitialTheme(): TerminalTheme {
   return 'pro-dark'
 }
 
-export const useDeShopStore = create<DeShopState>((set) => ({
+function loadInitialWatchlist(): string[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const stored = window.localStorage.getItem(WATCHLIST_STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      if (Array.isArray(parsed)) return parsed.filter((x) => typeof x === 'string')
+    }
+  } catch {
+    /* ignore */
+  }
+  return []
+}
+
+function loadInitialPriceAlerts(): PriceAlert[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const stored = window.localStorage.getItem(PRICE_ALERTS_STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      if (Array.isArray(parsed)) return parsed
+    }
+  } catch {
+    /* ignore */
+  }
+  return []
+}
+
+function persistWatchlist(list: string[]) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(list))
+  } catch {
+    /* ignore */
+  }
+}
+
+function persistPriceAlerts(alerts: PriceAlert[]) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(PRICE_ALERTS_STORAGE_KEY, JSON.stringify(alerts))
+  } catch {
+    /* ignore */
+  }
+}
+
+export const useDeShopStore = create<DeShopState>((set, get) => ({
   // Navigation
   activePage: 'dashboard',
 
@@ -105,8 +185,20 @@ export const useDeShopStore = create<DeShopState>((set) => ({
   // Command palette
   commandPaletteOpen: false,
 
+  // Keyboard shortcuts overlay
+  shortcutsOpen: false,
+
+  // Price alert modal target
+  priceAlertAsset: null,
+
   // Theme (hydrated from localStorage on first client read)
   theme: loadInitialTheme(),
+
+  // Watchlist (hydrated from localStorage)
+  watchlist: loadInitialWatchlist(),
+
+  // Price alerts (hydrated from localStorage)
+  priceAlerts: loadInitialPriceAlerts(),
 
   // Actions
   setActivePage: (page) => set({ activePage: page, mobileSidebarOpen: false }),
@@ -162,6 +254,10 @@ export const useDeShopStore = create<DeShopState>((set) => ({
 
   setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
 
+  setShortcutsOpen: (open) => set({ shortcutsOpen: open }),
+
+  setPriceAlertAsset: (asset) => set({ priceAlertAsset: asset }),
+
   setTheme: (theme) => {
     applyThemeToDocument(theme)
     if (typeof window !== 'undefined') {
@@ -172,5 +268,53 @@ export const useDeShopStore = create<DeShopState>((set) => ({
       }
     }
     set({ theme })
+  },
+
+  toggleWatchlist: (assetId) => {
+    const current = get().watchlist
+    const next = current.includes(assetId)
+      ? current.filter((id) => id !== assetId)
+      : [...current, assetId]
+    persistWatchlist(next)
+    set({ watchlist: next })
+  },
+
+  isWatched: (assetId) => get().watchlist.includes(assetId),
+
+  clearWatchlist: () => {
+    persistWatchlist([])
+    set({ watchlist: [] })
+  },
+
+  addPriceAlert: (alert) => {
+    const newAlert: PriceAlert = {
+      ...alert,
+      id: `alert-${Date.now()}-${++priceAlertCounter}`,
+      createdAt: Date.now(),
+    }
+    const next = [...get().priceAlerts, newAlert]
+    persistPriceAlerts(next)
+    set({ priceAlerts: next })
+  },
+
+  removePriceAlert: (id) => {
+    const next = get().priceAlerts.filter((a) => a.id !== id)
+    persistPriceAlerts(next)
+    set({ priceAlerts: next })
+  },
+
+  markPriceAlertTriggered: (id, lastPrice) => {
+    const next = get().priceAlerts.map((a) =>
+      a.id === id
+        ? { ...a, triggered: true, triggeredAt: Date.now(), lastPrice }
+        : a,
+    )
+    persistPriceAlerts(next)
+    set({ priceAlerts: next })
+  },
+
+  clearPriceAlerts: () => {
+    persistPriceAlerts([])
+    set({ priceAlerts: [] })
   },
 }))

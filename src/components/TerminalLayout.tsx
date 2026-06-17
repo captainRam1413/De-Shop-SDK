@@ -32,6 +32,9 @@ import {
   HardDrive,
   ArrowUp,
   ArrowDown,
+  Keyboard as KeyboardIcon,
+  Star,
+  BellRing,
 } from 'lucide-react'
 import { useDeShopStore, type ActivePage } from '@/store/useDeShopStore'
 import DashboardPage from '@/components/pages/DashboardPage'
@@ -45,6 +48,10 @@ import GamePage from '@/components/pages/GamePage'
 import SettingsPage from '@/components/pages/SettingsPage'
 import NotificationsPage from '@/components/pages/NotificationsPage'
 import CommandPalette from '@/components/CommandPalette'
+import KeyboardShortcutsOverlay from '@/components/KeyboardShortcutsOverlay'
+import PriceAlertModal from '@/components/PriceAlertModal'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
+import { usePriceAlerts } from '@/hooks/usePriceAlerts'
 
 /* ===== NAV CONFIG ===== */
 
@@ -468,6 +475,11 @@ function Header() {
   const status = useDeShopStore((s) => s.status)
   const setCommandPaletteOpen = useDeShopStore((s) => s.setCommandPaletteOpen)
   const setActivePage = useDeShopStore((s) => s.setActivePage)
+  const setShortcutsOpen = useDeShopStore((s) => s.setShortcutsOpen)
+  const watchlistCount = useDeShopStore((s) => s.watchlist.length)
+  const activeAlertsCount = useDeShopStore(
+    (s) => s.priceAlerts.filter((a) => !a.triggered).length,
+  )
 
   const handleDisconnect = useCallback(() => {
     disconnectWallet()
@@ -523,7 +535,7 @@ function Header() {
           {/* Command palette search button */}
           <button
             onClick={() => setCommandPaletteOpen(true)}
-            className="flex items-center gap-1.5 px-2 py-1 bg-term-elevated border border-term rounded-sm hover:border-term-green/60 hover:bg-[rgba(51,255,51,0.06)] transition-colors group"
+            className="header-indicator flex items-center gap-1.5 px-2 py-1 bg-term-elevated border border-term rounded-sm hover:border-term-green/60 hover:bg-[rgba(51,255,51,0.06)] transition-colors group"
             aria-label="Open command palette"
             title="Open command palette (⌘K)"
           >
@@ -534,6 +546,46 @@ function Header() {
             <span className="hidden md:inline-flex items-center justify-center min-w-[18px] h-[14px] px-1 text-[8px] font-terminal text-term-dim bg-[#1E1E1E] border border-[#444444] rounded-sm">
               ⌘K
             </span>
+          </button>
+
+          {/* Keyboard shortcuts button */}
+          <button
+            onClick={() => setShortcutsOpen(true)}
+            className="header-indicator hidden sm:flex items-center justify-center w-7 h-6 bg-term-elevated border border-term rounded-sm hover:border-term-cyan/60 hover:bg-[rgba(0,212,255,0.06)] transition-colors group"
+            aria-label="Show keyboard shortcuts"
+            title="Show keyboard shortcuts (?)"
+          >
+            <KeyboardIcon size={11} className="text-term-dim group-hover:text-term-cyan transition-colors" />
+          </button>
+
+          {/* Watchlist indicator — click to go to marketplace */}
+          <button
+            onClick={() => setActivePage('market')}
+            className="header-indicator hidden sm:flex relative items-center justify-center w-7 h-6 bg-term-elevated border border-term rounded-sm hover:border-term-amber/60 hover:bg-[rgba(255,184,0,0.06)] transition-colors group"
+            aria-label="Open watchlist"
+            title={`Watchlist (${watchlistCount})`}
+          >
+            <Star size={11} className={`transition-colors ${watchlistCount > 0 ? 'text-term-amber fill-term-amber/40' : 'text-term-dim group-hover:text-term-amber'}`} />
+            {watchlistCount > 0 && (
+              <span className="sidebar-badge sidebar-badge-amber">
+                {watchlistCount}
+              </span>
+            )}
+          </button>
+
+          {/* Price alerts indicator — click to go to marketplace */}
+          <button
+            onClick={() => setActivePage('market')}
+            className="header-indicator hidden sm:flex relative items-center justify-center w-7 h-6 bg-term-elevated border border-term rounded-sm hover:border-term-magenta/60 hover:bg-[rgba(255,0,255,0.06)] transition-colors group"
+            aria-label="View price alerts"
+            title={`Active price alerts (${activeAlertsCount})`}
+          >
+            <BellRing size={11} className={`transition-colors ${activeAlertsCount > 0 ? 'text-term-magenta' : 'text-term-dim group-hover:text-term-magenta'}`} />
+            {activeAlertsCount > 0 && (
+              <span className="sidebar-badge sidebar-badge-magenta">
+                {activeAlertsCount}
+              </span>
+            )}
           </button>
 
           {/* Notification bell — click to open Activity Center */}
@@ -694,6 +746,11 @@ export default function TerminalLayout() {
   const activePage = useDeShopStore((s) => s.activePage)
   const theme = useDeShopStore((s) => s.theme)
 
+  // Global keyboard shortcuts handler (Cmd+K, ?, g d, etc.)
+  useKeyboardShortcuts()
+  // Price alerts watcher — fires toast notifications when conditions are met
+  usePriceAlerts()
+
   // Apply theme to <html data-theme="..."> on mount and whenever the theme
   // changes. The store's setTheme() already applies this directly, but this
   // effect guarantees the attribute is in sync after hydration from
@@ -753,6 +810,8 @@ export default function TerminalLayout() {
       <NotificationToast />
       <WalletModal />
       <CommandPalette />
+      <KeyboardShortcutsOverlay />
+      <PriceAlertModal />
     </div>
   )
 }

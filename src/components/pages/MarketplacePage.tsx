@@ -27,6 +27,9 @@ import {
   Minus,
   Loader2,
   Flame,
+  Star,
+  BellRing,
+  Heart,
 } from 'lucide-react'
 import { useDeShopStore } from '@/store/useDeShopStore'
 import { useLivePrices } from '@/hooks/useLivePrices'
@@ -410,6 +413,9 @@ function DetailModal({
   onFetchPrice: (a: MarketplaceAsset) => void
 }) {
   const { walletConnected, addNotification, setShowWalletModal } = useDeShopStore()
+  const isWatched = useDeShopStore((s) => s.watchlist.includes(asset.id))
+  const toggleWatchlist = useDeShopStore((s) => s.toggleWatchlist)
+  const setPriceAlertAsset = useDeShopStore((s) => s.setPriceAlertAsset)
   const config = RARITY_CONFIG[asset.rarity]
   const rarityScore = config.weight * 25
 
@@ -428,6 +434,19 @@ function DetailModal({
       return
     }
     addNotification('success', `Purchased ${asset.name} for ${asset.price} ALGO`)
+    onClose()
+  }
+
+  const handleWatchToggle = () => {
+    toggleWatchlist(asset.id)
+    addNotification(
+      'info',
+      isWatched ? `Removed ${asset.name} from watchlist` : `Added ${asset.name} to watchlist`,
+    )
+  }
+
+  const handleSetAlert = () => {
+    setPriceAlertAsset({ name: asset.name, id: asset.id, price: asset.price })
     onClose()
   }
 
@@ -695,10 +714,10 @@ function DetailModal({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-2">
+          <div className="grid grid-cols-2 gap-2 pt-2">
             <button
               onClick={handleBuy}
-              className="terminal-btn terminal-btn-primary flex-1 flex items-center justify-center gap-2"
+              className="terminal-btn terminal-btn-primary flex items-center justify-center gap-2 col-span-2"
             >
               <ShoppingCart className="w-3.5 h-3.5" />
               <span>Buy for {asset.price} ALGO</span>
@@ -709,6 +728,24 @@ function DetailModal({
             >
               <Tag className="w-3.5 h-3.5" />
               <span>List</span>
+            </button>
+            <button
+              onClick={handleWatchToggle}
+              className={`terminal-btn flex items-center justify-center gap-2 ${
+                isWatched
+                  ? 'border-term-amber/60 text-term-amber bg-term-amber/10'
+                  : 'border-term-amber/50 text-term-amber hover:bg-term-amber/10'
+              }`}
+            >
+              <Star className={`w-3.5 h-3.5 ${isWatched ? 'fill-term-amber' : ''}`} />
+              <span>{isWatched ? 'Watching' : 'Watch'}</span>
+            </button>
+            <button
+              onClick={handleSetAlert}
+              className="terminal-btn flex items-center justify-center gap-2 border-term-magenta/50 text-term-magenta hover:bg-term-magenta/10 col-span-2"
+            >
+              <BellRing className="w-3.5 h-3.5" />
+              <span>Set Price Alert</span>
             </button>
           </div>
         </div>
@@ -752,12 +789,32 @@ function GridCard({
   const config = RARITY_CONFIG[asset.rarity]
   const [popoverOpen, setPopoverOpen] = useState(false)
 
+  // Watchlist + price alert state from global store
+  const isWatched = useDeShopStore((s) => s.watchlist.includes(asset.id))
+  const toggleWatchlist = useDeShopStore((s) => s.toggleWatchlist)
+  const setPriceAlertAsset = useDeShopStore((s) => s.setPriceAlertAsset)
+  const addNotification = useDeShopStore((s) => s.addNotification)
+
   const handleAIClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (!aiPrice && !aiPriceLoading) {
       onFetchPrice(asset)
     }
     setPopoverOpen((prev) => !prev)
+  }
+
+  const handleWatchlistToggle = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    toggleWatchlist(asset.id)
+    addNotification(
+      'info',
+      isWatched ? `Removed ${asset.name} from watchlist` : `Added ${asset.name} to watchlist`,
+    )
+  }
+
+  const handleSetAlert = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setPriceAlertAsset({ name: asset.name, id: asset.id, price: asset.price })
   }
 
   return (
@@ -812,6 +869,30 @@ function GridCard({
             <Bot className="w-2.5 h-2.5" />
           )}
           <span>AI</span>
+        </button>
+
+        {/* Watchlist star toggle */}
+        <button
+          onClick={handleWatchlistToggle}
+          className={`flex items-center justify-center w-5 h-5 border text-[9px] font-terminal transition-all ${
+            isWatched
+              ? 'border-term-amber/60 text-term-amber bg-term-amber/10'
+              : 'border-term-dim/40 text-term-dim hover:text-term-amber hover:border-term-amber/60'
+          }`}
+          aria-label={isWatched ? 'Remove from watchlist' : 'Add to watchlist'}
+          title={isWatched ? 'Remove from watchlist' : 'Add to watchlist'}
+        >
+          <Star className={`w-2.5 h-2.5 ${isWatched ? 'fill-term-amber' : ''}`} />
+        </button>
+
+        {/* Price alert bell */}
+        <button
+          onClick={handleSetAlert}
+          className="flex items-center justify-center w-5 h-5 border border-term-dim/40 text-term-dim hover:text-term-magenta hover:border-term-magenta/60 text-[9px] font-terminal transition-all"
+          aria-label="Set price alert"
+          title="Set price alert"
+        >
+          <BellRing className="w-2.5 h-2.5" />
         </button>
       </div>
 
@@ -995,7 +1076,11 @@ export default function MarketplacePage() {
   const [selectedAsset, setSelectedAsset] = useState<MarketplaceAsset | null>(null)
   const [apiAssets, setApiAssets] = useState<MarketplaceAsset[]>([])
   const [loading, setLoading] = useState(true)
+  const [watchlistOnly, setWatchlistOnly] = useState(false)
   const { aiPrices, loadingIds, errors: aiErrors, fetchPrice } = useAIPrices()
+
+  // Watchlist from global store
+  const watchlist = useDeShopStore((s) => s.watchlist)
 
   /* ===== LIVE PRICE TICKER + MARKET HEAT (Task 11-d) ===== */
   const {
@@ -1159,6 +1244,11 @@ export default function MarketplacePage() {
   const filteredAssets = useMemo(() => {
     let result = [...baseAssets]
 
+    // Watchlist filter
+    if (watchlistOnly) {
+      result = result.filter((a) => watchlist.includes(a.id))
+    }
+
     // Search filter
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -1189,7 +1279,7 @@ export default function MarketplacePage() {
     }
 
     return result
-  }, [search, rarityFilter, sort, baseAssets])
+  }, [search, rarityFilter, sort, baseAssets, watchlistOnly, watchlist])
 
   const floorPrices = useMemo(() => getFloorPrices(baseAssets), [baseAssets])
 
@@ -1374,6 +1464,22 @@ export default function MarketplacePage() {
                 </div>
               )
             })}
+
+            {/* Watchlist toggle */}
+            <button
+              onClick={() => setWatchlistOnly(!watchlistOnly)}
+              className={`ml-2 flex items-center gap-1 text-[10px] font-terminal px-2 py-0.5 border transition-all ${
+                watchlistOnly
+                  ? 'border-term-amber/60 text-term-amber bg-term-amber/10'
+                  : 'border-term-dim/40 text-term-dim hover:text-term-amber hover:border-term-amber/60'
+              }`}
+              title="Show only watchlisted assets"
+            >
+              <Star className={`w-2.5 h-2.5 ${watchlistOnly ? 'fill-term-amber' : ''}`} />
+              <span>WATCHLIST</span>
+              <span className="ml-0.5 text-term-amber">({watchlist.length})</span>
+            </button>
+
             <span className="text-term-dim text-[10px] font-terminal ml-auto">
               {filteredAssets.length} result{filteredAssets.length !== 1 ? 's' : ''}
             </span>

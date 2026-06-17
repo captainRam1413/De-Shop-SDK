@@ -23,6 +23,10 @@ import {
   ArrowUp,
   ArrowDown,
   CornerDownRight,
+  Star,
+  BellRing,
+  Keyboard,
+  Trash2,
   type LucideIcon,
 } from 'lucide-react'
 import { useDeShopStore, type ActivePage } from '@/store/useDeShopStore'
@@ -61,6 +65,11 @@ interface CommandContext {
   disconnectWallet: () => void
   walletConnected: boolean
   addNotification: (type: 'info' | 'success' | 'error' | 'warning', message: string) => void
+  setShortcutsOpen: (open: boolean) => void
+  clearWatchlist: () => void
+  clearPriceAlerts: () => void
+  watchlistCount: number
+  alertsCount: number
 }
 
 const COMMANDS: Command[] = [
@@ -221,6 +230,65 @@ const COMMANDS: Command[] = [
       ctx.addNotification('info', 'Browsing plugin catalog...')
     },
   },
+  {
+    id: 'act-show-shortcuts',
+    name: 'show keyboard shortcuts',
+    description: 'Display the keyboard shortcuts overlay',
+    icon: Keyboard,
+    category: 'Action',
+    shortcut: '?',
+    keywords: ['help', 'keys', 'bindings', 'hotkeys'],
+    run: (ctx) => ctx.setShortcutsOpen(true),
+  },
+  {
+    id: 'act-view-watchlist',
+    name: 'view watchlist',
+    description: 'Open marketplace to view your watched assets',
+    icon: Star,
+    category: 'Action',
+    keywords: ['favorite', 'star', 'tracked', 'following'],
+    run: (ctx) => {
+      ctx.setActivePage('market')
+      ctx.addNotification(
+        'info',
+        ctx.watchlistCount > 0
+          ? `Showing ${ctx.watchlistCount} watchlisted asset(s)`
+          : 'Watchlist is empty — star assets to track them',
+      )
+    },
+  },
+  {
+    id: 'act-clear-watchlist',
+    name: 'clear watchlist',
+    description: 'Remove all assets from your watchlist',
+    icon: Trash2,
+    category: 'Action',
+    keywords: ['reset', 'empty', 'remove', 'favorites'],
+    run: (ctx) => {
+      if (ctx.watchlistCount === 0) {
+        ctx.addNotification('info', 'Watchlist is already empty')
+        return
+      }
+      ctx.clearWatchlist()
+      ctx.addNotification('info', 'Watchlist cleared')
+    },
+  },
+  {
+    id: 'act-clear-alerts',
+    name: 'clear price alerts',
+    description: 'Remove all armed price alerts',
+    icon: BellRing,
+    category: 'Action',
+    keywords: ['reset', 'notifications', 'trigger', 'remove'],
+    run: (ctx) => {
+      if (ctx.alertsCount === 0) {
+        ctx.addNotification('info', 'No active price alerts')
+        return
+      }
+      ctx.clearPriceAlerts()
+      ctx.addNotification('info', `Cleared ${ctx.alertsCount} price alert(s)`)
+    },
+  },
 
   // ----- Quick Links -----
   {
@@ -359,6 +427,13 @@ export default function CommandPalette() {
   const disconnectWallet = useDeShopStore((s) => s.disconnectWallet)
   const walletConnected = useDeShopStore((s) => s.walletConnected)
   const addNotification = useDeShopStore((s) => s.addNotification)
+  const setShortcutsOpen = useDeShopStore((s) => s.setShortcutsOpen)
+  const clearWatchlist = useDeShopStore((s) => s.clearWatchlist)
+  const clearPriceAlerts = useDeShopStore((s) => s.clearPriceAlerts)
+  const watchlistCount = useDeShopStore((s) => s.watchlist.length)
+  const alertsCount = useDeShopStore(
+    (s) => s.priceAlerts.filter((a) => !a.triggered).length,
+  )
 
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -374,8 +449,25 @@ export default function CommandPalette() {
       disconnectWallet,
       walletConnected,
       addNotification,
+      setShortcutsOpen,
+      clearWatchlist,
+      clearPriceAlerts,
+      watchlistCount,
+      alertsCount,
     }),
-    [setActivePage, setShowWalletModal, connectWallet, disconnectWallet, walletConnected, addNotification]
+    [
+      setActivePage,
+      setShowWalletModal,
+      connectWallet,
+      disconnectWallet,
+      walletConnected,
+      addNotification,
+      setShortcutsOpen,
+      clearWatchlist,
+      clearPriceAlerts,
+      watchlistCount,
+      alertsCount,
+    ],
   )
 
   /* ----- Global Cmd+K / Ctrl+K listener ----- */

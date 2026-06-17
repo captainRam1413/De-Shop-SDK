@@ -2303,3 +2303,270 @@ button.ticker-timestamp:hover {
 [data-theme] .ticker-fade-right {
   background: linear-gradient(to left, color-mix(in srgb, var(--t-bg, #1E1E1E) 85%, #000 15%), rgba(26, 26, 26, 0));
 }
+
+/* ============================================================
+   ROUND 3 POLISH — hover lifts, focus rings, section dividers,
+   keyboard shortcuts overlay, price alert modal, micro-interactions
+   ============================================================ */
+
+/* --- Card hover lift (used by StatCards and other interactive cards) --- */
+.terminal-card-hover {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  will-change: transform;
+}
+
+.terminal-card-hover:hover {
+  border-color: color-mix(in srgb, var(--t-green, #33FF33) 40%, var(--t-border, #444)) !important;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--t-green, #33FF33) 20%, transparent),
+    0 8px 20px -8px rgba(0, 0, 0, 0.6),
+    0 0 24px -6px color-mix(in srgb, var(--t-green, #33FF33) 20%, transparent);
+}
+
+/* --- Improved focus-visible rings across the app --- */
+.terminal-card:focus-visible,
+.terminal-btn:focus-visible,
+.terminal-input:focus-visible,
+.nav-item:focus-visible,
+select:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--t-green, #33FF33) 70%, transparent);
+  outline-offset: 1px;
+  border-radius: 1px;
+}
+
+/* Remove default browser focus ring (we use our own above) */
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+select:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* --- Section divider (terminal-style "── LABEL ──") --- */
+.terminal-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--t-font, 'SF Mono', Menlo, Consolas, monospace);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--t-dim, #888);
+  margin: 0.5rem 0;
+}
+
+.terminal-section-divider::before,
+.terminal-section-divider::after {
+  content: '';
+  display: block;
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in srgb, var(--t-border, #444) 80%, transparent) 30%,
+    color-mix(in srgb, var(--t-border, #444) 80%, transparent) 70%,
+    transparent
+  );
+}
+
+.terminal-section-divider > span {
+  color: var(--t-amber, #FFB800);
+  font-weight: bold;
+  padding: 0 0.25rem;
+}
+
+/* --- Mini sparkline polish --- */
+.mini-sparkline {
+  display: block;
+  shape-rendering: geometricPrecision;
+}
+
+/* --- Slide-in animation for newly inserted items --- */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.25s ease-out;
+}
+
+/* --- Subtle "pulse-glow" for active badges --- */
+@keyframes pulse-glow-soft {
+  0%, 100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--t-green, #33FF33) 30%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--t-green, #33FF33) 0%, transparent);
+  }
+}
+
+.pulse-glow-soft {
+  animation: pulse-glow-soft 2s ease-in-out infinite;
+}
+
+/* --- Star button "fill" animation when toggled on --- */
+@keyframes star-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+.star-pop {
+  animation: star-pop 0.3s ease-out;
+}
+
+/* --- Kbd styling (used by shortcuts overlay) --- */
+kbd {
+  font-family: var(--t-font, 'SF Mono', Menlo, Consolas, monospace);
+  background: color-mix(in srgb, var(--t-bg, #1E1E1E) 80%, #000 20%);
+  border: 1px solid var(--t-border, #444);
+  border-bottom-width: 2px;
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-size: 10px;
+  color: var(--t-green, #33FF33);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--t-border, #444) 50%, transparent);
+}
+
+/* --- Improved terminal-scroll (used by modal bodies) --- */
+.terminal-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--t-green, #33FF33) 40%, transparent) transparent;
+}
+
+.terminal-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.terminal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.terminal-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--t-green, #33FF33) 25%, transparent);
+  border-radius: 3px;
+}
+
+.terminal-scroll::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--t-green, #33FF33) 50%, transparent);
+}
+
+/* --- Watchlist " Watching " pill on cards --- */
+.watchlist-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 5px;
+  font-size: 9px;
+  font-family: var(--t-font, 'SF Mono', Menlo, Consolas, monospace);
+  background: color-mix(in srgb, var(--t-amber, #FFB800) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--t-amber, #FFB800) 50%, transparent);
+  color: var(--t-amber, #FFB800);
+  border-radius: 1px;
+  line-height: 1.2;
+}
+
+/* --- Nav-item active strip (left vertical accent bar) --- */
+.nav-item.active {
+  position: relative;
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: var(--t-green, #33FF33);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--t-green, #33FF33) 60%, transparent);
+  animation: pulse-glow-soft 2.5s ease-in-out infinite;
+}
+
+/* --- Sidebar badge count (watchlist, alerts) --- */
+.sidebar-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 7px;
+  font-size: 8px;
+  font-weight: bold;
+  font-family: var(--t-font, 'SF Mono', Menlo, Consolas, monospace);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.sidebar-badge-amber {
+  background: var(--t-amber, #FFB800);
+  color: #1E1E1E;
+}
+
+.sidebar-badge-magenta {
+  background: var(--t-magenta, #FF00FF);
+  color: #1E1E1E;
+}
+
+/* --- Header indicator button hover sweep --- */
+.header-indicator {
+  position: relative;
+  overflow: hidden;
+}
+
+.header-indicator::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    transparent 30%,
+    color-mix(in srgb, var(--t-green, #33FF33) 15%, transparent) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.5s ease;
+  pointer-events: none;
+}
+
+.header-indicator:hover::after {
+  transform: translateX(100%);
+}
+
+/* --- Price alert modal: trending arrow pulse --- */
+@keyframes arrow-pulse {
+  0%, 100% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(-2px); opacity: 0.7; }
+}
+
+.arrow-pulse {
+  animation: arrow-pulse 1.5s ease-in-out infinite;
+}
+
+/* --- Reduced motion overrides for Round 3 animations --- */
+@media (prefers-reduced-motion: reduce) {
+  .terminal-card-hover,
+  .pulse-glow-soft,
+  .star-pop,
+  .arrow-pulse,
+  .nav-item.active::before,
+  .header-indicator::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -236,17 +236,21 @@ function StatCard({ stat, index }: { stat: typeof STATS[0]; index: number }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08, duration: 0.3 }}
-      className="terminal-card terminal-card-glow"
+      whileHover={{ y: -3 }}
+      className="terminal-card terminal-card-glow terminal-card-hover"
     >
       <div className="terminal-card-header">
         <TrafficLights />
         <span className="terminal-title">{stat.label.toLowerCase().replace(/\s/g, '_')}.log</span>
+        <span className="ml-auto text-[9px] font-terminal text-term-dim opacity-60">
+          [{String(index + 1).padStart(2, '0')}/04]
+        </span>
       </div>
       <div className="terminal-card-body">
         <div className="flex items-start justify-between">
           <div>
             <div className="text-term-dim text-[10px] mb-1 font-terminal">{stat.label}</div>
-            <div className="text-2xl font-bold text-term-green font-terminal glow-green">
+            <div className="text-2xl font-bold text-term-green font-terminal glow-green tabular-nums">
               {stat.value}
             </div>
             {/* Slide-up fade animation on change indicator - re-keys on value so it re-animates */}
@@ -265,7 +269,7 @@ function StatCard({ stat, index }: { stat: typeof STATS[0]; index: number }) {
             </div>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <div className="w-8 h-8 flex items-center justify-center rounded-sm bg-[#1E1E1E] border border-[#444444]">
+            <div className="w-8 h-8 flex items-center justify-center rounded-sm bg-[#1E1E1E] border border-[#444444] transition-colors group-hover:border-term-green/50">
               <Icon className="w-4 h-4 text-term-dim" />
             </div>
             <MiniSparkline data={stat.sparkData} color={stat.positive ? '#33FF33' : '#FF3333'} positive={stat.positive} />
