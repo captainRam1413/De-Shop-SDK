@@ -1,9 +1,9 @@
 /**
- * De-Shop SDK — Profile / Stats Page (Premium — Minecraft Theme)
+ * De-Shop SDK — Profile / Stats Page (Premium — Nexus Forge Theme)
  * ══════════════════════════════════════════════
- * Achievements → Advancements, Transaction History → Village Ledger,
- * Portfolio Analytics → Ender Chest Stats, Connected Accounts → Portal Links
- * All in Minecraft earthy dark theme with pixel fonts and no border-radius.
+ * Achievements → Advancements, Transaction History → Nexus Ledger,
+ * Portfolio Analytics → Asset Vault Stats, Connected Accounts → Portal Links
+ * All in Nexus Forge graphite theme with clean fonts and no border-radius.
  */
 
 import { useState, useEffect } from 'react'
@@ -44,42 +44,42 @@ import { useWallet } from '@txnlab/use-wallet-react'
 import { ellipseAddress } from '../utils/ellipseAddress'
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MINECRAFT THEME CONSTANTS
+// NEXUS FORGE THEME CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const MC = {
-  // Earthy palette
-  dirt: '#8B6914',
-  dirtDark: '#6B4F0A',
-  dirtLight: '#A07D1E',
-  stone: '#7A7A7A',
-  stoneDark: '#5A5A5A',
-  stoneLight: '#999999',
-  grass: '#5D8C2E',
-  grassDark: '#4A7024',
-  grassLight: '#6FA035',
-  emerald: '#2ECC71',
-  emeraldDark: '#1A9B4E',
-  emeraldGlow: 'rgba(46, 204, 113, 0.3)',
-  diamond: '#4DD0E1',
-  diamondDark: '#26C6DA',
-  diamondGlow: 'rgba(77, 208, 225, 0.3)',
-  gold: '#FFD700',
-  goldDark: '#DAA520',
-  goldGlow: 'rgba(255, 215, 0, 0.3)',
-  redstone: '#FF3333',
-  redstoneGlow: 'rgba(255, 51, 51, 0.3)',
-  netherite: '#4A4040',
-  netheriteLight: '#6A5555',
-  obsidian: '#1A1A2E',
-  ender: '#9B59B6',
-  enderGlow: 'rgba(155, 89, 182, 0.3)',
-  nightSky: '#1a1a2e',
-  panelBg: 'rgba(20, 20, 35, 0.92)',
-  panelBorder: 'rgba(139, 105, 20, 0.5)',
-  textLight: '#E0D8C8',
-  textMuted: '#9A917E',
-  textDark: '#6A6355',
+  // Nexus Forge palette
+  dirt: '#27272A',
+  dirtDark: '#1F1F23',
+  dirtLight: '#3F3F46',
+  stone: '#52525B',
+  stoneDark: '#3F3F46',
+  stoneLight: '#71717A',
+  grass: '#3F3F46',
+  grassDark: '#27272A',
+  grassLight: '#52525B',
+  emerald: '#C026D3',
+  emeraldDark: '#A21CAF',
+  emeraldGlow: 'rgba(192, 38, 211, 0.3)',
+  diamond: '#2DD4BF',
+  diamondDark: '#14B8A6',
+  diamondGlow: 'rgba(45, 212, 191, 0.3)',
+  gold: '#FBBF24',
+  goldDark: '#F59E0B',
+  goldGlow: 'rgba(251, 191, 36, 0.3)',
+  redstone: '#F43F5E',
+  redstoneGlow: 'rgba(244, 63, 94, 0.3)',
+  netherite: '#2A2A35',
+  netheriteLight: '#3F3F46',
+  obsidian: '#18181B',
+  ender: '#7C3AED',
+  enderGlow: 'rgba(124, 58, 237, 0.3)',
+  nightSky: '#0E0E12',
+  panelBg: 'rgba(18, 18, 23, 0.92)',
+  panelBorder: 'rgba(192, 38, 211, 0.4)',
+  textLight: '#E4E4E7',
+  textMuted: '#A1A1AA',
+  textDark: '#71717A',
 }
 
 const mcBorder = `3px solid ${MC.dirt}`
@@ -90,7 +90,7 @@ const mcPanelShadow = `4px 4px 0px ${MC.dirtDark}, inset 1px 1px 0px ${MC.dirtLi
 // MOCK DATA
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// ─── Minecraft Advancements ────────────────────────────────────────────────────
+// ─── Nexus Forge Advancements ───────────────────────────────────────────────
 
 interface Achievement {
   id: string
@@ -149,7 +149,7 @@ const achievements: Achievement[] = [
   },
 ]
 
-// ─── Village Ledger (Transaction History) ──────────────────────────────────────
+// ─── Nexus Ledger (Transaction History) ──────────────────────────────────────
 
 type TxType = 'Mint' | 'Buy' | 'Sell' | 'List' | 'Withdraw'
 type TxStatus = 'Confirmed' | 'Pending'
@@ -207,8 +207,8 @@ const mockTransactions: Transaction[] = [
 
 const rarityDistribution = [
   { name: 'Iron', count: 5, color: '#AAAAAA' },
-  { name: 'Gold', count: 3, color: '#FFD700' },
-  { name: 'Diamond', count: 2, color: '#4DD0E1' },
+  { name: 'Gold', count: 3, color: '#FBBF24' },
+  { name: 'Diamond', count: 2, color: '#2DD4BF' },
   { name: 'Netherite', count: 1, color: '#4A4040' },
 ]
 
@@ -224,7 +224,7 @@ const portfolioPerformance = Array.from({ length: 7 }, (_, i) => {
 })
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CUSTOM TOOLTIP (Minecraft style)
+// CUSTOM TOOLTIP (Nexus Forge style)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function CustomTooltip({ active, payload, label }: any) {
@@ -396,7 +396,7 @@ export default function ProfilePage() {
       }}
     >
       {/* ═══════════════════════════════════════════════════════════════════════
-          PLAYER PROFILE HEADER — Minecraft Player Card
+          PLAYER PROFILE HEADER — Nexus Forge Player Card
           ═══════════════════════════════════════════════════════════════════════ */}
       <motion.div
         variants={itemVariants}
@@ -449,7 +449,7 @@ export default function ProfilePage() {
                     parent.style.alignItems = 'center'
                     parent.style.justifyContent = 'center'
                     const fallback = document.createElement('span')
-                    fallback.textContent = '⛏️'
+                    fallback.textContent = '◆'
                     fallback.style.fontSize = '28px'
                     parent.appendChild(fallback)
                   }
@@ -671,7 +671,7 @@ export default function ProfilePage() {
                 </>
               ) : (
                 <span style={{ fontSize: 11, color: MC.textDark, fontStyle: 'italic', fontFamily: "'Courier New', monospace" }}>
-                  No wallet bound ⛏️
+                  No wallet bound ◆
                 </span>
               )}
             </div>
@@ -855,7 +855,7 @@ export default function ProfilePage() {
       </motion.div>
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          VILLAGE LEDGER + ENDER CHEST STATS (Side by Side)
+          NEXUS LEDGER + ASSET VAULT STATS (Side by Side)
           ═══════════════════════════════════════════════════════════════════════ */}
       <div
         style={{
@@ -864,7 +864,7 @@ export default function ProfilePage() {
           gap: 14,
         }}
       >
-        {/* ─── Village Ledger (Transaction History) ─────────────────────── */}
+        {/* ─── Nexus Ledger (Transaction History) ──────────────────────── */}
         <motion.div
           variants={itemVariants}
           style={{
@@ -899,7 +899,7 @@ export default function ProfilePage() {
                   fontFamily: "'Courier New', monospace",
                 }}
               >
-                Village Ledger 📜
+                Nexus Ledger 📜
               </h3>
             </div>
             <span style={{ fontSize: 10, color: MC.textMuted, fontFamily: "'Courier New', monospace" }}>{mockTransactions.length} entries</span>
@@ -957,7 +957,7 @@ export default function ProfilePage() {
                       cursor: 'default',
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(139, 105, 20, 0.08)'
+                      e.currentTarget.style.background = 'rgba(82, 82, 91, 0.08)'
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = 'transparent'
@@ -980,7 +980,7 @@ export default function ProfilePage() {
                     </span>
                     {/* Counterparty */}
                     <span style={{ fontSize: 10, color: tx.counterparty === 'You' ? MC.diamond : MC.textMuted, fontFamily: "'Courier New', monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {tx.counterparty === 'You' ? '⛏️ You' : tx.counterparty}
+                      {tx.counterparty === 'You' ? '◆ You' : tx.counterparty}
                     </span>
                     {/* Time ago */}
                     <span style={{ fontSize: 10, color: MC.textMuted, fontFamily: "'Courier New', monospace" }}>

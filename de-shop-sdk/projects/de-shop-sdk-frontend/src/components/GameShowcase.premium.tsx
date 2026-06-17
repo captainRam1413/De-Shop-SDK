@@ -190,7 +190,7 @@ export default function GameShowcase() {
         {/* Left: Game Arena */}
         <div className="showcase__arena-col">
           <div className="showcase__arena-header">
-            <span>⛏ OVERWORLD</span>
+            <span>◆ NEXUS</span>
             <span className="showcase__arena-hint">
               {analysis
                 ? `${analysis.type === 'gun_skin' ? '⚔ WEAPON SKIN' : analysis.type === 'character_skin' ? '🧑 CHARACTER SKIN' : '✨ ACCESSORY'} EQUIPPED`

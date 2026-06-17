@@ -221,7 +221,7 @@ export default function GameDemo({ activeSkin }: GameDemoProps) {
 
   return (
     <div className="game-panel">
-      <div className="game-title">⛏ WEAPON FORGE</div>
+      <div className="game-title">◆ SKIN FORGE</div>
       <div className="game-canvas-wrap">
         <canvas ref={canvasRef} style={{ imageRendering: 'pixelated' }} />
       </div>

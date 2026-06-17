@@ -706,7 +706,7 @@ export default function MinecraftVoxelGame() {
       {!isPlaying && !loading && (
         <div className="voxel-game__overlay" onClick={handleClickToPlay}>
           <div className="voxel-game__start">
-            <div className="voxel-game__start-title">⛏ Voxel World</div>
+            <div className="voxel-game__start-title">◆ Nexus Arena</div>
             <div className="voxel-game__start-subtitle">Click to Play</div>
             <div className="voxel-game__controls-help">
               <div className="voxel-game__control-row">

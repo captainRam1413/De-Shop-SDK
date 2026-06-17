@@ -1,8 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P:wght@400;700&family=VT323:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   DE-SHOP SDK — MINECRAFT THEME
-   ⛏ Blocky • Pixelated • Earthy • Game-Accurate
+   DE-SHOP SDK — NEXUS FORGE THEME
+   ◆ Plasma Violet • Electric Lime • Solar Amber on Graphite
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 /* ─── CSS CUSTOM PROPERTY ANIMATION ──────────────────────────────────────────── */
@@ -12,104 +12,104 @@
   inherits: false;
 }
 
-/* ─── MINECRAFT CUSTOM PROPERTIES ────────────────────────────────────────────── */
+/* ─── NEXUS FORGE CUSTOM PROPERTIES ─────────────────────────────────────────── */
 :root {
-  /* ── Minecraft Earthy Palette ── */
-  --mc-dirt:            #8B6914;
-  --mc-dirt-dark:       #6B4F10;
-  --mc-dirt-light:      #A08030;
-  --mc-grass:           #5D8C2E;
-  --mc-grass-bright:    #7CB342;
-  --mc-grass-dark:      #3D6B1E;
-  --mc-stone:           #7F7F7F;
-  --mc-stone-light:     #9F9F9F;
-  --mc-stone-dark:      #5A5A5A;
-  --mc-cobblestone:     #6B6B6B;
-  --mc-oak:             #A0764A;
-  --mc-oak-dark:        #7B5B33;
-  --mc-oak-light:       #BC9462;
-  --mc-spruce:          #5C4023;
-  --mc-obsidian:        #1B1029;
-  --mc-ender:           #0F2A1F;
-  --mc-diamond:         #4AEDD9;
-  --mc-diamond-dark:    #2AB5A2;
-  --mc-diamond-glow:    rgba(74,237,217,0.25);
-  --mc-emerald:         #2ECC71;
-  --mc-emerald-dark:    #1A9B4E;
-  --mc-emerald-glow:    rgba(46,204,113,0.25);
-  --mc-gold:            #FFD700;
-  --mc-gold-dark:       #DAA520;
-  --mc-gold-glow:       rgba(255,215,0,0.25);
-  --mc-redstone:        #FF1A1A;
-  --mc-redstone-dark:   #CC0000;
-  --mc-redstone-glow:   rgba(255,26,26,0.25);
-  --mc-lapis:           #1E3A8A;
-  --mc-lapis-bright:    #3B82F6;
-  --mc-netherite:       #3C3C4E;
-  --mc-netherite-light: #5A5A6E;
-  --mc-iron:            #D4D4D4;
-  --mc-iron-dark:       #A0A0A0;
-  --mc-experience:      #7FFF00;
-  --mc-night:           #0C0C1E;
-  --mc-night-deep:      #060612;
-  --mc-ui-dark:         #1A1A2E;
-  --mc-ui-panel:        #0D0D1F;
-  --mc-ui-slot:         #8B8B8B;
-  --mc-ui-slot-dark:    #373737;
-  --mc-ui-slot-inner:   #1A1A1A;
+  /* ── Nexus Forge Gaming Palette ── */
+  --mc-dirt:            #27272A;
+  --mc-dirt-dark:       #1F1F23;
+  --mc-dirt-light:      #3F3F46;
+  --mc-grass:           #3F3F46;
+  --mc-grass-bright:    #52525B;
+  --mc-grass-dark:      #27272A;
+  --mc-stone:           #52525B;
+  --mc-stone-light:     #71717A;
+  --mc-stone-dark:      #3F3F46;
+  --mc-cobblestone:     #52525B;
+  --mc-oak:             #71717A;
+  --mc-oak-dark:        #52525B;
+  --mc-oak-light:       #A1A1AA;
+  --mc-spruce:          #3F3F46;
+  --mc-obsidian:        #18181B;
+  --mc-ender:           #2A2A35;
+  --mc-diamond:         #2DD4BF;
+  --mc-diamond-dark:    #14B8A6;
+  --mc-diamond-glow:    rgba(45,212,191,0.25);
+  --mc-emerald:         #C026D3;
+  --mc-emerald-dark:    #A21CAF;
+  --mc-emerald-glow:    rgba(192,38,211,0.25);
+  --mc-gold:            #FBBF24;
+  --mc-gold-dark:       #F59E0B;
+  --mc-gold-glow:       rgba(251,191,36,0.25);
+  --mc-redstone:        #F43F5E;
+  --mc-redstone-dark:   #E11D48;
+  --mc-redstone-glow:   rgba(244,63,94,0.25);
+  --mc-lapis:           #7C3AED;
+  --mc-lapis-bright:    #8B5CF6;
+  --mc-netherite:       #2A2A35;
+  --mc-netherite-light: #3F3F46;
+  --mc-iron:            #E4E4E7;
+  --mc-iron-dark:       #A1A1AA;
+  --mc-experience:      #A3E635;
+  --mc-night:           #0E0E12;
+  --mc-night-deep:      #08080C;
+  --mc-ui-dark:         #16161D;
+  --mc-ui-panel:        #121217;
+  --mc-ui-slot:         #71717A;
+  --mc-ui-slot-dark:    #3F3F46;
+  --mc-ui-slot-inner:   #18181B;
   --mc-text:            #E8E8E8;
-  --mc-text-dim:        #B0B0B0;
-  --mc-tooltip-bg:      #100010;
-  --mc-tooltip-border:  #5000AA;
+  --mc-text-dim:        #A1A1AA;
+  --mc-tooltip-bg:      #121217;
+  --mc-tooltip-border:  #C026D3;
 
   /* ── Retain legacy vars for compatibility ── */
-  --space-void:          #060612;
-  --space-abyss:         #0a0a1e;
-  --space-deep:          #0c0c22;
-  --space-midnight:      #10101f;
-  --space-dim:           #16162a;
-  --space-muted:         #1e1e36;
-  --space-steel:         #2a2a44;
-  --space-fog:           #3a3a55;
+  --space-void:          #08080C;
+  --space-abyss:         #0C0C10;
+  --space-deep:          #0E0E12;
+  --space-midnight:      #121217;
+  --space-dim:           #16161D;
+  --space-muted:         #1F1F23;
+  --space-steel:         #27272A;
+  --space-fog:           #3F3F46;
 
-  --green:               #2ECC71;
-  --green-bright:        #7CB342;
-  --green-dim:           #1A5A2E;
-  --green-glow:          rgba(46,204,113,0.25);
-  --green-deep:          #1A9B4E;
-  --green-neon:          #2ECC71;
-  --green-matrix:        #7CB342;
-  --green-phantom:       rgba(46,204,113,0.06);
-  --green-subtle:        rgba(46,204,113,0.04);
+  --green:               #C026D3;
+  --green-bright:        #D946EF;
+  --green-dim:           #86198F;
+  --green-glow:          rgba(192,38,211,0.25);
+  --green-deep:          #A21CAF;
+  --green-neon:          #C026D3;
+  --green-matrix:        #A3E635;
+  --green-phantom:       rgba(192,38,211,0.06);
+  --green-subtle:        rgba(192,38,211,0.04);
 
-  --cyan:                #4AEDD9;
-  --cyan-bright:         #4AEDD9;
-  --cyan-deep:           #2AB5A2;
-  --cyan-neon:           #4AEDD9;
-  --cyan-glow:           rgba(74,237,217,0.25);
-  --cyan-subtle:         rgba(74,237,217,0.06);
+  --cyan:                #2DD4BF;
+  --cyan-bright:         #2DD4BF;
+  --cyan-deep:           #14B8A6;
+  --cyan-neon:           #2DD4BF;
+  --cyan-glow:           rgba(45,212,191,0.25);
+  --cyan-subtle:         rgba(45,212,191,0.06);
 
-  --purple:              #a855f7;
-  --purple-bright:       #c084fc;
-  --purple-deep:         #7c3aed;
-  --purple-neon:         #bf5af2;
-  --purple-glow:         rgba(168,85,247,0.25);
-  --purple-subtle:       rgba(168,85,247,0.06);
+  --purple:              #7C3AED;
+  --purple-bright:       #8B5CF6;
+  --purple-deep:         #6D28D9;
+  --purple-neon:         #A78BFA;
+  --purple-glow:         rgba(124,58,237,0.25);
+  --purple-subtle:       rgba(124,58,237,0.06);
 
-  --gold:                #FFD700;
-  --gold-bright:         #FFD700;
-  --gold-deep:           #DAA520;
-  --gold-neon:           #FFD700;
-  --gold-glow:           rgba(255,215,0,0.25);
-  --gold-subtle:         rgba(255,215,0,0.06);
+  --gold:                #FBBF24;
+  --gold-bright:         #FBBF24;
+  --gold-deep:           #F59E0B;
+  --gold-neon:           #FBBF24;
+  --gold-glow:           rgba(251,191,36,0.25);
+  --gold-subtle:         rgba(251,191,36,0.06);
 
-  --red:                 #FF1A1A;
-  --red-bright:          #FF4444;
-  --red-deep:            #CC0000;
+  --red:                 #F43F5E;
+  --red-bright:          #FB7185;
+  --red-deep:            #E11D48;
 
   /* ── Typography ── */
-  --font-pixel: 'Press Start 2P', monospace;
-  --font-body:  'VT323', 'Courier New', monospace;
+  --font-pixel: 'Orbitron', system-ui, sans-serif;
+  --font-body:  system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* ─── KEYFRAME ANIMATIONS ────────────────────────────────────────────────────── */
@@ -226,7 +226,7 @@ a:hover { color: var(--mc-emerald); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   SIDEBAR — MINECRAFT OAK PLANK STYLE
+   SIDEBAR — NEXUS FORGE PANEL STYLE
    ═══════════════════════════════════════════════════════════════════════════════ */
 .premium-sidebar, .mc-sidebar {
   display: flex;
@@ -527,11 +527,11 @@ a:hover { color: var(--mc-emerald); }
 }
 
 .premium-header__disconnect:hover, .mc-header__disconnect:hover {
-  background: rgba(255,26,26,0.1);
+  background: rgba(244, 63, 94,0.1);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   MINECRAFT BUTTONS — 3D RAISED STYLE
+   NEXUS FORGE BUTTONS — 3D RAISED STYLE
    ═══════════════════════════════════════════════════════════════════════════════ */
 .premium-btn {
   display: inline-flex;
@@ -640,7 +640,7 @@ a:hover { color: var(--mc-emerald); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   CARDS — MINECRAFT INVENTORY PANEL STYLE
+   CARDS — NEXUS FORGE INVENTORY PANEL STYLE
    ═══════════════════════════════════════════════════════════════════════════════ */
 .premium-card, .mc-card {
   background: var(--mc-ui-panel);
@@ -669,7 +669,7 @@ a:hover { color: var(--mc-emerald); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   INPUTS & SELECTS — MINECRAFT STYLE
+   INPUTS & SELECTS — NEXUS FORGE STYLE
    ═══════════════════════════════════════════════════════════════════════════════ */
 .premium-input {
   font-family: var(--font-body);
@@ -745,19 +745,19 @@ a:hover { color: var(--mc-emerald); }
 }
 
 .badge-rare, .premium-badge--rare {
-  background: rgba(74,237,217,0.1);
+  background: rgba(45, 212, 191,0.1);
   border-color: var(--mc-diamond-dark);
   color: var(--mc-diamond);
 }
 
 .badge-epic, .premium-badge--epic {
-  background: rgba(168,85,247,0.1);
+  background: rgba(124, 58, 237,0.1);
   border-color: #7c3aed;
-  color: #c084fc;
+  color: #A78BFA;
 }
 
 .badge-legendary, .premium-badge--legendary {
-  background: rgba(255,215,0,0.1);
+  background: rgba(251, 191, 36,0.1);
   border-color: var(--mc-gold-dark);
   color: var(--mc-gold);
   animation: mc-glow-pulse 2s ease-in-out infinite;
@@ -788,7 +788,7 @@ a:hover { color: var(--mc-emerald); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   MODAL — MINECRAFT INVENTORY POPUP
+   MODAL — NEXUS FORGE INVENTORY POPUP
    ═══════════════════════════════════════════════════════════════════════════════ */
 .premium-modal-overlay {
   position: fixed;
@@ -929,7 +929,7 @@ a:hover { color: var(--mc-emerald); }
 }
 
 .skin-card--active {
-  background: rgba(46,204,113,0.08);
+  background: rgba(192, 38, 211,0.08);
   border-color: var(--mc-emerald) var(--mc-emerald-dark) var(--mc-emerald-dark) var(--mc-emerald);
 }
 
@@ -1128,11 +1128,11 @@ a:hover { color: var(--mc-emerald); }
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: rgba(168,85,247,0.1);
+  background: rgba(124, 58, 237,0.1);
   border-bottom: 2px solid #333;
   font-family: var(--font-pixel);
   font-size: 8px;
-  color: #c084fc;
+  color: #A78BFA;
   text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
 }
 
@@ -1331,10 +1331,10 @@ a:hover { color: var(--mc-emerald); }
   text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
 }
 
-.dash-activity__type--mint { background: rgba(46,204,113,0.1); border-color: var(--mc-emerald-dark); color: var(--mc-emerald); }
-.dash-activity__type--buy { background: rgba(74,237,217,0.1); border-color: var(--mc-diamond-dark); color: var(--mc-diamond); }
-.dash-activity__type--list { background: rgba(255,215,0,0.1); border-color: var(--mc-gold-dark); color: var(--mc-gold); }
-.dash-activity__type--cancel { background: rgba(255,26,26,0.1); border-color: var(--mc-redstone-dark); color: var(--mc-redstone); }
+.dash-activity__type--mint { background: rgba(192, 38, 211,0.1); border-color: var(--mc-emerald-dark); color: var(--mc-emerald); }
+.dash-activity__type--buy { background: rgba(45, 212, 191,0.1); border-color: var(--mc-diamond-dark); color: var(--mc-diamond); }
+.dash-activity__type--list { background: rgba(251, 191, 36,0.1); border-color: var(--mc-gold-dark); color: var(--mc-gold); }
+.dash-activity__type--cancel { background: rgba(244, 63, 94,0.1); border-color: var(--mc-redstone-dark); color: var(--mc-redstone); }
 
 .dash-activity__item-name {
   flex: 1;
@@ -1795,7 +1795,7 @@ a:hover { color: var(--mc-emerald); }
 
 .profile-achievement--earned {
   border-color: var(--mc-emerald-dark);
-  background: rgba(46,204,113,0.05);
+  background: rgba(192, 38, 211,0.05);
 }
 
 .profile-achievement--locked {
@@ -1841,7 +1841,7 @@ a:hover { color: var(--mc-emerald); }
   margin-top: 2px;
 }
 
-/* Transaction History / Village Ledger */
+/* Transaction History / Nexus Ledger */
 .profile-tx {
   background: var(--mc-ui-panel);
   border: 3px solid;
@@ -1896,7 +1896,7 @@ a:hover { color: var(--mc-emerald); }
 .profile-portfolio__title {
   font-family: var(--font-pixel);
   font-size: 10px;
-  color: #c084fc;
+  color: #A78BFA;
   text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
   margin-bottom: 10px;
   display: flex;
@@ -2040,9 +2040,9 @@ a:hover { color: var(--mc-emerald); }
 }
 
 .rarity-common { background: rgba(212,212,212,0.1); border-color: var(--mc-iron-dark); color: var(--mc-iron); }
-.rarity-rare { background: rgba(74,237,217,0.1); border-color: var(--mc-diamond-dark); color: var(--mc-diamond); }
-.rarity-epic { background: rgba(168,85,247,0.1); border-color: #7c3aed; color: #c084fc; }
-.rarity-legendary { background: rgba(255,215,0,0.1); border-color: var(--mc-gold-dark); color: var(--mc-gold); }
+.rarity-rare { background: rgba(45, 212, 191,0.1); border-color: var(--mc-diamond-dark); color: var(--mc-diamond); }
+.rarity-epic { background: rgba(124, 58, 237,0.1); border-color: #7c3aed; color: #A78BFA; }
+.rarity-legendary { background: rgba(251, 191, 36,0.1); border-color: var(--mc-gold-dark); color: var(--mc-gold); }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    ANIMATED BORDER WRAPPER
@@ -2057,7 +2057,7 @@ a:hover { color: var(--mc-emerald); }
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   RECHARTS OVERRIDES — Minecraft style
+   RECHARTS OVERRIDES — Nexus Forge style
    ═══════════════════════════════════════════════════════════════════════════════ */
 .recharts-cartesian-grid line {
   stroke: #222;
@@ -2329,8 +2329,8 @@ a:hover { color: var(--mc-emerald); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   VOXEL GAME — Minecraft 3D World
-   ⛏ Full-page 3D game with HUD overlays
+   VOXEL GAME — Nexus Arena 3D World
+   ◆ Full-page 3D game with HUD overlays
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 .voxel-game {
@@ -2338,7 +2338,7 @@ a:hover { color: var(--mc-emerald); }
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #1a1a2e;
+  background: #16161D;
 }
 
 .voxel-game__canvas {
@@ -2378,7 +2378,7 @@ a:hover { color: var(--mc-emerald); }
   width: 48px;
   height: 48px;
   border: 4px solid var(--mc-ui-slot, #8B8B8B);
-  border-top-color: var(--mc-emerald, #2ECC71);
+  border-top-color: var(--mc-emerald, #C026D3);
   border-radius: 50%;
   animation: voxel-spin 0.8s linear infinite;
 }
@@ -2388,7 +2388,7 @@ a:hover { color: var(--mc-emerald); }
 }
 
 .voxel-game__loading-text {
-  font-family: var(--font-pixel, 'Press Start 2P', monospace);
+  font-family: var(--font-pixel, 'Orbitron', system-ui, sans-serif);
   font-size: 12px;
   color: var(--mc-text, #E8E8E8);
   text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.8);
@@ -2411,17 +2411,17 @@ a:hover { color: var(--mc-emerald); }
 }
 
 .voxel-game__start-title {
-  font-family: var(--font-pixel, 'Press Start 2P', monospace);
+  font-family: var(--font-pixel, 'Orbitron', system-ui, sans-serif);
   font-size: 24px;
-  color: var(--mc-emerald, #2ECC71);
-  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.8), 0 0 20px var(--mc-emerald-glow, rgba(46,204,113,0.25));
+  color: var(--mc-emerald, #C026D3);
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.8), 0 0 20px var(--mc-emerald-glow, rgba(192, 38, 211,0.25));
   letter-spacing: 2px;
 }
 
 .voxel-game__start-subtitle {
-  font-family: var(--font-pixel, 'Press Start 2P', monospace);
+  font-family: var(--font-pixel, 'Orbitron', system-ui, sans-serif);
   font-size: 14px;
-  color: var(--mc-gold, #FFD700);
+  color: var(--mc-gold, #FBBF24);
   text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.8);
   animation: voxel-pulse 2s ease-in-out infinite;
   cursor: pointer;
@@ -2442,7 +2442,7 @@ a:hover { color: var(--mc-emerald); }
   display: flex;
   align-items: center;
   gap: 12px;
-  font-family: var(--font-body, 'VT323', monospace);
+  font-family: var(--font-body, system-ui, sans-serif);
   font-size: 16px;
   color: var(--mc-text, #E8E8E8);
 }
@@ -2454,7 +2454,7 @@ a:hover { color: var(--mc-emerald); }
   background: #555;
   border: 2px solid;
   border-color: #777 #333 #333 #777;
-  font-family: var(--font-pixel, 'Press Start 2P', monospace);
+  font-family: var(--font-pixel, 'Orbitron', system-ui, sans-serif);
   font-size: 9px;
   color: #fff;
   text-align: center;
@@ -2499,7 +2499,7 @@ a:hover { color: var(--mc-emerald); }
   position: absolute;
   top: 8px;
   left: 8px;
-  font-family: var(--font-body, 'VT323', monospace);
+  font-family: var(--font-body, system-ui, sans-serif);
   font-size: 14px;
   color: var(--mc-text, #E8E8E8);
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.9);
@@ -2515,7 +2515,7 @@ a:hover { color: var(--mc-emerald); }
   position: absolute;
   top: 8px;
   right: 8px;
-  font-family: var(--font-body, 'VT323', monospace);
+  font-family: var(--font-body, system-ui, sans-serif);
   font-size: 14px;
   color: var(--mc-text-dim, #B0B0B0);
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.9);
@@ -2576,7 +2576,7 @@ a:hover { color: var(--mc-emerald); }
   position: absolute;
   bottom: 1px;
   right: 2px;
-  font-family: var(--font-body, 'VT323', monospace);
+  font-family: var(--font-body, system-ui, sans-serif);
   font-size: 10px;
   color: rgba(255, 255, 255, 0.5);
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.8);
@@ -2590,7 +2590,7 @@ a:hover { color: var(--mc-emerald); }
   bottom: 60px;
   left: 50%;
   transform: translateX(-50%);
-  font-family: var(--font-body, 'VT323', monospace);
+  font-family: var(--font-body, system-ui, sans-serif);
   font-size: 16px;
   color: var(--mc-text, #E8E8E8);
   text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.9);
@@ -2747,8 +2747,8 @@ a:hover { color: var(--mc-emerald); }
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  background: rgba(74, 237, 217, 0.08);
-  border: 1px solid rgba(74, 237, 217, 0.2);
+  background: rgba(45, 212, 191, 0.08);
+  border: 1px solid rgba(45, 212, 191, 0.2);
   color: var(--mc-diamond);
 }
 
@@ -2826,8 +2826,8 @@ a:hover { color: var(--mc-emerald); }
 }
 
 .premium-header__network-badge--mainnet {
-  background: rgba(46, 204, 113, 0.08);
-  border-color: rgba(46, 204, 113, 0.3);
+  background: rgba(192, 38, 211, 0.08);
+  border-color: rgba(192, 38, 211, 0.3);
   color: var(--mc-emerald);
 }
 
@@ -2866,7 +2866,7 @@ a:hover { color: var(--mc-emerald); }
 /* ─── Glow Effect on Hover for Interactive Cards ─────────────────────────── */
 .marketplace-grid .premium-card:hover,
 .marketplace-grid > div:hover {
-  box-shadow: 0 0 20px rgba(74, 237, 217, 0.08);
+  box-shadow: 0 0 20px rgba(45, 212, 191, 0.08);
 }
 
 /* ─── Responsive ────────────────────────────────────────────────────────────── */
@@ -2944,24 +2944,24 @@ a:hover { color: var(--mc-emerald); }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    DE-SHOP SDK — PREMIUM LANDING PAGE
-   ⛏ Investor-ready • Dark • Emerald/Amber • Glassmorphism
+   ◆ Investor-ready • Dark • Plasma Violet/Solar Amber • Glassmorphism
    All classes are namespaced `.ds-*` so they never collide with the dashboard.
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── De-Shop premium palette (oklch) ── */
-  --ds-emerald:   oklch(0.72 0.17 152);
-  --ds-amber:     oklch(0.78 0.16 75);
-  --ds-diamond:   oklch(0.75 0.14 230);
-  --ds-redstone:  oklch(0.62 0.22 25);
-  --ds-lapis:     oklch(0.55 0.13 250);
+  /* ── Nexus Forge premium palette (oklch) ── */
+  --ds-emerald:   oklch(0.65 0.28 315);  /* plasma violet */
+  --ds-amber:     oklch(0.80 0.18 85);   /* solar amber */
+  --ds-diamond:   oklch(0.75 0.15 170);  /* mint teal */
+  --ds-redstone:  oklch(0.62 0.25 15);   /* crimson */
+  --ds-lapis:     oklch(0.55 0.25 285);  /* deep violet */
 
   /* ── Convenient rgb-ish aliases (for glows/alpha) ── */
-  --ds-emerald-rgb:  34, 197, 94;
+  --ds-emerald-rgb:  192, 38, 211;
   --ds-amber-rgb:    251, 191, 36;
-  --ds-diamond-rgb:  77, 166, 255;
-  --ds-redstone-rgb: 239, 68, 68;
-  --ds-lapis-rgb:    99, 102, 241;
+  --ds-diamond-rgb:  45, 212, 191;
+  --ds-redstone-rgb: 244, 63, 94;
+  --ds-lapis-rgb:    124, 58, 237;
 
   /* ── Surfaces ── */
   --ds-bg:          #07070d;

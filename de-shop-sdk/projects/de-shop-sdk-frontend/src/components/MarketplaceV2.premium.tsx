@@ -1,8 +1,8 @@
 /**
- * De-Shop SDK — Marketplace V2 (Premium) — Minecraft Theme
+ * De-Shop SDK — Marketplace V2 (Premium) — Nexus Forge Theme
  * ═══════════════════════════════════════════════════════════
- * Minecraft Trading Hall with inventory-style grid, chest-style list,
- * tooltip-style detail modal, and enchantment-themed analysis.
+ * Nexus Forge Marketplace with inventory-style grid, chest-style list,
+ * tooltip-style detail modal, and analysis-themed insights.
  */
 
 import { useState, useMemo, useCallback, useEffect } from 'react'
@@ -82,7 +82,7 @@ interface MarketplaceListing {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// RARITY CONFIG — Minecraft Ore Colors
+// RARITY CONFIG — Nexus Forge Tier Colors
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const RARITY_CONFIG: Record<Rarity, {
@@ -104,30 +104,30 @@ const RARITY_CONFIG: Record<Rarity, {
     icon: '⬜',
   },
   rare: {
-    color: '#4AEDD9',
-    bg: 'rgba(74,237,217,0.1)',
-    border: 'rgba(74,237,217,0.3)',
-    glow: 'rgba(74,237,217,0.15)',
-    badge: '#4AEDD9',
-    gradient: 'linear-gradient(135deg, rgba(74,237,217,0.1), rgba(74,237,217,0.03))',
+    color: '#2DD4BF',
+    bg: 'rgba(45, 212, 191,0.1)',
+    border: 'rgba(45, 212, 191,0.3)',
+    glow: 'rgba(45, 212, 191,0.15)',
+    badge: '#2DD4BF',
+    gradient: 'linear-gradient(135deg, rgba(45, 212, 191,0.1), rgba(45, 212, 191,0.03))',
     icon: '💠',
   },
   epic: {
-    color: '#c084fc',
-    bg: 'rgba(168,85,247,0.1)',
-    border: 'rgba(168,85,247,0.3)',
-    glow: 'rgba(168,85,247,0.15)',
-    badge: '#a855f7',
-    gradient: 'linear-gradient(135deg, rgba(168,85,247,0.1), rgba(168,85,247,0.03))',
+    color: '#A78BFA',
+    bg: 'rgba(124, 58, 237,0.1)',
+    border: 'rgba(124, 58, 237,0.3)',
+    glow: 'rgba(124, 58, 237,0.15)',
+    badge: '#7C3AED',
+    gradient: 'linear-gradient(135deg, rgba(124, 58, 237,0.1), rgba(124, 58, 237,0.03))',
     icon: '🟣',
   },
   legendary: {
-    color: '#FFD700',
-    bg: 'rgba(255,215,0,0.1)',
-    border: 'rgba(255,215,0,0.3)',
-    glow: 'rgba(255,215,0,0.15)',
-    badge: '#FFD700',
-    gradient: 'linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,215,0,0.03))',
+    color: '#FBBF24',
+    bg: 'rgba(251, 191, 36,0.1)',
+    border: 'rgba(251, 191, 36,0.3)',
+    glow: 'rgba(251, 191, 36,0.15)',
+    badge: '#FBBF24',
+    gradient: 'linear-gradient(135deg, rgba(251, 191, 36,0.12), rgba(251, 191, 36,0.03))',
     icon: '🟡',
   },
 }
@@ -153,7 +153,7 @@ function rarityFromAsset(raw: string): Rarity {
   return 'common'
 }
 
-/** Pick a Minecraft-style icon emoji for the listing based on rarity + skin type. */
+/** Pick a Nexus Forge-style icon emoji for the listing based on rarity + skin type. */
 function iconForAsset(rarity: Rarity, skinType?: string): string {
   if (skinType === 'character') return '🧑'
   if (skinType === 'accessory') return '✨'
@@ -346,7 +346,7 @@ const backdropVariants = {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CUSTOM TOOLTIP FOR PRICE CHART — Minecraft Style
+// CUSTOM TOOLTIP FOR PRICE CHART — Nexus Forge Style
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function ChartTooltip({ active, payload, label }: any) {
@@ -362,16 +362,16 @@ function ChartTooltip({ active, payload, label }: any) {
         boxShadow: '0 4px 16px rgba(80, 0, 170, 0.4)',
       }}
     >
-      <p style={{ color: '#9f7aea', fontSize: 10, marginBottom: 2, fontFamily: "'Press Start 2P', 'Courier New', monospace", imageRendering: 'pixelated' }}>{label}</p>
-      <p style={{ color: '#4AEDD9', fontSize: 12, fontWeight: 700, fontFamily: "'Press Start 2P', 'Courier New', monospace", imageRendering: 'pixelated' }}>
-        {payload[0].value.toLocaleString()} <span style={{ fontSize: 8, color: '#4AEDD9' }}>μA</span>
+      <p style={{ color: '#A78BFA', fontSize: 10, marginBottom: 2, fontFamily: "'Orbitron', system-ui, sans-serif", imageRendering: 'pixelated' }}>{label}</p>
+      <p style={{ color: '#2DD4BF', fontSize: 12, fontWeight: 700, fontFamily: "'Orbitron', system-ui, sans-serif", imageRendering: 'pixelated' }}>
+        {payload[0].value.toLocaleString()} <span style={{ fontSize: 8, color: '#2DD4BF' }}>μA</span>
       </p>
     </div>
   )
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// RARITY BADGE COMPONENT — Minecraft Style
+// RARITY BADGE COMPONENT — Nexus Forge Style
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function RarityBadge({ rarity }: { rarity: Rarity }) {
@@ -401,7 +401,7 @@ function RarityBadge({ rarity }: { rarity: Rarity }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const pixelFont = {
-  fontFamily: "'Press Start 2P', 'Courier New', monospace",
+  fontFamily: "'Orbitron', system-ui, sans-serif",
   imageRendering: 'pixelated' as const,
 }
 
@@ -625,14 +625,14 @@ export default function MarketplaceV2() {
           imageRendering: 'pixelated',
         }}
       >
-        {/* Minecraft Banner */}
+        {/* Nexus Forge Banner */}
         <div
           style={{
             width: '100%',
             height: 48,
             marginBottom: 12,
-            background: 'linear-gradient(135deg, rgba(80,0,170,0.3) 0%, rgba(74,237,217,0.15) 50%, rgba(255,215,0,0.2) 100%)',
-            border: '2px solid rgba(80, 0, 170, 0.5)',
+            background: 'linear-gradient(135deg, rgba(124,58,237,0.3) 0%, rgba(45,212,191,0.15) 50%, rgba(251,191,36,0.2) 100%)',
+            border: '2px solid rgba(124, 58, 237, 0.5)',
             borderRadius: 0,
             display: 'flex',
             alignItems: 'center',
@@ -641,38 +641,38 @@ export default function MarketplaceV2() {
             imageRendering: 'pixelated',
           }}
         >
-          <span style={{ fontSize: 20, ...pixelFont }}>⛏</span>
-          <span style={{ fontSize: 14, color: '#FFD700', fontWeight: 700, letterSpacing: '0.08em', ...pixelFont }}>
-            TRADING HALL
+          <span style={{ fontSize: 20, ...pixelFont }}>◆</span>
+          <span style={{ fontSize: 14, color: '#FBBF24', fontWeight: 700, letterSpacing: '0.08em', ...pixelFont }}>
+            MARKETPLACE
           </span>
-          <span style={{ fontSize: 20, ...pixelFont }}>⛏</span>
+          <span style={{ fontSize: 20, ...pixelFont }}>◆</span>
         </div>
 
         {/* Title row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <ShoppingBag className="h-5 w-5" style={{ color: '#4AEDD9' }} />
+            <ShoppingBag className="h-5 w-5" style={{ color: '#2DD4BF' }} />
             <h2
               style={{
                 fontSize: 16,
                 fontWeight: 700,
-                color: '#FFD700',
+                color: '#FBBF24',
                 letterSpacing: '0.06em',
                 margin: 0,
                 ...pixelFont,
               }}
             >
-              ⛏ TRADING HALL
+              ◆ MARKETPLACE
             </h2>
             <span
               style={{
                 fontSize: 9,
-                color: '#4AEDD9',
-                background: 'rgba(74,237,217,0.1)',
+                color: '#2DD4BF',
+                background: 'rgba(45,212,191,0.1)',
                 padding: '2px 8px',
                 borderRadius: 0,
                 fontWeight: 600,
-                border: '2px solid rgba(74,237,217,0.3)',
+                border: '2px solid rgba(45,212,191,0.3)',
                 imageRendering: 'pixelated',
               }}
             >
@@ -680,7 +680,7 @@ export default function MarketplaceV2() {
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 11, color: '#9f7aea', ...pixelFont }}>
+            <span style={{ fontSize: 11, color: '#A78BFA', ...pixelFont }}>
               {filteredListings.length} item{filteredListings.length !== 1 ? 's' : ''}
             </span>
             {wishlist.size > 0 && (
@@ -722,7 +722,7 @@ export default function MarketplaceV2() {
                 left: 10,
                 top: '50%',
                 transform: 'translateY(-50%)',
-                color: '#9f7aea',
+                color: '#A78BFA',
               }}
             />
             <input
@@ -794,9 +794,9 @@ export default function MarketplaceV2() {
             className="premium-btn premium-btn--sm"
             onClick={() => setShowFilters(!showFilters)}
             style={{
-              background: showFilters ? 'rgba(74,237,217,0.1)' : 'rgba(26,10,46,0.6)',
-              borderColor: showFilters ? 'rgba(74,237,217,0.4)' : 'rgba(80,0,170,0.4)',
-              color: showFilters ? '#4AEDD9' : '#9f7aea',
+              background: showFilters ? 'rgba(45, 212, 191,0.1)' : 'rgba(26,10,46,0.6)',
+              borderColor: showFilters ? 'rgba(45, 212, 191,0.4)' : 'rgba(80,0,170,0.4)',
+              color: showFilters ? '#2DD4BF' : '#A78BFA',
               borderRadius: 0,
               ...pixelFont,
             }}
@@ -819,10 +819,10 @@ export default function MarketplaceV2() {
               onClick={() => setViewMode('grid')}
               style={{
                 padding: '5px 10px',
-                background: viewMode === 'grid' ? 'rgba(74,237,217,0.12)' : 'transparent',
+                background: viewMode === 'grid' ? 'rgba(45, 212, 191,0.12)' : 'transparent',
                 border: 'none',
                 borderRight: '2px solid rgba(80,0,170,0.4)',
-                color: viewMode === 'grid' ? '#4AEDD9' : '#9f7aea',
+                color: viewMode === 'grid' ? '#2DD4BF' : '#A78BFA',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -835,9 +835,9 @@ export default function MarketplaceV2() {
               onClick={() => setViewMode('list')}
               style={{
                 padding: '5px 10px',
-                background: viewMode === 'list' ? 'rgba(74,237,217,0.12)' : 'transparent',
+                background: viewMode === 'list' ? 'rgba(45, 212, 191,0.12)' : 'transparent',
                 border: 'none',
-                color: viewMode === 'list' ? '#4AEDD9' : '#9f7aea',
+                color: viewMode === 'list' ? '#2DD4BF' : '#A78BFA',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -870,7 +870,7 @@ export default function MarketplaceV2() {
                   flexWrap: 'wrap',
                 }}
               >
-                <span style={{ fontSize: 10, color: '#9f7aea', fontWeight: 600, letterSpacing: '0.05em', ...pixelFont }}>
+                <span style={{ fontSize: 10, color: '#A78BFA', fontWeight: 600, letterSpacing: '0.05em', ...pixelFont }}>
                   PRICE RANGE
                 </span>
                 <input
@@ -889,7 +889,7 @@ export default function MarketplaceV2() {
                     ...pixelFont,
                   }}
                 />
-                <span style={{ color: '#9f7aea', fontSize: 11 }}>—</span>
+                <span style={{ color: '#A78BFA', fontSize: 11 }}>—</span>
                 <input
                   className="premium-input"
                   placeholder="Max μA"
@@ -912,7 +912,7 @@ export default function MarketplaceV2() {
                     style={{
                       background: 'none',
                       border: 'none',
-                      color: '#9f7aea',
+                      color: '#A78BFA',
                       cursor: 'pointer',
                       padding: '2px 6px',
                       fontSize: 10,
@@ -965,12 +965,12 @@ export default function MarketplaceV2() {
               <span style={{ fontSize: 8, color: rc.color, fontWeight: 700, ...pixelFont, textTransform: 'uppercase' }}>
                 {rarity}
               </span>
-              <span style={{ fontSize: 10, color: '#4AEDD9', fontWeight: 700, ...pixelFont }}>
+              <span style={{ fontSize: 10, color: '#2DD4BF', fontWeight: 700, ...pixelFont }}>
                 {fp.price.toLocaleString()} <span style={{ fontSize: 7 }}>μA</span>
               </span>
               <span style={{
                 fontSize: 8,
-                color: fp.change24h >= 0 ? '#22c55e' : '#ef4444',
+                color: fp.change24h >= 0 ? '#C026D3' : '#F43F5E',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 2,
@@ -994,16 +994,16 @@ export default function MarketplaceV2() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-          <Activity className="h-3.5 w-3.5" style={{ color: '#22c55e' }} />
-          <span style={{ fontSize: 9, color: '#22c55e', fontWeight: 700, letterSpacing: '0.06em', ...pixelFont }}>
+          <Activity className="h-3.5 w-3.5" style={{ color: '#C026D3' }} />
+          <span style={{ fontSize: 9, color: '#C026D3', fontWeight: 700, letterSpacing: '0.06em', ...pixelFont }}>
             RECENTLY SOLD
           </span>
           <span
             style={{
               width: 5,
               height: 5,
-              background: '#22c55e',
-              boxShadow: '0 0 4px #22c55e',
+              background: '#C026D3',
+              boxShadow: '0 0 4px #C026D3',
               animation: 'mc-pulse 2s infinite',
             }}
           />
@@ -1034,7 +1034,7 @@ export default function MarketplaceV2() {
                     <span style={{ fontSize: 9, color: rc.color, fontWeight: 700, ...pixelFont }}>{sale.name}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 1 }}>
-                    <span style={{ fontSize: 9, color: '#4AEDD9', fontWeight: 700, ...pixelFont }}>
+                    <span style={{ fontSize: 9, color: '#2DD4BF', fontWeight: 700, ...pixelFont }}>
                       {sale.salePrice.toLocaleString()} μA
                     </span>
                     <span style={{ fontSize: 7, color: '#7c5eaa', display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -1068,11 +1068,11 @@ export default function MarketplaceV2() {
           >
             <Loader2
               className="h-10 w-10 animate-spin"
-              style={{ color: '#4AEDD9' }}
+              style={{ color: '#2DD4BF' }}
             />
             <h3
               style={{
-                color: '#FFD700',
+                color: '#FBBF24',
                 fontSize: 13,
                 fontWeight: 700,
                 letterSpacing: '0.04em',
@@ -1082,7 +1082,7 @@ export default function MarketplaceV2() {
             >
               LOADING MARKETPLACE
             </h3>
-            <p style={{ color: '#9f7aea', fontSize: 11, maxWidth: 320, lineHeight: 1.6, margin: 0 }}>
+            <p style={{ color: '#A78BFA', fontSize: 11, maxWidth: 320, lineHeight: 1.6, margin: 0 }}>
               Fetching live listings from the De-Shop backend…
             </p>
           </motion.div>
@@ -1115,11 +1115,11 @@ export default function MarketplaceV2() {
                 boxShadow: '0 0 30px rgba(80,0,170,0.15)',
               }}
             >
-              <ShoppingBag className="h-10 w-10" style={{ color: '#9f7aea', opacity: 0.5 }} />
+              <ShoppingBag className="h-10 w-10" style={{ color: '#A78BFA', opacity: 0.5 }} />
             </div>
             <h3
               style={{
-                color: '#FFD700',
+                color: '#FBBF24',
                 fontSize: 16,
                 fontWeight: 700,
                 marginBottom: 8,
@@ -1129,7 +1129,7 @@ export default function MarketplaceV2() {
             >
               No Items Found
             </h3>
-            <p style={{ color: '#9f7aea', fontSize: 12, maxWidth: 320, lineHeight: 1.6, marginBottom: 4 }}>
+            <p style={{ color: '#A78BFA', fontSize: 12, maxWidth: 320, lineHeight: 1.6, marginBottom: 4 }}>
               No trading hall items match your current filters, or the marketplace is empty.
               Try adjusting your search, clearing all filters, or minting a skin to get started.
             </p>
@@ -1216,7 +1216,7 @@ export default function MarketplaceV2() {
 
                   {/* Card content */}
                   <div style={{ padding: '10px 10px 8px', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    {/* Item icon — Minecraft inventory slot */}
+                    {/* Item icon — Nexus Forge inventory slot */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 6 }}>
                       <button
                         onClick={(e) => {
@@ -1290,16 +1290,16 @@ export default function MarketplaceV2() {
 
                     {/* Price in emerald color */}
                     <div style={{ textAlign: 'center', marginBottom: 4 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#4AEDD9', ...pixelFont }}>
-                        {item.price.toLocaleString()} <span style={{ fontSize: 8, color: '#4AEDD9' }}>μA</span>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#2DD4BF', ...pixelFont }}>
+                        {item.price.toLocaleString()} <span style={{ fontSize: 8, color: '#2DD4BF' }}>μA</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'center', marginTop: 2 }}>
-                        {trend.direction === 'up' && <TrendingUp className="h-3 w-3" style={{ color: '#22c55e' }} />}
-                        {trend.direction === 'down' && <TrendingDown className="h-3 w-3" style={{ color: '#ef4444' }} />}
+                        {trend.direction === 'up' && <TrendingUp className="h-3 w-3" style={{ color: '#C026D3' }} />}
+                        {trend.direction === 'down' && <TrendingDown className="h-3 w-3" style={{ color: '#F43F5E' }} />}
                         <span
                           style={{
                             fontSize: 8,
-                            color: trend.direction === 'up' ? '#22c55e' : trend.direction === 'down' ? '#ef4444' : '#9f7aea',
+                            color: trend.direction === 'up' ? '#C026D3' : trend.direction === 'down' ? '#F43F5E' : '#A78BFA',
                             fontWeight: 600,
                           }}
                         >
@@ -1318,9 +1318,9 @@ export default function MarketplaceV2() {
                       }}
                       style={{
                         borderRadius: 0,
-                        background: 'rgba(74,237,217,0.15)',
-                        border: '2px solid rgba(74,237,217,0.4)',
-                        color: '#4AEDD9',
+                        background: 'rgba(45, 212, 191,0.15)',
+                        border: '2px solid rgba(45, 212, 191,0.4)',
+                        color: '#2DD4BF',
                         width: '100%',
                         opacity: buyingId === item.id ? 0.7 : 1,
                         cursor: buyingId === item.id ? 'wait' : 'pointer',
@@ -1382,7 +1382,7 @@ export default function MarketplaceV2() {
                 padding: '10px 16px',
                 borderBottom: '2px solid rgba(80,0,170,0.4)',
                 fontSize: 8,
-                color: '#9f7aea',
+                color: '#A78BFA',
                 fontWeight: 700,
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase' as const,
@@ -1407,7 +1407,7 @@ export default function MarketplaceV2() {
                   key={item.id}
                   variants={listVariants}
                   whileHover={{
-                    background: 'rgba(74,237,217,0.06)',
+                    background: 'rgba(45, 212, 191,0.06)',
                   }}
                   className="marketplace-list-row"
                   style={{
@@ -1455,19 +1455,19 @@ export default function MarketplaceV2() {
                   <RarityBadge rarity={item.rarity} />
 
                   {/* Price — emerald color */}
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#4AEDD9', ...pixelFont }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#2DD4BF', ...pixelFont }}>
                     {item.price.toLocaleString()} <span style={{ fontSize: 8 }}>μA</span>
                   </div>
 
                   {/* Trend + Seller */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      {trend.direction === 'up' && <TrendingUp className="h-3 w-3" style={{ color: '#22c55e' }} />}
-                      {trend.direction === 'down' && <TrendingDown className="h-3 w-3" style={{ color: '#ef4444' }} />}
+                      {trend.direction === 'up' && <TrendingUp className="h-3 w-3" style={{ color: '#C026D3' }} />}
+                      {trend.direction === 'down' && <TrendingDown className="h-3 w-3" style={{ color: '#F43F5E' }} />}
                       <span
                         style={{
                           fontSize: 9,
-                          color: trend.direction === 'up' ? '#22c55e' : trend.direction === 'down' ? '#ef4444' : '#9f7aea',
+                          color: trend.direction === 'up' ? '#C026D3' : trend.direction === 'down' ? '#F43F5E' : '#A78BFA',
                           fontWeight: 600,
                         }}
                       >
@@ -1503,9 +1503,9 @@ export default function MarketplaceV2() {
                       }}
                       style={{
                         borderRadius: 0,
-                        background: 'rgba(74,237,217,0.15)',
-                        border: '2px solid rgba(74,237,217,0.4)',
-                        color: '#4AEDD9',
+                        background: 'rgba(45, 212, 191,0.15)',
+                        border: '2px solid rgba(45, 212, 191,0.4)',
+                        color: '#2DD4BF',
                         opacity: buyingId === item.id ? 0.7 : 1,
                         cursor: buyingId === item.id ? 'wait' : 'pointer',
                         ...pixelFont,
@@ -1531,7 +1531,7 @@ export default function MarketplaceV2() {
         )}
       </div>
 
-      {/* ═══ ITEM DETAIL MODAL — Minecraft Tooltip Style ═══ */}
+      {/* ═══ ITEM DETAIL MODAL — Nexus Forge Tooltip Style ═══ */}
       <AnimatePresence>
         {selectedItem && (
           <>
@@ -1551,7 +1551,7 @@ export default function MarketplaceV2() {
               }}
             />
 
-            {/* Modal — Minecraft tooltip style */}
+            {/* Modal — Nexus Forge tooltip style */}
             <motion.div
               variants={modalVariants}
               initial="hidden"
@@ -1592,7 +1592,7 @@ export default function MarketplaceV2() {
                         background: 'rgba(26, 10, 46, 0.8)',
                         border: '2px solid #5000AA',
                         borderRadius: 0,
-                        color: '#9f7aea',
+                        color: '#A78BFA',
                         cursor: 'pointer',
                         padding: 4,
                         zIndex: 10,
@@ -1657,7 +1657,7 @@ export default function MarketplaceV2() {
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
                             <RarityBadge rarity={item.rarity} />
-                            <span style={{ fontSize: 9, color: '#9f7aea', ...pixelFont }}>{item.type}</span>
+                            <span style={{ fontSize: 9, color: '#A78BFA', ...pixelFont }}>{item.type}</span>
                             <span style={{ fontSize: 9, color: '#7c5eaa' }}>•</span>
                             <span style={{ fontSize: 9, color: '#7c5ea' }}>Listed {item.listedAt}</span>
                           </div>
@@ -1682,21 +1682,21 @@ export default function MarketplaceV2() {
                         }}
                       >
                         <div>
-                          <div style={{ fontSize: 9, color: '#9f7aea', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 2, ...pixelFont }}>
+                          <div style={{ fontSize: 9, color: '#A78BFA', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 2, ...pixelFont }}>
                             CURRENT PRICE
                           </div>
                           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                            <span style={{ fontSize: 20, fontWeight: 700, color: '#4AEDD9', ...pixelFont }}>
+                            <span style={{ fontSize: 20, fontWeight: 700, color: '#2DD4BF', ...pixelFont }}>
                               {item.price.toLocaleString()}
                             </span>
-                            <span style={{ fontSize: 9, color: '#4AEDD9', ...pixelFont }}>μA</span>
+                            <span style={{ fontSize: 9, color: '#2DD4BF', ...pixelFont }}>μA</span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginLeft: 6 }}>
-                              {trend.direction === 'up' && <TrendingUp className="h-3 w-3" style={{ color: '#22c55e' }} />}
-                              {trend.direction === 'down' && <TrendingDown className="h-3 w-3" style={{ color: '#ef4444' }} />}
+                              {trend.direction === 'up' && <TrendingUp className="h-3 w-3" style={{ color: '#C026D3' }} />}
+                              {trend.direction === 'down' && <TrendingDown className="h-3 w-3" style={{ color: '#F43F5E' }} />}
                               <span
                                 style={{
                                   fontSize: 9,
-                                  color: trend.direction === 'up' ? '#22c55e' : trend.direction === 'down' ? '#ef4444' : '#9f7aea',
+                                  color: trend.direction === 'up' ? '#C026D3' : trend.direction === 'down' ? '#F43F5E' : '#A78BFA',
                                   fontWeight: 600,
                                 }}
                               >
@@ -1711,7 +1711,7 @@ export default function MarketplaceV2() {
                             className="premium-btn premium-btn--sm"
                             style={{
                               borderColor: isWished ? '#f87171' : 'rgba(80,0,170,0.4)',
-                              color: isWished ? '#f87171' : '#9f7aea',
+                              color: isWished ? '#f87171' : '#A78BFA',
                               background: isWished ? 'rgba(248,113,113,0.08)' : 'rgba(26,10,46,0.5)',
                               borderRadius: 0,
                               ...pixelFont,
@@ -1726,9 +1726,9 @@ export default function MarketplaceV2() {
                             onClick={() => void handleBuy(item)}
                             style={{
                               borderRadius: 0,
-                              background: 'rgba(74,237,217,0.2)',
-                              border: '2px solid rgba(74,237,217,0.5)',
-                              color: '#4AEDD9',
+                              background: 'rgba(45, 212, 191,0.2)',
+                              border: '2px solid rgba(45, 212, 191,0.5)',
+                              color: '#2DD4BF',
                               opacity: buyingId === item.id ? 0.7 : 1,
                               cursor: buyingId === item.id ? 'wait' : 'pointer',
                               ...pixelFont,
@@ -1752,8 +1752,8 @@ export default function MarketplaceV2() {
                       {/* Trading History Chart (was Price History) */}
                       <div style={{ marginBottom: 16 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                          <BarChart3 className="h-3.5 w-3.5" style={{ color: '#4AEDD9' }} />
-                          <span style={{ fontSize: 10, fontWeight: 700, color: '#FFD700', letterSpacing: '0.04em', ...pixelFont }}>
+                          <BarChart3 className="h-3.5 w-3.5" style={{ color: '#2DD4BF' }} />
+                          <span style={{ fontSize: 10, fontWeight: 700, color: '#FBBF24', letterSpacing: '0.04em', ...pixelFont }}>
                             TRADING HISTORY — 7 DAYS
                           </span>
                         </div>
@@ -1777,12 +1777,12 @@ export default function MarketplaceV2() {
                               <CartesianGrid strokeDasharray="3 3" stroke="rgba(80,0,170,0.15)" />
                               <XAxis
                                 dataKey="day"
-                                tick={{ fill: '#9f7aea', fontSize: 8 }}
+                                tick={{ fill: '#A78BFA', fontSize: 8 }}
                                 axisLine={{ stroke: 'rgba(80,0,170,0.2)' }}
                                 tickLine={false}
                               />
                               <YAxis
-                                tick={{ fill: '#9f7aea', fontSize: 8 }}
+                                tick={{ fill: '#A78BFA', fontSize: 8 }}
                                 axisLine={{ stroke: 'rgba(80,0,170,0.2)' }}
                                 tickLine={false}
                                 width={50}
@@ -1796,7 +1796,7 @@ export default function MarketplaceV2() {
                                 strokeWidth={2}
                                 fill={`url(#grad-${item.id})`}
                                 dot={false}
-                                activeDot={{ r: 4, fill: rc.color, stroke: '#FFD700', strokeWidth: 1.5 }}
+                                activeDot={{ r: 4, fill: rc.color, stroke: '#FBBF24', strokeWidth: 1.5 }}
                               />
                             </AreaChart>
                           </ResponsiveContainer>
@@ -1806,8 +1806,8 @@ export default function MarketplaceV2() {
                       {/* Enchantment Analysis (was AI Price Analysis) */}
                       <div style={{ marginBottom: 16 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                          <Sparkles className="h-3.5 w-3.5" style={{ color: '#c084fc' }} />
-                          <span style={{ fontSize: 10, fontWeight: 700, color: '#FFD700', letterSpacing: '0.04em', ...pixelFont }}>
+                          <Sparkles className="h-3.5 w-3.5" style={{ color: '#A78BFA' }} />
+                          <span style={{ fontSize: 10, fontWeight: 700, color: '#FBBF24', letterSpacing: '0.04em', ...pixelFont }}>
                             ENCHANTMENT ANALYSIS
                           </span>
                         </div>
@@ -1821,17 +1821,17 @@ export default function MarketplaceV2() {
                           {/* Enchantment Power (was Confidence) */}
                           <div
                             style={{
-                              background: 'rgba(74,237,217,0.04)',
-                              border: '2px solid rgba(74,237,217,0.2)',
+                              background: 'rgba(45, 212, 191,0.04)',
+                              border: '2px solid rgba(45, 212, 191,0.2)',
                               borderRadius: 0,
                               padding: '10px 10px',
                               imageRendering: 'pixelated',
                             }}
                           >
-                            <div style={{ fontSize: 7, color: '#9f7aea', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4, ...pixelFont }}>
+                            <div style={{ fontSize: 7, color: '#A78BFA', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4, ...pixelFont }}>
                               ENCHANTMENT POWER
                             </div>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: '#4AEDD9', ...pixelFont }}>
+                            <div style={{ fontSize: 16, fontWeight: 700, color: '#2DD4BF', ...pixelFont }}>
                               {item.confidence}%
                             </div>
                             <div
@@ -1847,7 +1847,7 @@ export default function MarketplaceV2() {
                                 style={{
                                   height: '100%',
                                   width: `${item.confidence}%`,
-                                  background: '#4AEDD9',
+                                  background: '#2DD4BF',
                                   borderRadius: 0,
                                   imageRendering: 'pixelated',
                                 }}
@@ -1855,20 +1855,20 @@ export default function MarketplaceV2() {
                             </div>
                           </div>
 
-                          {/* Villager Appraisal (was Suggested Price) */}
+                          {/* Asset Appraisal (was Suggested Price) */}
                           <div
                             style={{
-                              background: 'rgba(168,85,247,0.04)',
-                              border: '2px solid rgba(168,85,247,0.2)',
+                              background: 'rgba(124, 58, 237,0.04)',
+                              border: '2px solid rgba(124, 58, 237,0.2)',
                               borderRadius: 0,
                               padding: '10px 10px',
                               imageRendering: 'pixelated',
                             }}
                           >
-                            <div style={{ fontSize: 7, color: '#9f7aea', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4, ...pixelFont }}>
+                            <div style={{ fontSize: 7, color: '#A78BFA', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4, ...pixelFont }}>
                               VILLAGER APPRAISAL
                             </div>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: '#c084fc', ...pixelFont }}>
+                            <div style={{ fontSize: 16, fontWeight: 700, color: '#A78BFA', ...pixelFont }}>
                               {item.suggestedPrice.toLocaleString()}
                             </div>
                             <div style={{ fontSize: 8, color: '#7c5eaa', marginTop: 4, ...pixelFont }}>
@@ -1886,7 +1886,7 @@ export default function MarketplaceV2() {
                               imageRendering: 'pixelated',
                             }}
                           >
-                            <div style={{ fontSize: 7, color: '#9f7aea', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4, ...pixelFont }}>
+                            <div style={{ fontSize: 7, color: '#A78BFA', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4, ...pixelFont }}>
                               ENCHANTMENT LEVEL
                             </div>
                             <div style={{ fontSize: 16, fontWeight: 700, color: rc.color, ...pixelFont }}>
@@ -1917,15 +1917,15 @@ export default function MarketplaceV2() {
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <Shield className="h-3.5 w-3.5" style={{ color: '#9f7aea' }} />
-                          <span style={{ fontSize: 9, color: '#9f7aea', ...pixelFont }}>
+                          <Shield className="h-3.5 w-3.5" style={{ color: '#A78BFA' }} />
+                          <span style={{ fontSize: 9, color: '#A78BFA', ...pixelFont }}>
                             Seller
                           </span>
                           <span
                             style={{
                               fontSize: 10,
                               fontWeight: 600,
-                              color: '#4AEDD9',
+                              color: '#2DD4BF',
                               ...pixelFont,
                             }}
                           >

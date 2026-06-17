@@ -1,9 +1,9 @@
 /**
- * De-Shop SDK — Animated Gradient Border (Minecraft Edition)
+ * De-Shop SDK — Animated Gradient Border (Nexus Forge Edition)
  * ────────────────────────────────────────
  * A wrapper component that draws an animated gradient border around children.
  * Uses CSS @property for animating gradient angle with conic-gradient.
- * Default border colors cycle: emerald → diamond → gold → redstone → emerald.
+ * Default border colors cycle: plasma violet → mint teal → solar amber → crimson → plasma violet.
  * Custom colors can be passed via the `colors` prop.
  * Respects `prefers-reduced-motion`.
  */
@@ -24,14 +24,14 @@ interface AnimatedBorderProps {
   colors?: string[]
 }
 
-// ─── Default Minecraft palette ──────────────────────────────────────────────
+// ─── Default Nexus Forge palette ───────────────────────────────────────────
 
 const MC_DEFAULT_COLORS = [
-  '#22c55e', // emerald
-  '#4da6ff', // diamond
-  '#fbbf24', // gold
-  '#ef4444', // redstone
-  '#22c55e', // emerald (loop back)
+  '#C026D3', // plasma violet
+  '#2DD4BF', // mint teal
+  '#FBBF24', // solar amber
+  '#F43F5E', // crimson
+  '#C026D3', // plasma violet (loop back)
 ]
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -63,7 +63,7 @@ export default function AnimatedBorder({
         className={`animated-border-wrapper ${className || ''}`}
         style={{
           borderRadius,
-          border: `${borderWidth}px solid rgba(34, 197, 94, 0.2)`,
+          border: `${borderWidth}px solid rgba(192, 38, 211, 0.2)`,
         }}
       >
         {children}

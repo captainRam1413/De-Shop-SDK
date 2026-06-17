@@ -39,13 +39,13 @@ interface ConfettiParticle {
 const PARTICLE_COUNT = 35
 const DURATION = 3 // seconds
 const COLORS = [
-  '#2ECC71', // emerald green
-  '#4AEDD9', // diamond cyan
-  '#a855f7', // netherite purple
-  '#FFD700', // gold
-  '#7CB342', // grass green
-  '#c084fc', // ender purple
-  '#FF1A1A', // redstone
+  '#C026D3', // emerald green
+  '#2DD4BF', // diamond cyan
+  '#7C3AED', // netherite purple
+  '#FBBF24', // gold
+  '#A3E635', // grass green
+  '#A78BFA', // ender purple
+  '#F43F5E', // redstone
   '#D4D4D4', // iron gray
 ]
 

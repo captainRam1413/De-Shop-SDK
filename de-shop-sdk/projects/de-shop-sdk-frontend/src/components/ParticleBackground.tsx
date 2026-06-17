@@ -1,8 +1,8 @@
 /**
- * De-Shop SDK — Minecraft Particle Background
+ * De-Shop SDK — Nexus Forge Particle Background
  * ─────────────────────────────────────────────
  * Canvas-based particle system rendering floating BLOCK particles.
- * Square/rectangular particles in Minecraft colors drift upward.
+ * Square/rectangular particles in Nexus Forge colors drift upward.
  * Respects `prefers-reduced-motion`.
  */
 
@@ -19,16 +19,16 @@ const WOBBLE_AMPLITUDE = 0.2
 const WOBBLE_SPEED = 0.002
 const FADE_MAX = 0.18
 
-// Minecraft block colors
+// Nexus Forge block colors
 const COLORS = [
-  { r: 93, g: 140, b: 46 },    // Grass green
-  { r: 139, g: 105, b: 20 },   // Dirt brown
-  { r: 127, g: 127, b: 127 },  // Stone gray
-  { r: 74, g: 237, b: 217 },   // Diamond cyan
-  { r: 46, g: 204, b: 113 },   // Emerald green
-  { r: 255, g: 215, b: 0 },    // Gold
-  { r: 160, g: 118, b: 74 },   // Oak wood
-  { r: 212, g: 212, b: 212 },  // Iron gray
+  { r: 192, g: 38, b: 211 },   // Plasma violet
+  { r: 124, g: 58, b: 237 },   // Deep violet
+  { r: 82, g: 82, b: 91 },     // Zinc-600
+  { r: 45, g: 212, b: 191 },   // Mint teal
+  { r: 163, g: 230, b: 53 },   // Electric lime
+  { r: 251, g: 191, b: 36 },   // Solar amber
+  { r: 113, g: 113, b: 122 },  // Zinc-500
+  { r: 228, g: 228, b: 231 },  // Zinc-200
 ]
 
 // ─── Particle Type ────────────────────────────────────────────────────────────
@@ -101,7 +101,7 @@ export default function ParticleBackground() {
     const particles = particlesRef.current
     const time = timeRef.current
 
-    // Update & draw particles as SQUARE blocks (Minecraft style)
+    // Update & draw particles as SQUARE blocks (Nexus Forge style)
     for (let i = 0; i < particles.length; i++) {
       const p = particles[i]
 
@@ -118,7 +118,7 @@ export default function ParticleBackground() {
       if (p.x < -p.size * 2) p.x = width + p.size * 2
       if (p.x > width + p.size * 2) p.x = -p.size * 2
 
-      // Draw as a square block (no circles — Minecraft!)
+      // Draw as a square block (no circles — Nexus Forge!)  
       ctx.save()
       ctx.translate(p.x, p.y)
       ctx.rotate(p.rotation)

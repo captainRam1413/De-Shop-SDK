@@ -60,10 +60,10 @@ const navItems: { id: ActivePage; label: string; icon: React.ReactNode; color: s
   { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 className="h-4 w-4" />, color: 'var(--mc-diamond)' },
   { id: 'minecraft', label: 'Play', icon: <Swords className="h-4 w-4" />, color: 'var(--mc-emerald)' },
   { id: 'game', label: 'World', icon: <Gamepad2 className="h-4 w-4" />, color: 'var(--mc-emerald)' },
-  { id: 'market', label: 'Trading Hall', icon: <Store className="h-4 w-4" />, color: 'var(--mc-gold)' },
+  { id: 'market', label: 'Marketplace', icon: <Store className="h-4 w-4" />, color: 'var(--mc-gold)' },
   { id: 'inventory', label: 'Inventory', icon: <Backpack className="h-4 w-4" />, color: 'var(--mc-lapis)' },
-  { id: 'terminal', label: 'Command Block', icon: <Terminal className="h-4 w-4" />, color: 'var(--mc-redstone)' },
-  { id: 'profile', label: 'Player', icon: <User className="h-4 w-4" />, color: 'var(--mc-gold)' },
+  { id: 'terminal', label: 'Console', icon: <Terminal className="h-4 w-4" />, color: 'var(--mc-redstone)' },
+  { id: 'profile', label: 'Profile', icon: <User className="h-4 w-4" />, color: 'var(--mc-gold)' },
 ]
 
 function Notifications() {
@@ -111,7 +111,7 @@ function Sidebar() {
       <div className="premium-sidebar__brand mc-sidebar__brand">
         <img
           src="/minecraft/logo.png"
-          alt="Minecraft"
+          alt="Nexus Forge"
           style={{ width: 24, height: 24, imageRendering: 'pixelated' }}
         />
         {!sidebarCollapsed && (
@@ -122,7 +122,7 @@ function Sidebar() {
             className="premium-sidebar__brand-text"
           >
             <span className="premium-sidebar__title mc-sidebar__title">DE-SHOP</span>
-            <span className="premium-sidebar__subtitle mc-sidebar__subtitle">⛏ BLOCKCHAIN</span>
+            <span className="premium-sidebar__subtitle mc-sidebar__subtitle">◆ NEXUS FORGE</span>
           </motion.div>
         )}
       </div>
@@ -195,13 +195,13 @@ function Header({ onBackToHome }: { onBackToHome?: () => void }) {
     : null
 
   const pageLabels: Record<ActivePage, string> = {
-    dashboard: 'Village Ledger',
+    dashboard: 'Nexus Ledger',
     minecraft: 'Play',
     game: 'World',
-    market: 'Trading Hall',
+    market: 'Marketplace',
     inventory: 'Inventory',
-    terminal: 'Command Block',
-    profile: 'Player',
+    terminal: 'Console',
+    profile: 'Profile',
   }
 
   const unreadCount = notifications.length
@@ -258,7 +258,7 @@ function Header({ onBackToHome }: { onBackToHome?: () => void }) {
           <div className="premium-header__steam mc-header__player">
             <img
               src={steamProfile.avatarfull}
-              alt="Player"
+              alt="Profile"
               style={{ width: 22, height: 22, imageRendering: 'pixelated' }}
             />
             <span style={{ color: 'var(--mc-gold, #fbbf24)', fontSize: 11, fontWeight: 600 }}>{steamProfile.personaname}</span>
@@ -293,10 +293,10 @@ const pageComponents: Record<ActivePage, React.ComponentType> = {
   dashboard: DashboardPremium,
   minecraft: MinecraftVoxelGame,
   game: GameShowcase,
-  market: MarketplaceV2, // Trading Hall — Enhanced Marketplace V2 with advanced filtering & views
+  market: MarketplaceV2, // Marketplace — Enhanced Marketplace V2 with advanced filtering & views
   inventory: GameShowcase, // Will use same component with inventory tab active
-  terminal: TerminalConsole, // Command Block
-  profile: ProfilePage, // Player Profile
+  terminal: TerminalConsole, // Console
+  profile: ProfilePage, // Profile
 }
 
 // Shared suspense fallback — a centered spinning loader in the premium theme.
@@ -314,7 +314,7 @@ function PageSuspense({ children }: { children: React.ReactNode }) {
   )
 }
 
-// Minecraft palette for animated border: emerald → diamond → gold → redstone → emerald
+// Nexus Forge palette for animated border: plasma violet → mint teal → solar amber → crimson → plasma violet
 const mcBorderColors = [
   'var(--mc-emerald, #22c55e)',
   'var(--mc-diamond, #4da6ff)',
@@ -426,7 +426,7 @@ export default function App() {
         {/* Professional Footer */}
         <footer className="premium-footer">
           <div className="premium-footer__brand">
-            <span>⛏ DE-SHOP SDK</span>
+            <span>◆ DE-SHOP SDK</span>
             <span style={{ color: 'var(--mc-text-dim)', fontSize: 6 }}>v2.0</span>
           </div>
           <div className="premium-footer__links">

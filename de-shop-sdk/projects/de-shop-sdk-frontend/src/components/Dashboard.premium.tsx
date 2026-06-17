@@ -1,7 +1,7 @@
 /**
- * De-Shop SDK — Dashboard / Analytics Page (Professional Web3 Minecraft Theme)
+ * De-Shop SDK — Dashboard / Analytics Page (Nexus Forge Web3 Gaming Theme)
  * ────────────────────────────────────────────
- * Village Ledger: Live marketplace stats, charts, village crier feed.
+ * Nexus Ledger: Live marketplace stats, charts, marketplace activity feed.
  * Enhanced with web3 metrics, glow effects, and professional polish.
  */
 
@@ -84,12 +84,12 @@ const activityItems: ActivityItem[] = [
 
 const rarityData = [
   { name: 'Iron', count: 45, color: '#D4D4D4' },
-  { name: 'Gold', count: 28, color: '#FFD700' },
-  { name: 'Diamond', count: 18, color: '#4AEDD9' },
+  { name: 'Gold', count: 28, color: '#FBBF24' },
+  { name: 'Diamond', count: 18, color: '#2DD4BF' },
   { name: 'Netherite', count: 9, color: '#3C3C4E' },
 ]
 
-// ─── Stats Card Data — Web3 + Minecraft Hybrid ───────────────────────────────
+// ─── Stats Card Data — Web3 + Nexus Forge Hybrid ─────────────────────────────
 
 const statsCards = [
   {
@@ -99,9 +99,9 @@ const statsCards = [
     subtext: '12,847 ALGO',
     change: +14.2,
     icon: <Gem className="h-5 w-5" />,
-    color: '#2ECC71',
-    bgColor: 'rgba(46, 204, 113, 0.12)',
-    glowColor: 'rgba(46, 204, 113, 0.15)',
+    color: '#C026D3',
+    bgColor: 'rgba(192, 38, 211, 0.12)',
+    glowColor: 'rgba(192, 38, 211, 0.15)',
   },
   {
     label: 'ACTIVE WALLETS',
@@ -110,9 +110,9 @@ const statsCards = [
     subtext: '+128 today',
     change: +8.7,
     icon: <Wallet className="h-5 w-5" />,
-    color: '#4AEDD9',
-    bgColor: 'rgba(74, 237, 217, 0.12)',
-    glowColor: 'rgba(74, 237, 217, 0.15)',
+    color: '#2DD4BF',
+    bgColor: 'rgba(45, 212, 191, 0.12)',
+    glowColor: 'rgba(45, 212, 191, 0.15)',
   },
   {
     label: 'GAS FEES (24H)',
@@ -132,7 +132,7 @@ const statsCards = [
     subtext: '5 chains',
     change: +23.5,
     icon: <Globe className="h-5 w-5" />,
-    color: '#c084fc',
+    color: '#A78BFA',
     bgColor: 'rgba(192, 132, 252, 0.12)',
     glowColor: 'rgba(192, 132, 252, 0.15)',
   },
@@ -141,26 +141,26 @@ const statsCards = [
 // ─── Quick Actions ────────────────────────────────────────────────────────────
 
 const quickActions = [
-  { label: 'Mint NFT', desc: 'Forge new item', icon: <Sparkles className="h-4 w-4" />, color: '#2ECC71', action: 'Mint NFT' },
-  { label: 'List Item', desc: 'Place in chest', icon: <Package className="h-4 w-4" />, color: '#4AEDD9', action: 'List Item' },
-  { label: 'Connect Wallet', desc: 'Link account', icon: <Link2 className="h-4 w-4" />, color: '#c084fc', action: 'Connect Wallet' },
-  { label: 'View Docs', desc: 'SDK reference', icon: <BookOpen className="h-4 w-4" />, color: '#FFD700', action: 'View Docs' },
+  { label: 'Mint NFT', desc: 'Forge new item', icon: <Sparkles className="h-4 w-4" />, color: '#C026D3', action: 'Mint NFT' },
+  { label: 'List Item', desc: 'Place in chest', icon: <Package className="h-4 w-4" />, color: '#2DD4BF', action: 'List Item' },
+  { label: 'Connect Wallet', desc: 'Link account', icon: <Link2 className="h-4 w-4" />, color: '#A78BFA', action: 'Connect Wallet' },
+  { label: 'View Docs', desc: 'SDK reference', icon: <BookOpen className="h-4 w-4" />, color: '#FBBF24', action: 'View Docs' },
 ]
 
 // ─── Activity Icon Map ────────────────────────────────────────────────────────
 
 const activityIconMap: Record<ActivityType, { icon: React.ReactNode; color: string; label: string }> = {
-  mint: { icon: <Sparkles className="h-3.5 w-3.5" />, color: '#2ECC71', label: 'FORGE' },
-  buy: { icon: <Zap className="h-3.5 w-3.5" />, color: '#4AEDD9', label: 'TRADE' },
-  list: { icon: <Tag className="h-3.5 w-3.5" />, color: '#c084fc', label: 'DISPLAY' },
-  cancel: { icon: <Flame className="h-3.5 w-3.5" />, color: '#E74C3C', label: 'CANCEL' },
+  mint: { icon: <Sparkles className="h-3.5 w-3.5" />, color: '#C026D3', label: 'FORGE' },
+  buy: { icon: <Zap className="h-3.5 w-3.5" />, color: '#2DD4BF', label: 'TRADE' },
+  list: { icon: <Tag className="h-3.5 w-3.5" />, color: '#A78BFA', label: 'DISPLAY' },
+  cancel: { icon: <Flame className="h-3.5 w-3.5" />, color: '#F43F5E', label: 'CANCEL' },
 }
 
 const rarityColorMap: Record<string, string> = {
   common: '#9E9E9E',
-  rare: '#4AEDD9',
-  epic: '#c084fc',
-  legendary: '#FFD700',
+  rare: '#2DD4BF',
+  epic: '#A78BFA',
+  legendary: '#FBBF24',
 }
 
 // ─── Custom Tooltip ───────────────────────────────────────────────────────────
@@ -173,13 +173,13 @@ function CustomTooltip({ active, payload, label }: any) {
       style={{
         background: 'rgba(20, 16, 12, 0.95)',
         backdropFilter: 'blur(8px)',
-        border: '2px solid rgba(46, 204, 113, 0.4)',
-        boxShadow: '0 0 16px rgba(46, 204, 113, 0.15)',
+        border: '2px solid rgba(192, 38, 211, 0.4)',
+        boxShadow: '0 0 16px rgba(192, 38, 211, 0.15)',
         padding: '10px 14px',
         imageRendering: 'pixelated',
       }}
     >
-      <p style={{ color: '#8B7355', fontSize: 11, marginBottom: 4, fontWeight: 700, textTransform: 'uppercase' }}>{label}</p>
+      <p style={{ color: '#A1A1AA', fontSize: 11, marginBottom: 4, fontWeight: 700, textTransform: 'uppercase' }}>{label}</p>
       {payload.map((entry: any, idx: number) => (
         <p key={idx} style={{ color: entry.color, fontSize: 13, fontWeight: 700 }}>
           {entry.name === 'price' ? '💎 Price' : '📦 Volume'}: {entry.name === 'price' ? `${entry.value} ALGO` : entry.value}
@@ -229,7 +229,7 @@ export default function DashboardPremium() {
       setShowWalletModal(true)
       return
     }
-    addNotification('info', `${action} initiated from village ledger`)
+    addNotification('info', `${action} initiated from Nexus Ledger`)
     if (action === 'List Item') setActivePage('market')
     if (action === 'View Docs') setActivePage('terminal')
   }
@@ -264,17 +264,17 @@ export default function DashboardPremium() {
             style={{
               fontSize: 22,
               fontWeight: 800,
-              color: '#2ECC71',
+              color: '#C026D3',
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
               margin: 0,
-              textShadow: '2px 2px 0px rgba(0,0,0,0.6), 0 0 20px rgba(46, 204, 113, 0.3)',
+              textShadow: '2px 2px 0px rgba(0,0,0,0.6), 0 0 20px rgba(192, 38, 211, 0.3)',
             }}
           >
-            ⛏ VILLAGE LEDGER
+            ◆ NEXUS LEDGER
           </h2>
-          <p style={{ fontSize: 11, color: '#8B7355', marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            🧱 Live trading post analytics &amp; web3 insights
+          <p style={{ fontSize: 11, color: '#A1A1AA', marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            ◆ Live marketplace analytics &amp; web3 insights
           </p>
         </div>
         <div
@@ -284,12 +284,12 @@ export default function DashboardPremium() {
             alignItems: 'center',
             gap: 6,
             padding: '4px 12px',
-            background: 'rgba(46, 204, 113, 0.08)',
+            background: 'rgba(192, 38, 211, 0.08)',
             backdropFilter: 'blur(8px)',
-            border: '2px solid rgba(46, 204, 113, 0.3)',
-            boxShadow: '0 0 12px rgba(46, 204, 113, 0.1)',
+            border: '2px solid rgba(192, 38, 211, 0.3)',
+            boxShadow: '0 0 12px rgba(192, 38, 211, 0.1)',
             fontSize: 10,
-            color: '#2ECC71',
+            color: '#C026D3',
             fontWeight: 700,
             textTransform: 'uppercase',
           }}
@@ -298,8 +298,8 @@ export default function DashboardPremium() {
             style={{
               width: 6,
               height: 6,
-              background: '#2ECC71',
-              boxShadow: '0 0 6px #2ECC71',
+              background: '#C026D3',
+              boxShadow: '0 0 6px #C026D3',
               animation: 'mc-pulse 2s infinite',
             }}
           />
@@ -351,7 +351,7 @@ export default function DashboardPremium() {
                   gap: 3,
                   fontSize: 11,
                   fontWeight: 700,
-                  color: card.change >= 0 ? '#2ECC71' : '#E74C3C',
+                  color: card.change >= 0 ? '#C026D3' : '#F43F5E',
                 }}
               >
                 {card.change >= 0 ? (
@@ -363,13 +363,13 @@ export default function DashboardPremium() {
               </div>
             </div>
             <div>
-              <p style={{ fontSize: 10, color: '#8B7355', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <p style={{ fontSize: 10, color: '#A1A1AA', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 {card.emoji} {card.label}
               </p>
               <p style={{ fontSize: 20, fontWeight: 800, color: card.color, marginTop: 2, textShadow: `0 0 12px ${card.glowColor}` }}>
                 {card.value}
               </p>
-              <p style={{ fontSize: 9, color: '#6B5B3E', marginTop: 1 }}>{card.subtext}</p>
+              <p style={{ fontSize: 9, color: '#71717A', marginTop: 1 }}>{card.subtext}</p>
             </div>
             {/* XP bar style progress with glow */}
             <div style={{ width: '100%', height: 3, background: 'rgba(0,0,0,0.3)', overflow: 'hidden', borderRadius: 2 }}>
@@ -439,9 +439,9 @@ export default function DashboardPremium() {
                 <div style={{ fontSize: 10, fontWeight: 700, color: action.color, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                   {action.label}
                 </div>
-                <div style={{ fontSize: 9, color: '#6B5B3E', marginTop: 1 }}>{action.desc}</div>
+                <div style={{ fontSize: 9, color: '#71717A', marginTop: 1 }}>{action.desc}</div>
               </div>
-              <ExternalLink className="h-3 w-3" style={{ marginLeft: 'auto', color: '#6B5B3E', opacity: 0.5, flexShrink: 0 }} />
+              <ExternalLink className="h-3 w-3" style={{ marginLeft: 'auto', color: '#71717A', opacity: 0.5, flexShrink: 0 }} />
             </motion.button>
           ))}
         </div>
@@ -449,8 +449,8 @@ export default function DashboardPremium() {
 
       {/* ─── Main Content: Chart + Activity Feed ─────────────────────────── */}
       <div className="dashboard-main-grid">
-        {/* Price Chart — Trading Post */}
-        <motion.div variants={itemVariants} className="premium-card mc-card dash-chart dashboard-chart-container" style={{ padding: 20, boxShadow: '0 0 16px rgba(46, 204, 113, 0.06)' }}>
+        {/* Price Chart — Marketplace */}
+        <motion.div variants={itemVariants} className="premium-card mc-card dash-chart dashboard-chart-container" style={{ padding: 20, boxShadow: '0 0 16px rgba(192, 38, 211, 0.06)' }}>
           <div
             style={{
               display: 'flex',
@@ -464,25 +464,25 @@ export default function DashboardPremium() {
                 style={{
                   fontSize: 14,
                   fontWeight: 700,
-                  color: '#2ECC71',
+                  color: '#C026D3',
                   textTransform: 'uppercase',
                   letterSpacing: '0.06em',
                   margin: 0,
-                  textShadow: '1px 1px 0px rgba(0,0,0,0.5), 0 0 12px rgba(46, 204, 113, 0.2)',
+                  textShadow: '1px 1px 0px rgba(0,0,0,0.5), 0 0 12px rgba(192, 38, 211, 0.2)',
                 }}
               >
-                ⛏ TRADING POST
+                ◆ MARKETPLACE
               </h3>
-              <p style={{ fontSize: 10, color: '#8B7355', marginTop: 2, fontWeight: 600 }}>7-DAY EMERALD EXCHANGE RATE</p>
+              <p style={{ fontSize: 10, color: '#A1A1AA', marginTop: 2, fontWeight: 600 }}>7-DAY ASSET EXCHANGE RATE</p>
             </div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 10, height: 3, background: '#2ECC71', boxShadow: '0 0 4px rgba(46, 204, 113, 0.4)' }} />
-                <span style={{ fontSize: 9, color: '#8B7355', fontWeight: 600, textTransform: 'uppercase' }}>💎 Price</span>
+                <span style={{ width: 10, height: 3, background: '#C026D3', boxShadow: '0 0 4px rgba(192, 38, 211, 0.4)' }} />
+                <span style={{ fontSize: 9, color: '#A1A1AA', fontWeight: 600, textTransform: 'uppercase' }}>💎 Price</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 10, height: 3, background: '#4AEDD9', opacity: 0.6 }} />
-                <span style={{ fontSize: 9, color: '#8B7355', fontWeight: 600, textTransform: 'uppercase' }}>📦 Volume</span>
+                <span style={{ width: 10, height: 3, background: '#2DD4BF', opacity: 0.6 }} />
+                <span style={{ fontSize: 9, color: '#A1A1AA', fontWeight: 600, textTransform: 'uppercase' }}>📦 Volume</span>
               </div>
             </div>
           </div>
@@ -490,43 +490,43 @@ export default function DashboardPremium() {
             <AreaChart data={priceData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
               <defs>
                 <linearGradient id="mcEmeraldGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#2ECC71" stopOpacity={0.35} />
-                  <stop offset="50%" stopColor="#2ECC71" stopOpacity={0.1} />
-                  <stop offset="100%" stopColor="#2ECC71" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#C026D3" stopOpacity={0.35} />
+                  <stop offset="50%" stopColor="#C026D3" stopOpacity={0.1} />
+                  <stop offset="100%" stopColor="#C026D3" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="mcVolumeGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#4AEDD9" stopOpacity={0.15} />
-                  <stop offset="100%" stopColor="#4AEDD9" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#2DD4BF" stopOpacity={0.15} />
+                  <stop offset="100%" stopColor="#2DD4BF" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid
                 strokeDasharray="4 4"
-                stroke="rgba(139, 115, 85, 0.12)"
+                stroke="rgba(113, 113, 122, 0.12)"
                 vertical={false}
               />
               <XAxis
                 dataKey="day"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: isLightTheme ? '#334155' : '#8B7355', fontSize: 10, fontWeight: 700 }}
+                tick={{ fill: isLightTheme ? '#334155' : '#A1A1AA', fontSize: 10, fontWeight: 700 }}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: isLightTheme ? '#334155' : '#8B7355', fontSize: 10, fontWeight: 700 }}
+                tick={{ fill: isLightTheme ? '#334155' : '#A1A1AA', fontSize: 10, fontWeight: 700 }}
                 domain={['auto', 'auto']}
               />
               <Tooltip content={<CustomTooltip />} />
               <Area
                 type="monotone"
                 dataKey="price"
-                stroke="#2ECC71"
+                stroke="#C026D3"
                 strokeWidth={2.5}
                 fill="url(#mcEmeraldGradient)"
                 dot={false}
                 activeDot={{
                   r: 5,
-                  fill: '#2ECC71',
+                  fill: '#C026D3',
                   stroke: '#1a1a1a',
                   strokeWidth: 3,
                 }}
@@ -535,7 +535,7 @@ export default function DashboardPremium() {
               <Area
                 type="monotone"
                 dataKey="volume"
-                stroke="#4AEDD9"
+                stroke="#2DD4BF"
                 strokeWidth={1.5}
                 strokeDasharray="4 3"
                 fill="url(#mcVolumeGradient)"
@@ -548,12 +548,12 @@ export default function DashboardPremium() {
           </ResponsiveContainer>
         </motion.div>
 
-        {/* Activity Feed — Village Crier with Tx Hashes */}
-        <motion.div variants={slideInRight} className="premium-card mc-card dash-activity" style={{ padding: 0, display: 'flex', flexDirection: 'column', boxShadow: '0 0 16px rgba(74, 237, 217, 0.06)' }}>
+        {/* Activity Feed — Nexus Feed with Tx Hashes */}
+        <motion.div variants={slideInRight} className="premium-card mc-card dash-activity" style={{ padding: 0, display: 'flex', flexDirection: 'column', boxShadow: '0 0 16px rgba(45, 212, 191, 0.06)' }}>
           <div
             style={{
               padding: '14px 18px 12px',
-              borderBottom: '2px solid rgba(46, 204, 113, 0.15)',
+              borderBottom: '2px solid rgba(192, 38, 211, 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -563,11 +563,11 @@ export default function DashboardPremium() {
               style={{
                 fontSize: 13,
                 fontWeight: 700,
-                color: '#4AEDD9',
+                color: '#2DD4BF',
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
                 margin: 0,
-                textShadow: '1px 1px 0px rgba(0,0,0,0.5), 0 0 12px rgba(74, 237, 217, 0.2)',
+                textShadow: '1px 1px 0px rgba(0,0,0,0.5), 0 0 12px rgba(45, 212, 191, 0.2)',
               }}
             >
               📢 VILLAGE CRIER
@@ -577,12 +577,12 @@ export default function DashboardPremium() {
                 style={{
                   width: 5,
                   height: 5,
-                  background: '#2ECC71',
-                  boxShadow: '0 0 6px #2ECC71',
+                  background: '#C026D3',
+                  boxShadow: '0 0 6px #C026D3',
                   animation: 'mc-pulse 2s infinite',
                 }}
               />
-              <span style={{ fontSize: 9, color: '#8B7355', fontWeight: 700, textTransform: 'uppercase' }}>LIVE</span>
+              <span style={{ fontSize: 9, color: '#A1A1AA', fontWeight: 700, textTransform: 'uppercase' }}>LIVE</span>
             </div>
           </div>
           <div
@@ -606,12 +606,12 @@ export default function DashboardPremium() {
                     alignItems: 'center',
                     gap: 10,
                     padding: '8px 18px',
-                    borderBottom: '1px solid rgba(139, 115, 85, 0.08)',
+                    borderBottom: '1px solid rgba(113, 113, 122, 0.08)',
                     transition: 'background 0.2s ease',
                     cursor: 'default',
                   }}
                   onMouseEnter={(e) => {
-                    ;(e.currentTarget as HTMLDivElement).style.background = 'rgba(46, 204, 113, 0.04)'
+                    ;(e.currentTarget as HTMLDivElement).style.background = 'rgba(192, 38, 211, 0.04)'
                   }}
                   onMouseLeave={(e) => {
                     ;(e.currentTarget as HTMLDivElement).style.background = 'transparent'
@@ -651,7 +651,7 @@ export default function DashboardPremium() {
                         style={{
                           fontSize: 11,
                           fontWeight: 600,
-                          color: '#D4C5A9',
+                          color: '#E4E4E7',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
@@ -662,23 +662,23 @@ export default function DashboardPremium() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
                       {item.price > 0 && (
-                        <span style={{ fontSize: 10, fontWeight: 700, color: rarityColorMap[item.rarity] || '#8B7355' }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: rarityColorMap[item.rarity] || '#A1A1AA' }}>
                           💎 {item.price} ALGO
                         </span>
                       )}
                       {item.price === 0 && (
-                        <span style={{ fontSize: 10, fontWeight: 600, color: '#8B7355', fontStyle: 'italic' }}>
-                          ⛏ freshly forged
+                        <span style={{ fontSize: 10, fontWeight: 600, color: '#A1A1AA', fontStyle: 'italic' }}>
+                          ◆ newly minted
                         </span>
                       )}
-                      <span style={{ fontSize: 9, color: '#6B5B3E', display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <span style={{ fontSize: 9, color: '#71717A', display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Clock className="h-2.5 w-2.5" />
                         {item.timeAgo}
                       </span>
                     </div>
                     {/* Transaction hash */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                      <span style={{ fontSize: 8, color: '#4AEDD9', opacity: 0.6, fontFamily: 'monospace', letterSpacing: '0.02em' }}>
+                      <span style={{ fontSize: 8, color: '#2DD4BF', opacity: 0.6, fontFamily: 'monospace', letterSpacing: '0.02em' }}>
                         {item.txHash}
                       </span>
                     </div>
@@ -690,22 +690,22 @@ export default function DashboardPremium() {
         </motion.div>
       </div>
 
-      {/* ─── Bottom Row: Ore Distribution + SDK Stats ──────────────────── */}
+      {/* ─── Bottom Row: Asset Distribution + SDK Stats ────────────────── */}
       <div className="dashboard-bottom-grid">
-        {/* Ore Distribution */}
-        <motion.div variants={itemVariants} className="premium-card mc-card dashboard-chart-container" style={{ padding: 20, boxShadow: '0 0 16px rgba(255, 215, 0, 0.06)' }}>
+        {/* Asset Distribution */}
+        <motion.div variants={itemVariants} className="premium-card mc-card dashboard-chart-container" style={{ padding: 20, boxShadow: '0 0 16px rgba(251, 191, 36, 0.06)' }}>
           <h3
             style={{
               fontSize: 13,
               fontWeight: 700,
-              color: '#FFD700',
+              color: '#FBBF24',
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
               margin: '0 0 16px 0',
-              textShadow: '1px 1px 0px rgba(0,0,0,0.5), 0 0 12px rgba(255, 215, 0, 0.2)',
+              textShadow: '1px 1px 0px rgba(0,0,0,0.5), 0 0 12px rgba(251, 191, 36, 0.2)',
             }}
           >
-            ⛏ ORE DISTRIBUTION
+            ◆ ASSET DISTRIBUTION
           </h3>
           <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
             <div style={{ flex: 1 }}>
@@ -716,19 +716,19 @@ export default function DashboardPremium() {
                   margin={{ top: 0, right: 20, left: 70, bottom: 0 }}
                   barCategoryGap={12}
                 >
-                  <CartesianGrid strokeDasharray="4 4" stroke="rgba(139, 115, 85, 0.08)" horizontal={false} />
+                  <CartesianGrid strokeDasharray="4 4" stroke="rgba(113, 113, 122, 0.08)" horizontal={false} />
                   <XAxis
                     type="number"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: isLightTheme ? '#334155' : '#8B7355', fontSize: 10, fontWeight: 700 }}
+                    tick={{ fill: isLightTheme ? '#334155' : '#A1A1AA', fontSize: 10, fontWeight: 700 }}
                   />
                   <YAxis
                     type="category"
                     dataKey="name"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: isLightTheme ? '#475569' : '#D4C5A9', fontSize: 11, fontWeight: 700 }}
+                    tick={{ fill: isLightTheme ? '#475569' : '#E4E4E7', fontSize: 11, fontWeight: 700 }}
                     width={65}
                   />
                   <Tooltip content={<CustomTooltip />} />
@@ -746,7 +746,7 @@ export default function DashboardPremium() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            {/* Ore legend */}
+            {/* Asset legend */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 110 }}>
               {rarityData.map((r) => (
                 <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -759,7 +759,7 @@ export default function DashboardPremium() {
                       boxShadow: r.name === 'Diamond' ? `0 0 8px ${r.color}80` : r.name === 'Netherite' ? `0 0 12px rgba(200,200,200,0.3)` : 'none',
                     }}
                   />
-                  <span style={{ fontSize: 10, color: '#8B7355', fontWeight: 700, textTransform: 'uppercase' }}>{r.name}</span>
+                  <span style={{ fontSize: 10, color: '#A1A1AA', fontWeight: 700, textTransform: 'uppercase' }}>{r.name}</span>
                   <span style={{ fontSize: 11, color: r.color, fontWeight: 800, marginLeft: 'auto' }}>{r.count}</span>
                 </div>
               ))}
@@ -773,7 +773,7 @@ export default function DashboardPremium() {
             style={{
               fontSize: 13,
               fontWeight: 700,
-              color: '#c084fc',
+              color: '#A78BFA',
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
               margin: '0 0 16px 0',
@@ -792,23 +792,23 @@ export default function DashboardPremium() {
                 fontFamily: 'monospace',
                 fontSize: 10,
                 lineHeight: 1.6,
-                color: '#D4C5A9',
+                color: '#E4E4E7',
                 overflow: 'hidden',
               }}
             >
-              <span style={{ color: '#c084fc' }}>import</span> {'{ DeShopSDK }'} <span style={{ color: '#c084fc' }}>from</span> <span style={{ color: '#2ECC71' }}>'@de-shop/sdk'</span>
+              <span style={{ color: '#A78BFA' }}>import</span> {'{ DeShopSDK }'} <span style={{ color: '#A78BFA' }}>from</span> <span style={{ color: '#C026D3' }}>'@de-shop/sdk'</span>
               <br />
-              <span style={{ color: '#c084fc' }}>const</span> sdk = <span style={{ color: '#c084fc' }}>new</span> <span style={{ color: '#4AEDD9' }}>DeShopSDK</span>({'{'}
+              <span style={{ color: '#A78BFA' }}>const</span> sdk = <span style={{ color: '#A78BFA' }}>new</span> <span style={{ color: '#2DD4BF' }}>DeShopSDK</span>({'{'}
               <br />
-              &nbsp;&nbsp;network: <span style={{ color: '#FFD700' }}>'testnet'</span>,{'\n'}
+              &nbsp;&nbsp;network: <span style={{ color: '#FBBF24' }}>'testnet'</span>,{'\n'}
               &nbsp;&nbsp;wallet: provider
               {'}'})
             </div>
             {/* SDK feature buttons */}
             {[
-              { label: 'Mint NFT', desc: 'Create game assets on-chain', icon: <Sparkles className="h-4 w-4" />, color: '#2ECC71' },
-              { label: 'Trade Items', desc: 'Peer-to-peer marketplace', icon: <Zap className="h-4 w-4" />, color: '#4AEDD9' },
-              { label: 'Read Docs', desc: 'Full API reference', icon: <FileText className="h-4 w-4" />, color: '#FFD700' },
+              { label: 'Mint NFT', desc: 'Create game assets on-chain', icon: <Sparkles className="h-4 w-4" />, color: '#C026D3' },
+              { label: 'Trade Items', desc: 'Peer-to-peer marketplace', icon: <Zap className="h-4 w-4" />, color: '#2DD4BF' },
+              { label: 'Read Docs', desc: 'Full API reference', icon: <FileText className="h-4 w-4" />, color: '#FBBF24' },
             ].map((ref) => (
               <motion.button
                 key={ref.label}
@@ -829,7 +829,7 @@ export default function DashboardPremium() {
                 {ref.icon}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                   <span style={{ fontSize: 9, fontWeight: 700 }}>{ref.label.toUpperCase()}</span>
-                  <span style={{ fontSize: 7, color: '#6B5B3E', fontWeight: 400 }}>{ref.desc}</span>
+                  <span style={{ fontSize: 7, color: '#71717A', fontWeight: 400 }}>{ref.desc}</span>
                 </div>
                 <span style={{ marginLeft: 'auto', fontSize: 9, opacity: 0.5 }}>→</span>
               </motion.button>
@@ -838,7 +838,7 @@ export default function DashboardPremium() {
         </motion.div>
       </div>
 
-      {/* ─── Minecraft Pulse Animation Keyframe ──────────────────────────── */}
+      {/* ─── Nexus Forge Pulse Animation Keyframe ─────────────────────────── */}
       <style>{`
         @keyframes mc-pulse {
           0%, 100% { opacity: 1; }

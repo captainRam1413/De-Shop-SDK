@@ -3,12 +3,12 @@ import { normalizeRarity } from '../sdk/DeShopSDK'
 import { motion } from 'framer-motion'
 import { Zap, ShoppingBag, ArrowUpFromLine, Cloud } from 'lucide-react'
 
-// Minecraft ore theme rarity colors
+// Nexus Forge rarity tier colors
 const RARITY_COLORS: Record<string, { bg: string; border: string; glow: string; text: string; badge: string }> = {
   common:    { bg: 'rgba(212,212,212,0.06)', border: 'rgba(160,160,160,0.3)', glow: 'rgba(212,212,212,0.12)', text: '#D4D4D4', badge: '#A0A0A0' },
-  rare:      { bg: 'rgba(74,237,217,0.06)', border: 'rgba(74,237,217,0.3)', glow: 'rgba(74,237,217,0.12)', text: '#4AEDD9', badge: '#2AB5A2' },
-  epic:      { bg: 'rgba(168,85,247,0.06)', border: 'rgba(168,85,247,0.3)', glow: 'rgba(168,85,247,0.12)', text: '#c084fc', badge: '#a855f7' },
-  legendary: { bg: 'rgba(255,215,0,0.06)', border: 'rgba(255,215,0,0.3)', glow: 'rgba(255,215,0,0.12)', text: '#FFD700', badge: '#DAA520' },
+  rare:      { bg: 'rgba(45, 212, 191,0.06)', border: 'rgba(45, 212, 191,0.3)', glow: 'rgba(45, 212, 191,0.12)', text: '#2DD4BF', badge: '#14B8A6' },
+  epic:      { bg: 'rgba(124, 58, 237,0.06)', border: 'rgba(124, 58, 237,0.3)', glow: 'rgba(124, 58, 237,0.12)', text: '#A78BFA', badge: '#7C3AED' },
+  legendary: { bg: 'rgba(251, 191, 36,0.06)', border: 'rgba(251, 191, 36,0.3)', glow: 'rgba(251, 191, 36,0.12)', text: '#FBBF24', badge: '#F59E0B' },
 }
 
 type SkinCardProps = {

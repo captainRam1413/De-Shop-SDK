@@ -26,8 +26,8 @@ const SKIN_PALETTE: Record<string, {
   },
   rare: {
     helmet: '#2563eb', helmetLight: '#60a5fa', visor: '#1e3a5f',
-    body: '#1d4ed8', bodyLight: '#3b82f6', bodyDark: '#1e40af',
-    legs: '#1e3a8a', legsDark: '#1e3070',
+    body: '#1d4ed8', bodyLight: '#8B5CF6', bodyDark: '#1e40af',
+    legs: '#7C3AED', legsDark: '#1e3070',
     sword: '#60a5fa', swordLight: '#93c5fd', swordGlow: 'rgba(59,130,246,0.4)', swordTrail: 'rgba(59,130,246,0.3)',
     aura: 'rgba(59,130,246,0.08)', particleColor: '#60a5fa',
     dmgMulti: 1.5,
@@ -36,8 +36,8 @@ const SKIN_PALETTE: Record<string, {
     helmet: '#7c3aed', helmetLight: '#a78bfa', visor: '#4c1d95',
     body: '#6d28d9', bodyLight: '#8b5cf6', bodyDark: '#5b21b6',
     legs: '#4c1d95', legsDark: '#3b0f80',
-    sword: '#c084fc', swordLight: '#e9d5ff', swordGlow: 'rgba(168,85,247,0.5)', swordTrail: 'rgba(168,85,247,0.35)',
-    aura: 'rgba(168,85,247,0.1)', particleColor: '#a78bfa',
+    sword: '#A78BFA', swordLight: '#e9d5ff', swordGlow: 'rgba(124, 58, 237,0.5)', swordTrail: 'rgba(124, 58, 237,0.35)',
+    aura: 'rgba(124, 58, 237,0.1)', particleColor: '#a78bfa',
     dmgMulti: 2,
   },
   legendary: {
@@ -372,7 +372,7 @@ function StartScreen({
         marginBottom: '8px',
         textTransform: 'uppercase',
       }}>
-        ⛏ minecraft world
+        ◆ nexus arena
       </div>
 
       {/* Character Preview Canvas */}
@@ -747,7 +747,7 @@ export default function GameArena({ activeGunSkin, activeCharSkin }: GameArenaPr
           }
           if (tile === TILE.FLOWER) {
             // Flower on grass
-            const fc = ['#ef4444', '#fbbf24', '#a855f7', '#ec4899'][(tx * 7 + ty * 3) % 4]
+            const fc = ['#ef4444', '#fbbf24', '#7C3AED', '#ec4899'][(tx * 7 + ty * 3) % 4]
             ctx.fillStyle = fc
             ctx.fillRect(sx + 12, sy + 10, 6, 6)
             ctx.fillStyle = '#fef08a'

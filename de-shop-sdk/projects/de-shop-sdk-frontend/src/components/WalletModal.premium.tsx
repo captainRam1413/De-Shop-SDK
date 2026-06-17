@@ -39,7 +39,7 @@ export default function WalletModal({ wallets, onClose }: WalletModalProps) {
             <div>
               <h3 style={{
                 color: 'var(--mc-emerald)',
-                fontFamily: 'var(--font-pixel, "Press Start 2P", monospace)',
+                fontFamily: "var(--font-pixel, 'Orbitron', system-ui, sans-serif)",
                 fontSize: 11,
                 fontWeight: 700,
                 letterSpacing: '0.06em',
@@ -50,7 +50,7 @@ export default function WalletModal({ wallets, onClose }: WalletModalProps) {
               </h3>
               <p style={{
                 color: 'var(--mc-text-dim)',
-                fontFamily: 'var(--font-body, "VT323", monospace)',
+                fontFamily: 'var(--font-body, system-ui, sans-serif)',
                 fontSize: 16,
                 margin: '4px 0 0',
               }}>
@@ -84,13 +84,13 @@ export default function WalletModal({ wallets, onClose }: WalletModalProps) {
                   fontFamily: 'var(--font-pixel)',
                   fontSize: 7,
                   padding: '2px 6px',
-                  background: 'rgba(46,204,113,0.08)',
+                  background: 'rgba(192,38,211,0.08)',
                   border: '1px solid var(--mc-emerald-dark)',
                   color: 'var(--mc-emerald)',
                   fontWeight: 600,
                   letterSpacing: '0.04em',
                 }}>
-                  OVERWORLD
+                  NEXUS
                 </span>
               </motion.button>
             ))}
