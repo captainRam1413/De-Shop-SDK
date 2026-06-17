@@ -1,0 +1,1953 @@
+     1→/**
+     2→ * De-Shop SDK — Marketplace V2 (Premium) — Nexus Forge Theme
+     3→ * ═══════════════════════════════════════════════════════════
+     4→ * Nexus Forge Marketplace with inventory-style grid, chest-style list,
+     5→ * tooltip-style detail modal, and analysis-themed insights.
+     6→ */
+     7→
+     8→import { useState, useMemo, useCallback, useEffect } from 'react'
+     9→import { motion, AnimatePresence } from 'framer-motion'
+    10→import {
+    11→  Search,
+    12→  LayoutGrid,
+    13→  List,
+    14→  SlidersHorizontal,
+    15→  Heart,
+    16→  X,
+    17→  TrendingUp,
+    18→  TrendingDown,
+    19→  Sparkles,
+    20→  Shield,
+    21→  Zap,
+    22→  Eye,
+    23→  ShoppingBag,
+    24→  BarChart3,
+    25→  Clock,
+    26→  ArrowUpRight,
+    27→  Activity,
+    28→  Loader2,
+    29→} from 'lucide-react'
+    30→import {
+    31→  ResponsiveContainer,
+    32→  AreaChart,
+    33→  Area,
+    34→  XAxis,
+    35→  YAxis,
+    36→  Tooltip,
+    37→  CartesianGrid,
+    38→} from 'recharts'
+    39→import { useWallet } from '@txnlab/use-wallet-react'
+    40→import { useDeShopStore } from '../store/useDeShopStore'
+    41→import { useSDK } from '../context/SDKProvider'
+    42→import type { Asset, SaleRecord } from '../sdk/types'
+    43→import {
+    44→  DeShopError,
+    45→  WalletNotConnectedError,
+    46→  InsufficientFundsError,
+    47→  TransactionFailedError,
+    48→} from '../sdk/errors'
+    49→
+    50→// ═══════════════════════════════════════════════════════════════════════════════
+    51→// TYPES
+    52→// ═══════════════════════════════════════════════════════════════════════════════
+    53→
+    54→type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
+    55→type SortOption = 'price_asc' | 'price_desc' | 'newest' | 'rarity'
+    56→type ViewMode = 'grid' | 'list'
+    57→
+    58→interface PricePoint {
+    59→  day: string
+    60→  price: number
+    61→}
+    62→
+    63→interface MarketplaceListing {
+    64→  /** Stable React key (stringified asset.id). */
+    65→  id: string
+    66→  /** Backend asset primary key — passed to `sdk.buyAsset(activeAddress, assetId)`. */
+    67→  assetId: number
+    68→  /** On-chain ASA ID (may be undefined for backend-only mock assets). */
+    69→  asaId?: number
+    70→  name: string
+    71→  rarity: Rarity
+    72→  price: number
+    73→  seller: string
+    74→  icon: string
+    75→  priceHistory: PricePoint[]
+    76→  confidence: number
+    77→  suggestedPrice: number
+    78→  rarityScore: number
+    79→  listedAt: string
+    80→  type: string
+    81→  description: string
+    82→}
+    83→
+    84→// ═══════════════════════════════════════════════════════════════════════════════
+    85→// RARITY CONFIG — Nexus Forge Tier Colors
+    86→// ═══════════════════════════════════════════════════════════════════════════════
+    87→
+    88→const RARITY_CONFIG: Record<Rarity, {
+    89→  color: string
+    90→  bg: string
+    91→  border: string
+    92→  glow: string
+    93→  badge: string
+    94→  gradient: string
+    95→  icon: string
+    96→}> = {
+    97→  common: {
+    98→    color: '#D4D4D4',
+    99→    bg: 'rgba(212,212,212,0.1)',
+   100→    border: 'rgba(212,212,212,0.3)',
+   101→    glow: 'rgba(212,212,212,0.15)',
+   102→    badge: '#D4D4D4',
+   103→    gradient: 'linear-gradient(135deg, rgba(212,212,212,0.1), rgba(212,212,212,0.03))',
+   104→    icon: '⬜',
+   105→  },
+   106→  rare: {
+   107→    color: '#2DD4BF',
+   108→    bg: 'rgba(45, 212, 191,0.1)',
+   109→    border: 'rgba(45, 212, 191,0.3)',
+   110→    glow: 'rgba(45, 212, 191,0.15)',
+   111→    badge: '#2DD4BF',
+   112→    gradient: 'linear-gradient(135deg, rgba(45, 212, 191,0.1), rgba(45, 212, 191,0.03))',
+   113→    icon: '💠',
+   114→  },
+   115→  epic: {
+   116→    color: '#A78BFA',
+   117→    bg: 'rgba(124, 58, 237,0.1)',
+   118→    border: 'rgba(124, 58, 237,0.3)',
+   119→    glow: 'rgba(124, 58, 237,0.15)',
+   120→    badge: '#7C3AED',
+   121→    gradient: 'linear-gradient(135deg, rgba(124, 58, 237,0.1), rgba(124, 58, 237,0.03))',
+   122→    icon: '🟣',
+   123→  },
+   124→  legendary: {
+   125→    color: '#FBBF24',
+   126→    bg: 'rgba(251, 191, 36,0.1)',
+   127→    border: 'rgba(251, 191, 36,0.3)',
+   128→    glow: 'rgba(251, 191, 36,0.15)',
+   129→    badge: '#FBBF24',
+   130→    gradient: 'linear-gradient(135deg, rgba(251, 191, 36,0.12), rgba(251, 191, 36,0.03))',
+   131→    icon: '🟡',
+   132→  },
+   133→}
+   134→
+   135→const RARITY_ORDER: Record<Rarity, number> = {
+   136→  common: 1,
+   137→  rare: 2,
+   138→  epic: 3,
+   139→  legendary: 4,
+   140→}
+   141→
+   142→// ═══════════════════════════════════════════════════════════════════════════════
+   143→// ASSET → LISTING CONVERSION (real SDK data, no more mock)
+   144→// ═══════════════════════════════════════════════════════════════════════════════
+   145→
+   146→/** Coerce an SDK Asset.rarity string into our 4-tier UI Rarity (defensive). */
+   147→function rarityFromAsset(raw: string): Rarity {
+   148→  const r = (raw || '').toLowerCase()
+   149→  if (r === 'common' || r === 'rare' || r === 'epic' || r === 'legendary') return r
+   150→  // Map the SDK's expanded rarities (uncommon, mythic) down to the nearest UI tier.
+   151→  if (r === 'uncommon') return 'common'
+   152→  if (r === 'mythic') return 'legendary'
+   153→  return 'common'
+   154→}
+   155→
+   156→/** Pick a Nexus Forge-style icon emoji for the listing based on rarity + skin type. */
+   157→function iconForAsset(rarity: Rarity, skinType?: string): string {
+   158→  if (skinType === 'character') return '🧑'
+   159→  if (skinType === 'accessory') return '✨'
+   160→  // Default: weapon icon, tinted by rarity tier.
+   161→  switch (rarity) {
+   162→    case 'legendary': return '⚔️'
+   163→    case 'epic':      return '🗡️'
+   164→    case 'rare':      return '💎'
+   165→    default:          return '🪨'
+   166→  }
+   167→}
+   168→
+   169→/**
+   170→ * Build a 7-day price-history array for the chart. Without per-asset historical
+   171→ * pricing data from the backend we render a flat line at the current list price
+   172→ * (volatility=0 → trend shows "—"). When `volatility` is provided, a stable
+   173→ * pseudo-random series is generated so the chart has visible variation; this is
+   174→ * only used for visual continuity, NOT for fake market data.
+   175→ */
+   176→function generatePriceHistory(basePrice: number, volatility: number = 0): PricePoint[] {
+   177→  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+   178→  let current = basePrice
+   179→  return days.map((day) => {
+   180→    if (volatility > 0) {
+   181→      const change = (Math.random() - 0.45) * volatility * basePrice
+   182→      current = Math.max(basePrice * 0.5, current + change)
+   183→    }
+   184→    return { day, price: Math.round(current * 100) / 100 }
+   185→  })
+   186→}
+   187→
+   188→/** Format an ISO timestamp as a short relative-time string ("3h ago", "2d ago"). */
+   189→function formatRelativeTime(iso: string): string {
+   190→  const then = new Date(iso).getTime()
+   191→  if (Number.isNaN(then)) return 'recently'
+   192→  const diffMs = Date.now() - then
+   193→  const m = Math.floor(diffMs / 60_000)
+   194→  if (m < 1) return 'just now'
+   195→  if (m < 60) return `${m}m ago`
+   196→  const h = Math.floor(m / 60)
+   197→  if (h < 24) return `${h}h ago`
+   198→  const d = Math.floor(h / 24)
+   199→  return `${d}d ago`
+   200→}
+   201→
+   202→/** Build a short seller label from a wallet address (first 8 chars + ellipsis). */
+   203→function shortSeller(wallet: string): string {
+   204→  if (!wallet) return 'unknown'
+   205→  return wallet.length > 12 ? `${wallet.slice(0, 8)}…` : wallet
+   206→}
+   207→
+   208→/** Default description shown in the detail modal — derived from rarity + type. */
+   209→function describeAsset(name: string, rarity: Rarity, type?: string): string {
+   210→  const tier = rarity === 'legendary'
+   211→    ? 'a legendary-tier'
+   212→    : rarity === 'epic'
+   213→      ? 'an epic-tier'
+   214→      : rarity === 'rare'
+   215→        ? 'a rare-tier'
+   216→        : 'a common-tier'
+   217→  const kind = type === 'character' ? 'character skin' : type === 'accessory' ? 'accessory' : 'weapon skin'
+   218→  return `${name} is ${tier} ${kind} minted on Algorand and listed on the De-Shop marketplace.`
+   219→}
+   220→
+   221→/** Convert a real SDK Asset into the UI's MarketplaceListing shape. */
+   222→function assetToListing(asset: Asset): MarketplaceListing {
+   223→  const rarity = rarityFromAsset(asset.rarity)
+   224→  const skinType = asset.metadata?.skin_type
+   225→  const price = asset.list_price ?? 0
+   226→  const suggested = asset.suggested_price
+   227→  return {
+   228→    id: String(asset.id),
+   229→    assetId: asset.id,
+   230→    asaId: asset.asa_id,
+   231→    name: asset.name,
+   232→    rarity,
+   233→    price,
+   234→    seller: shortSeller(asset.owner || asset.creator),
+   235→    icon: iconForAsset(rarity, skinType),
+   236→    priceHistory: generatePriceHistory(price || 1),
+   237→    confidence: suggested?.confidence ?? 0,
+   238→    suggestedPrice: suggested?.price ?? price,
+   239→    rarityScore: suggested?.rarity_score ?? 0,
+   240→    listedAt: formatRelativeTime(asset.created_at),
+   241→    type: skinType ?? 'item',
+   242→    description: describeAsset(asset.name, rarity, skinType),
+   243→  }
+   244→}
+   245→
+   246→/** Compute floor price + listing-count per rarity from a list of listings. */
+   247→function computeFloorPrice(listings: MarketplaceListing[]): Record<Rarity, { price: number; change24h: number; listCount: number }> {
+   248→  const empty = { price: 0, change24h: 0, listCount: 0 }
+   249→  const out: Record<Rarity, { price: number; change24h: number; listCount: number }> = {
+   250→    common: { ...empty },
+   251→    rare: { ...empty },
+   252→    epic: { ...empty },
+   253→    legendary: { ...empty },
+   254→  }
+   255→  for (const l of listings) {
+   256→    const bucket = out[l.rarity]
+   257→    bucket.listCount += 1
+   258→    if (bucket.price === 0 || (l.price > 0 && l.price < bucket.price)) {
+   259→      bucket.price = l.price
+   260→    }
+   261→  }
+   262→  // 24h change requires historical data the backend doesn't currently expose;
+   263→  // leave at 0 so the UI shows "—" rather than fabricated percentages.
+   264→  return out
+   265→}
+   266→
+   267→// ═══════════════════════════════════════════════════════════════════════════════
+   268→// RECENT SALE TYPE — populated from sdk.getMarketData().sales
+   269→// ═══════════════════════════════════════════════════════════════════════════════
+   270→
+   271→interface RecentSale {
+   272→  id: string
+   273→  name: string
+   274→  icon: string
+   275→  rarity: Rarity
+   276→  salePrice: number
+   277→  buyer: string
+   278→  soldAt: string
+   279→}
+   280→
+   281→/** Map an SDK SaleRecord into the UI's RecentSale shape. */
+   282→function saleToRecent(sale: SaleRecord, idx: number): RecentSale {
+   283→  const rarity = rarityFromAsset('rare') // SaleRecord has no rarity field; default
+   284→  return {
+   285→    id: `sale-${idx}-${sale.timestamp}`,
+   286→    name: 'Skin', // SaleRecord carries no asset name; backend route would need to join
+   287→    icon: iconForAsset(rarity),
+   288→    rarity,
+   289→    salePrice: sale.price,
+   290→    buyer: shortSeller(sale.buyer),
+   291→    soldAt: formatRelativeTime(sale.timestamp),
+   292→  }
+   293→}
+   294→
+   295→// ═══════════════════════════════════════════════════════════════════════════════
+   296→// ANIMATION VARIANTS
+   297→// ═══════════════════════════════════════════════════════════════════════════════
+   298→
+   299→const containerVariants = {
+   300→  hidden: { opacity: 0 },
+   301→  visible: {
+   302→    opacity: 1,
+   303→    transition: { staggerChildren: 0.05 },
+   304→  },
+   305→}
+   306→
+   307→const cardVariants = {
+   308→  hidden: { opacity: 0, y: 20, scale: 0.95 },
+   309→  visible: {
+   310→    opacity: 1,
+   311→    y: 0,
+   312→    scale: 1,
+   313→    transition: { duration: 0.35, ease: 'easeOut' as const },
+   314→  },
+   315→}
+   316→
+   317→const listVariants = {
+   318→  hidden: { opacity: 0, x: -15 },
+   319→  visible: {
+   320→    opacity: 1,
+   321→    x: 0,
+   322→    transition: { duration: 0.25, ease: 'easeOut' as const },
+   323→  },
+   324→}
+   325→
+   326→const modalVariants = {
+   327→  hidden: { opacity: 0, scale: 0.92, y: 20 },
+   328→  visible: {
+   329→    opacity: 1,
+   330→    scale: 1,
+   331→    y: 0,
+   332→    transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
+   333→  },
+   334→  exit: {
+   335→    opacity: 0,
+   336→    scale: 0.95,
+   337→    y: 10,
+   338→    transition: { duration: 0.2, ease: 'easeIn' as const },
+   339→  },
+   340→}
+   341→
+   342→const backdropVariants = {
+   343→  hidden: { opacity: 0 },
+   344→  visible: { opacity: 1, transition: { duration: 0.2 } },
+   345→  exit: { opacity: 0, transition: { duration: 0.15 } },
+   346→}
+   347→
+   348→// ═══════════════════════════════════════════════════════════════════════════════
+   349→// CUSTOM TOOLTIP FOR PRICE CHART — Nexus Forge Style
+   350→// ═══════════════════════════════════════════════════════════════════════════════
+   351→
+   352→function ChartTooltip({ active, payload, label }: any) {
+   353→  if (!active || !payload?.length) return null
+   354→  return (
+   355→    <div
+   356→      style={{
+   357→        background: 'rgba(26, 10, 46, 0.95)',
+   358→        border: '2px solid #5000AA',
+   359→        borderRadius: 0,
+   360→        padding: '8px 12px',
+   361→        imageRendering: 'pixelated',
+   362→        boxShadow: '0 4px 16px rgba(80, 0, 170, 0.4)',
+   363→      }}
+   364→    >
+   365→      <p style={{ color: '#A78BFA', fontSize: 10, marginBottom: 2, fontFamily: "'Orbitron', system-ui, sans-serif", imageRendering: 'pixelated' }}>{label}</p>
+   366→      <p style={{ color: '#2DD4BF', fontSize: 12, fontWeight: 700, fontFamily: "'Orbitron', system-ui, sans-serif", imageRendering: 'pixelated' }}>
+   367→        {payload[0].value.toLocaleString()} <span style={{ fontSize: 8, color: '#2DD4BF' }}>μA</span>
+   368→      </p>
+   369→    </div>
+   370→  )
+   371→}
+   372→
+   373→// ═══════════════════════════════════════════════════════════════════════════════
+   374→// RARITY BADGE COMPONENT — Nexus Forge Style
+   375→// ═══════════════════════════════════════════════════════════════════════════════
+   376→
+   377→function RarityBadge({ rarity }: { rarity: Rarity }) {
+   378→  const config = RARITY_CONFIG[rarity]
+   379→  return (
+   380→    <span
+   381→      style={{
+   382→        background: config.glow,
+   383→        color: config.color,
+   384→        fontSize: 9,
+   385→        padding: '2px 8px',
+   386→        borderRadius: 0,
+   387→        fontWeight: 700,
+   388→        letterSpacing: '0.08em',
+   389→        textTransform: 'uppercase' as const,
+   390→        border: `2px solid ${config.border}`,
+   391→        imageRendering: 'pixelated',
+   392→      }}
+   393→    >
+   394→      {rarity}
+   395→    </span>
+   396→  )
+   397→}
+   398→
+   399→// ═══════════════════════════════════════════════════════════════════════════════
+   400→// PIXEL FONT HELPER
+   401→// ═══════════════════════════════════════════════════════════════════════════════
+   402→
+   403→const pixelFont = {
+   404→  fontFamily: "'Orbitron', system-ui, sans-serif",
+   405→  imageRendering: 'pixelated' as const,
+   406→}
+   407→
+   408→// ═══════════════════════════════════════════════════════════════════════════════
+   409→// MAIN COMPONENT
+   410→// ═══════════════════════════════════════════════════════════════════════════════
+   411→
+   412→export default function MarketplaceV2() {
+   413→  // ── State ────────────────────────────────────────────────────────────────
+   414→  const [searchQuery, setSearchQuery] = useState('')
+   415→  const [rarityFilter, setRarityFilter] = useState<Rarity | 'all'>('all')
+   416→  const [priceMin, setPriceMin] = useState('')
+   417→  const [priceMax, setPriceMax] = useState('')
+   418→  const [sortBy, setSortBy] = useState<SortOption>('newest')
+   419→  const [viewMode, setViewMode] = useState<ViewMode>('grid')
+   420→  const [selectedItem, setSelectedItem] = useState<MarketplaceListing | null>(null)
+   421→  const [wishlist, setWishlist] = useState<Set<string>>(new Set())
+   422→  const [showFilters, setShowFilters] = useState(false)
+   423→  const [loading, setLoading] = useState(true)
+   424→  const [recentSales, setRecentSales] = useState<RecentSale[]>([])
+   425→  const [buyingId, setBuyingId] = useState<string | null>(null)
+   426→
+   427→  // ── SDK + wallet + shared store ─────────────────────────────────────────
+   428→  const { sdk } = useSDK()
+   429→  const { activeAddress } = useWallet()
+   430→  const storeMarket = useDeShopStore((s) => s.market)
+   431→  const setMarket = useDeShopStore((s) => s.setMarket)
+   432→  const addNotification = useDeShopStore((s) => s.addNotification)
+   433→
+   434→  // ── Convert the shared store's Asset[] → MarketplaceListing[] ───────────
+   435→  const allListings = useMemo<MarketplaceListing[]>(
+   436→    () => storeMarket.map(assetToListing),
+   437→    [storeMarket],
+   438→  )
+   439→
+   440→  // ── Initial marketplace fetch (in case SDKProvider hasn't populated yet,
+   441→  //    e.g. before wallet connect). The shared store is the single source of
+   442→  //    truth; this effect only kicks in when it's empty.
+   443→  useEffect(() => {
+   444→    let cancelled = false
+   445→    if (storeMarket.length > 0) {
+   446→      setLoading(false)
+   447→      return
+   448→    }
+   449→    setLoading(true)
+   450→    sdk
+   451→      .getMarketplace()
+   452→      .then((items) => {
+   453→        if (cancelled) return
+   454→        if (items.length > 0) setMarket(items)
+   455→        setLoading(false)
+   456→      })
+   457→      .catch((e) => {
+   458→        if (cancelled) return
+   459→        console.error('[MarketplaceV2] Failed to load marketplace:', e)
+   460→        setLoading(false)
+   461→      })
+   462→    return () => {
+   463→      cancelled = true
+   464→    }
+   465→  }, [sdk, storeMarket.length, setMarket])
+   466→
+   467→  // ── Recent sales feed (one-time fetch; backend exposes sales via
+   468→  //    /marketplace which returns { marketplace, sales }). ────────────────
+   469→  useEffect(() => {
+   470→    let cancelled = false
+   471→    sdk
+   472→      .getMarketData()
+   473→      .then((data) => {
+   474→        if (cancelled) return
+   475→        const sales = (data.sales || []).slice(0, 8).map(saleToRecent)
+   476→        setRecentSales(sales)
+   477→      })
+   478→      .catch(() => {
+   479→        // Optional feed — leave empty on failure.
+   480→      })
+   481→    return () => {
+   482→      cancelled = true
+   483→    }
+   484→  }, [sdk])
+   485→
+   486→  // ── Floor price (computed from the live listing set, not mock data) ─────
+   487→  const floorPriceData = useMemo(
+   488→    () => computeFloorPrice(allListings),
+   489→    [allListings],
+   490→  )
+   491→
+   492→  // ── Wishlist toggle ──────────────────────────────────────────────────────
+   493→  const toggleWishlist = useCallback((id: string, name: string) => {
+   494→    setWishlist((prev) => {
+   495→      const next = new Set(prev)
+   496→      if (next.has(id)) {
+   497→        next.delete(id)
+   498→        addNotification('info', `Removed "${name}" from wishlist`)
+   499→      } else {
+   500→        next.add(id)
+   501→        addNotification('success', `Added "${name}" to wishlist ❤️`)
+   502→      }
+   503→      return next
+   504→    })
+   505→  }, [addNotification])
+   506→
+   507→  // ── Filtering & Sorting ──────────────────────────────────────────────────
+   508→  // Keep a stable insertion-order map for the "newest" sort. We use the order
+   509→  // in which assets arrived from the backend (i.e. the store's order), which
+   510→  // is the closest proxy to recency without a backend sort parameter.
+   511→  const newestOrder = useMemo(() => {
+   512→    const m = new Map<string, number>()
+   513→    allListings.forEach((l, idx) => m.set(l.id, idx))
+   514→    return m
+   515→  }, [allListings])
+   516→
+   517→  const filteredListings = useMemo(() => {
+   518→    let items = [...allListings]
+   519→
+   520→    // Search
+   521→    if (searchQuery.trim()) {
+   522→      const q = searchQuery.toLowerCase()
+   523→      items = items.filter(
+   524→        (i) =>
+   525→          i.name.toLowerCase().includes(q) ||
+   526→          i.type.toLowerCase().includes(q) ||
+   527→          i.rarity.toLowerCase().includes(q)
+   528→      )
+   529→    }
+   530→
+   531→    // Rarity filter
+   532→    if (rarityFilter !== 'all') {
+   533→      items = items.filter((i) => i.rarity === rarityFilter)
+   534→    }
+   535→
+   536→    // Price range
+   537→    const min = priceMin ? Number(priceMin) : 0
+   538→    const max = priceMax ? Number(priceMax) : Infinity
+   539→    if (min > 0 || max < Infinity) {
+   540→      items = items.filter((i) => i.price >= min && i.price <= max)
+   541→    }
+   542→
+   543→    // Sort
+   544→    switch (sortBy) {
+   545→      case 'price_asc':
+   546→        items.sort((a, b) => a.price - b.price)
+   547→        break
+   548→      case 'price_desc':
+   549→        items.sort((a, b) => b.price - a.price)
+   550→        break
+   551→      case 'newest':
+   552→        items.sort((a, b) => (newestOrder.get(a.id) ?? 0) - (newestOrder.get(b.id) ?? 0))
+   553→        break
+   554→      case 'rarity':
+   555→        items.sort((a, b) => RARITY_ORDER[b.rarity] - RARITY_ORDER[a.rarity])
+   556→        break
+   557→    }
+   558→
+   559→    return items
+   560→  }, [allListings, newestOrder, searchQuery, rarityFilter, priceMin, priceMax, sortBy])
+   561→
+   562→  // ── Price trend ──────────────────────────────────────────────────────────
+   563→  const getPriceTrend = (history: PricePoint[]) => {
+   564→    if (history.length < 2) return { direction: 'flat' as const, pct: 0 }
+   565→    const first = history[0].price
+   566→    const last = history[history.length - 1].price
+   567→    const pct = first === 0 ? 0 : ((last - first) / first) * 100
+   568→    return {
+   569→      direction: pct > 1 ? 'up' as const : pct < -1 ? 'down' as const : 'flat' as const,
+   570→      pct: Math.abs(pct),
+   571→    }
+   572→  }
+   573→
+   574→  // ── Buy handler — calls the real SDK buy flow with full error handling ──
+   575→  const handleBuy = useCallback(async (item: MarketplaceListing) => {
+   576→    if (!activeAddress) {
+   577→      addNotification('warning', 'Connect your wallet to trade.')
+   578→      return
+   579→    }
+   580→    if (buyingId) return // prevent double-clicks
+   581→    setBuyingId(item.id)
+   582→    try {
+   583→      addNotification('info', `Initiating trade for "${item.name}" at ${item.price.toLocaleString()} μA…`)
+   584→      const result = await sdk.buyAsset(activeAddress, item.assetId)
+   585→      if (result.success) {
+   586→        addNotification(
+   587→          'success',
+   588→          `✓ Purchased "${item.name}" for ${item.price.toLocaleString()} μA${
+   589→            result.payment_txn_id ? ` · TX ${result.payment_txn_id.slice(0, 10)}…` : ''
+   590→          }`,
+   591→        )
+   592→        setSelectedItem(null)
+   593→      }
+   594→    } catch (e) {
+   595→      if (e instanceof WalletNotConnectedError) {
+   596→        addNotification('warning', 'Please connect your wallet first.')
+   597→      } else if (e instanceof InsufficientFundsError) {
+   598→        addNotification('error', `Insufficient funds: need ${e.required} μALGO.`)
+   599→      } else if (e instanceof TransactionFailedError) {
+   600→        addNotification('error', `Trade failed: ${e.message}`)
+   601→      } else if (e instanceof DeShopError) {
+   602→        addNotification('error', e.message)
+   603→      } else if (e instanceof Error) {
+   604→        addNotification('error', e.message || 'Trade failed.')
+   605→      } else {
+   606→        addNotification('error', 'Trade failed due to an unknown error.')
+   607→      }
+   608→    } finally {
+   609→      setBuyingId(null)
+   610→    }
+   611→  }, [activeAddress, addNotification, buyingId, sdk])
+   612→
+   613→  // ═══════════════════════════════════════════════════════════════════════════
+   614→  // RENDER
+   615→  // ═══════════════════════════════════════════════════════════════════════════
+   616→
+   617→  return (
+   618→    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+   619→      {/* ═══ TOP BAR ═══ */}
+   620→      <div
+   621→        style={{
+   622→          padding: '16px 20px',
+   623→          borderBottom: '2px solid rgba(80, 0, 170, 0.4)',
+   624→          background: 'rgba(26, 10, 46, 0.9)',
+   625→          imageRendering: 'pixelated',
+   626→        }}
+   627→      >
+   628→        {/* Nexus Forge Banner */}
+   629→        <div
+   630→          style={{
+   631→            width: '100%',
+   632→            height: 48,
+   633→            marginBottom: 12,
+   634→            background: 'linear-gradient(135deg, rgba(124,58,237,0.3) 0%, rgba(45,212,191,0.15) 50%, rgba(251,191,36,0.2) 100%)',
+   635→            border: '2px solid rgba(124, 58, 237, 0.5)',
+   636→            borderRadius: 0,
+   637→            display: 'flex',
+   638→            alignItems: 'center',
+   639→            justifyContent: 'center',
+   640→            gap: 8,
+   641→            imageRendering: 'pixelated',
+   642→          }}
+   643→        >
+   644→          <span style={{ fontSize: 20, ...pixelFont }}>◆</span>
+   645→          <span style={{ fontSize: 14, color: '#FBBF24', fontWeight: 700, letterSpacing: '0.08em', ...pixelFont }}>
+   646→            MARKETPLACE
+   647→          </span>
+   648→          <span style={{ fontSize: 20, ...pixelFont }}>◆</span>
+   649→        </div>
+   650→
+   651→        {/* Title row */}
+   652→        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+   653→          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+   654→            <ShoppingBag className="h-5 w-5" style={{ color: '#2DD4BF' }} />
+   655→            <h2
+   656→              style={{
+   657→                fontSize: 16,
+   658→                fontWeight: 700,
+   659→                color: '#FBBF24',
+   660→                letterSpacing: '0.06em',
+   661→                margin: 0,
+   662→                ...pixelFont,
+   663→              }}
+   664→            >
+   665→              ◆ MARKETPLACE
+   666→            </h2>
+   667→            <span
+   668→              style={{
+   669→                fontSize: 9,
+   670→                color: '#2DD4BF',
+   671→                background: 'rgba(45,212,191,0.1)',
+   672→                padding: '2px 8px',
+   673→                borderRadius: 0,
+   674→                fontWeight: 600,
+   675→                border: '2px solid rgba(45,212,191,0.3)',
+   676→                imageRendering: 'pixelated',
+   677→              }}
+   678→            >
+   679→              V2
+   680→            </span>
+   681→          </div>
+   682→          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+   683→            <span style={{ fontSize: 11, color: '#A78BFA', ...pixelFont }}>
+   684→              {filteredListings.length} item{filteredListings.length !== 1 ? 's' : ''}
+   685→            </span>
+   686→            {wishlist.size > 0 && (
+   687→              <span
+   688→                style={{
+   689→                  fontSize: 10,
+   690→                  color: '#f87171',
+   691→                  background: 'rgba(248, 113, 113, 0.1)',
+   692→                  padding: '2px 8px',
+   693→                  borderRadius: 0,
+   694→                  fontWeight: 600,
+   695→                  display: 'flex',
+   696→                  alignItems: 'center',
+   697→                  gap: 4,
+   698→                  border: '2px solid rgba(248,113,113,0.3)',
+   699→                  imageRendering: 'pixelated',
+   700→                }}
+   701→              >
+   702→                <Heart className="h-3 w-3" style={{ fill: '#f87171' }} /> {wishlist.size}
+   703→              </span>
+   704→            )}
+   705→          </div>
+   706→        </div>
+   707→
+   708→        {/* Search + controls row */}
+   709→        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+   710→          {/* Search */}
+   711→          <div
+   712→            style={{
+   713→              position: 'relative',
+   714→              flex: '1 1 220px',
+   715→              minWidth: 180,
+   716→            }}
+   717→          >
+   718→            <Search
+   719→              className="h-3.5 w-3.5"
+   720→              style={{
+   721→                position: 'absolute',
+   722→                left: 10,
+   723→                top: '50%',
+   724→                transform: 'translateY(-50%)',
+   725→                color: '#A78BFA',
+   726→              }}
+   727→            />
+   728→            <input
+   729→              className="premium-input"
+   730→              placeholder="Search items..."
+   731→              value={searchQuery}
+   732→              onChange={(e) => setSearchQuery(e.target.value)}
+   733→              style={{
+   734→                width: '100%',
+   735→                fontSize: 11,
+   736→                paddingLeft: 30,
+   737→                paddingRight: 8,
+   738→                borderRadius: 0,
+   739→                border: '2px solid rgba(80,0,170,0.4)',
+   740→                background: 'rgba(26,10,46,0.6)',
+   741→                color: '#e2d5f3',
+   742→                ...pixelFont,
+   743→              }}
+   744→            />
+   745→          </div>
+   746→
+   747→          {/* Rarity filter — "Filter by Ore Quality" */}
+   748→          <div style={{ position: 'relative' }}>
+   749→            <select
+   750→              className="premium-select"
+   751→              value={rarityFilter}
+   752→              onChange={(e) => setRarityFilter(e.target.value as Rarity | 'all')}
+   753→              style={{
+   754→                fontSize: 11,
+   755→                minWidth: 120,
+   756→                borderRadius: 0,
+   757→                border: '2px solid rgba(80,0,170,0.4)',
+   758→                background: 'rgba(26,10,46,0.6)',
+   759→                color: '#e2d5f3',
+   760→                ...pixelFont,
+   761→              }}
+   762→            >
+   763→              <option value="all">All Ore Quality</option>
+   764→              <option value="common">Common (Iron)</option>
+   765→              <option value="rare">Rare (Diamond)</option>
+   766→              <option value="epic">Epic (Netherite)</option>
+   767→              <option value="legendary">Legendary (Gold)</option>
+   768→            </select>
+   769→          </div>
+   770→
+   771→          {/* Sort */}
+   772→          <select
+   773→            className="premium-select"
+   774→            value={sortBy}
+   775→            onChange={(e) => setSortBy(e.target.value as SortOption)}
+   776→            style={{
+   777→              fontSize: 11,
+   778→              minWidth: 140,
+   779→              borderRadius: 0,
+   780→              border: '2px solid rgba(80,0,170,0.4)',
+   781→              background: 'rgba(26,10,46,0.6)',
+   782→              color: '#e2d5f3',
+   783→              ...pixelFont,
+   784→            }}
+   785→          >
+   786→            <option value="newest">Newest First</option>
+   787→            <option value="price_asc">Price: Low → High</option>
+   788→            <option value="price_desc">Price: High → Low</option>
+   789→            <option value="rarity">Rarest First</option>
+   790→          </select>
+   791→
+   792→          {/* Filter toggle */}
+   793→          <button
+   794→            className="premium-btn premium-btn--sm"
+   795→            onClick={() => setShowFilters(!showFilters)}
+   796→            style={{
+   797→              background: showFilters ? 'rgba(45, 212, 191,0.1)' : 'rgba(26,10,46,0.6)',
+   798→              borderColor: showFilters ? 'rgba(45, 212, 191,0.4)' : 'rgba(80,0,170,0.4)',
+   799→              color: showFilters ? '#2DD4BF' : '#A78BFA',
+   800→              borderRadius: 0,
+   801→              ...pixelFont,
+   802→            }}
+   803→          >
+   804→            <SlidersHorizontal className="h-3.5 w-3.5" />
+   805→            Filters
+   806→          </button>
+   807→
+   808→          {/* View toggle */}
+   809→          <div
+   810→            style={{
+   811→              display: 'flex',
+   812→              border: '2px solid rgba(80,0,170,0.4)',
+   813→              borderRadius: 0,
+   814→              overflow: 'hidden',
+   815→              imageRendering: 'pixelated',
+   816→            }}
+   817→          >
+   818→            <button
+   819→              onClick={() => setViewMode('grid')}
+   820→              style={{
+   821→                padding: '5px 10px',
+   822→                background: viewMode === 'grid' ? 'rgba(45, 212, 191,0.12)' : 'transparent',
+   823→                border: 'none',
+   824→                borderRight: '2px solid rgba(80,0,170,0.4)',
+   825→                color: viewMode === 'grid' ? '#2DD4BF' : '#A78BFA',
+   826→                cursor: 'pointer',
+   827→                display: 'flex',
+   828→                alignItems: 'center',
+   829→                transition: 'all 0.15s',
+   830→              }}
+   831→            >
+   832→              <LayoutGrid className="h-3.5 w-3.5" />
+   833→            </button>
+   834→            <button
+   835→              onClick={() => setViewMode('list')}
+   836→              style={{
+   837→                padding: '5px 10px',
+   838→                background: viewMode === 'list' ? 'rgba(45, 212, 191,0.12)' : 'transparent',
+   839→                border: 'none',
+   840→                color: viewMode === 'list' ? '#2DD4BF' : '#A78BFA',
+   841→                cursor: 'pointer',
+   842→                display: 'flex',
+   843→                alignItems: 'center',
+   844→                transition: 'all 0.15s',
+   845→              }}
+   846→            >
+   847→              <List className="h-3.5 w-3.5" />
+   848→            </button>
+   849→          </div>
+   850→        </div>
+   851→
+   852→        {/* Expandable price range filter */}
+   853→        <AnimatePresence>
+   854→          {showFilters && (
+   855→            <motion.div
+   856→              initial={{ height: 0, opacity: 0 }}
+   857→              animate={{ height: 'auto', opacity: 1 }}
+   858→              exit={{ height: 0, opacity: 0 }}
+   859→              transition={{ duration: 0.2 }}
+   860→              style={{ overflow: 'hidden' }}
+   861→            >
+   862→              <div
+   863→                style={{
+   864→                  display: 'flex',
+   865→                  alignItems: 'center',
+   866→                  gap: 10,
+   867→                  marginTop: 12,
+   868→                  paddingTop: 12,
+   869→                  borderTop: '2px solid rgba(80,0,170,0.2)',
+   870→                  flexWrap: 'wrap',
+   871→                }}
+   872→              >
+   873→                <span style={{ fontSize: 10, color: '#A78BFA', fontWeight: 600, letterSpacing: '0.05em', ...pixelFont }}>
+   874→                  PRICE RANGE
+   875→                </span>
+   876→                <input
+   877→                  className="premium-input"
+   878→                  placeholder="Min μA"
+   879→                  value={priceMin}
+   880→                  onChange={(e) => setPriceMin(e.target.value)}
+   881→                  type="number"
+   882→                  style={{
+   883→                    width: 100,
+   884→                    fontSize: 11,
+   885→                    borderRadius: 0,
+   886→                    border: '2px solid rgba(80,0,170,0.4)',
+   887→                    background: 'rgba(26,10,46,0.6)',
+   888→                    color: '#e2d5f3',
+   889→                    ...pixelFont,
+   890→                  }}
+   891→                />
+   892→                <span style={{ color: '#A78BFA', fontSize: 11 }}>—</span>
+   893→                <input
+   894→                  className="premium-input"
+   895→                  placeholder="Max μA"
+   896→                  value={priceMax}
+   897→                  onChange={(e) => setPriceMax(e.target.value)}
+   898→                  type="number"
+   899→                  style={{
+   900→                    width: 100,
+   901→                    fontSize: 11,
+   902→                    borderRadius: 0,
+   903→                    border: '2px solid rgba(80,0,170,0.4)',
+   904→                    background: 'rgba(26,10,46,0.6)',
+   905→                    color: '#e2d5f3',
+   906→                    ...pixelFont,
+   907→                  }}
+   908→                />
+   909→                {(priceMin || priceMax) && (
+   910→                  <button
+   911→                    onClick={() => { setPriceMin(''); setPriceMax('') }}
+   912→                    style={{
+   913→                      background: 'none',
+   914→                      border: 'none',
+   915→                      color: '#A78BFA',
+   916→                      cursor: 'pointer',
+   917→                      padding: '2px 6px',
+   918→                      fontSize: 10,
+   919→                    }}
+   920→                  >
+   921→                    <X className="h-3 w-3" />
+   922→                  </button>
+   923→                )}
+   924→                <div style={{ flex: 1 }} />
+   925→                <span style={{ fontSize: 9, color: '#7c5eaa', ...pixelFont }}>
+   926→                  15 — 10,000 μA
+   927→                </span>
+   928→              </div>
+   929→            </motion.div>
+   930→          )}
+   931→        </AnimatePresence>
+   932→      </div>
+   933→
+   934→      {/* ═══ FLOOR PRICE BAR ═══ */}
+   935→      <div
+   936→        style={{
+   937→          padding: '8px 20px',
+   938→          display: 'flex',
+   939→          gap: 6,
+   940→          overflowX: 'auto',
+   941→          background: 'rgba(26, 10, 46, 0.6)',
+   942→          borderBottom: '2px solid rgba(80, 0, 170, 0.2)',
+   943→        }}
+   944→      >
+   945→        {(Object.keys(floorPriceData) as Rarity[]).map((rarity) => {
+   946→          const fp = floorPriceData[rarity]
+   947→          const rc = RARITY_CONFIG[rarity]
+   948→          return (
+   949→            <motion.div
+   950→              key={rarity}
+   951→              whileHover={{ y: -2, boxShadow: `0 0 16px ${rc.glow}` }}
+   952→              style={{
+   953→                display: 'flex',
+   954→                alignItems: 'center',
+   955→                gap: 8,
+   956→                padding: '6px 12px',
+   957→                background: rc.gradient,
+   958→                border: `2px solid ${rc.border}`,
+   959→                cursor: 'pointer',
+   960→                flexShrink: 0,
+   961→                imageRendering: 'pixelated',
+   962→                transition: 'box-shadow 0.2s ease',
+   963→              }}
+   964→            >
+   965→              <span style={{ fontSize: 8, color: rc.color, fontWeight: 700, ...pixelFont, textTransform: 'uppercase' }}>
+   966→                {rarity}
+   967→              </span>
+   968→              <span style={{ fontSize: 10, color: '#2DD4BF', fontWeight: 700, ...pixelFont }}>
+   969→                {fp.price.toLocaleString()} <span style={{ fontSize: 7 }}>μA</span>
+   970→              </span>
+   971→              <span style={{
+   972→                fontSize: 8,
+   973→                color: fp.change24h >= 0 ? '#C026D3' : '#F43F5E',
+   974→                display: 'flex',
+   975→                alignItems: 'center',
+   976→                gap: 2,
+   977→                fontWeight: 600,
+   978→              }}>
+   979→                {fp.change24h >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+   980→                {Math.abs(fp.change24h)}%
+   981→              </span>
+   982→              <span style={{ fontSize: 7, color: '#7c5eaa', ...pixelFont }}>{fp.listCount} listed</span>
+   983→            </motion.div>
+   984→          )
+   985→        })}
+   986→      </div>
+   987→
+   988→      {/* ═══ RECENTLY SOLD ═══ */}
+   989→      <div
+   990→        style={{
+   991→          padding: '10px 20px',
+   992→          background: 'rgba(26, 10, 46, 0.4)',
+   993→          borderBottom: '2px solid rgba(80, 0, 170, 0.15)',
+   994→        }}
+   995→      >
+   996→        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+   997→          <Activity className="h-3.5 w-3.5" style={{ color: '#C026D3' }} />
+   998→          <span style={{ fontSize: 9, color: '#C026D3', fontWeight: 700, letterSpacing: '0.06em', ...pixelFont }}>
+   999→            RECENTLY SOLD
+  1000→          </span>
+  1001→          <span
+  1002→            style={{
+  1003→              width: 5,
+  1004→              height: 5,
+  1005→              background: '#C026D3',
+  1006→              boxShadow: '0 0 4px #C026D3',
+  1007→              animation: 'mc-pulse 2s infinite',
+  1008→            }}
+  1009→          />
+  1010→        </div>
+  1011→        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+  1012→          {recentSales.map((sale) => {
+  1013→            const rc = RARITY_CONFIG[sale.rarity]
+  1014→            return (
+  1015→              <motion.div
+  1016→                key={sale.id}
+  1017→                whileHover={{ y: -2, boxShadow: `0 0 12px ${rc.glow}` }}
+  1018→                style={{
+  1019→                  display: 'flex',
+  1020→                  alignItems: 'center',
+  1021→                  gap: 8,
+  1022→                  padding: '6px 10px',
+  1023→                  background: rc.gradient,
+  1024→                  border: `2px solid ${rc.border}`,
+  1025→                  flexShrink: 0,
+  1026→                  cursor: 'pointer',
+  1027→                  imageRendering: 'pixelated',
+  1028→                  transition: 'all 0.2s ease',
+  1029→                }}
+  1030→              >
+  1031→                <span style={{ fontSize: 16 }}>{sale.icon}</span>
+  1032→                <div>
+  1033→                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+  1034→                    <span style={{ fontSize: 9, color: rc.color, fontWeight: 700, ...pixelFont }}>{sale.name}</span>
+  1035→                  </div>
+  1036→                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 1 }}>
+  1037→                    <span style={{ fontSize: 9, color: '#2DD4BF', fontWeight: 700, ...pixelFont }}>
+  1038→                      {sale.salePrice.toLocaleString()} μA
+  1039→                    </span>
+  1040→                    <span style={{ fontSize: 7, color: '#7c5eaa', display: 'flex', alignItems: 'center', gap: 2 }}>
+  1041→                      <Clock className="h-2 w-2" />
+  1042→                      {sale.soldAt}
+  1043→                    </span>
+  1044→                  </div>
+  1045→                </div>
+  1046→              </motion.div>
+  1047→            )
+  1048→          })}
+  1049→        </div>
+  1050→      </div>
+  1051→
+  1052→      {/* ═══ CONTENT AREA ═══ */}
+  1053→      <div style={{ flex: 1, overflow: 'auto', padding: '16px 20px' }}>
+  1054→        {loading ? (
+  1055→          /* ═══ LOADING STATE — fetching marketplace from backend ═══ */
+  1056→          <motion.div
+  1057→            initial={{ opacity: 0 }}
+  1058→            animate={{ opacity: 1 }}
+  1059→            style={{
+  1060→              display: 'flex',
+  1061→              flexDirection: 'column',
+  1062→              alignItems: 'center',
+  1063→              justifyContent: 'center',
+  1064→              padding: '80px 20px',
+  1065→              textAlign: 'center',
+  1066→              gap: 14,
+  1067→            }}
+  1068→          >
+  1069→            <Loader2
+  1070→              className="h-10 w-10 animate-spin"
+  1071→              style={{ color: '#2DD4BF' }}
+  1072→            />
+  1073→            <h3
+  1074→              style={{
+  1075→                color: '#FBBF24',
+  1076→                fontSize: 13,
+  1077→                fontWeight: 700,
+  1078→                letterSpacing: '0.04em',
+  1079→                margin: 0,
+  1080→                ...pixelFont,
+  1081→              }}
+  1082→            >
+  1083→              LOADING MARKETPLACE
+  1084→            </h3>
+  1085→            <p style={{ color: '#A78BFA', fontSize: 11, maxWidth: 320, lineHeight: 1.6, margin: 0 }}>
+  1086→              Fetching live listings from the De-Shop backend…
+  1087→            </p>
+  1088→          </motion.div>
+  1089→        ) : filteredListings.length === 0 ? (
+  1090→          /* ═══ EMPTY STATE ═══ */
+  1091→          <motion.div
+  1092→            initial={{ opacity: 0, y: 20 }}
+  1093→            animate={{ opacity: 1, y: 0 }}
+  1094→            style={{
+  1095→              display: 'flex',
+  1096→              flexDirection: 'column',
+  1097→              alignItems: 'center',
+  1098→              justifyContent: 'center',
+  1099→              padding: '80px 20px',
+  1100→              textAlign: 'center',
+  1101→            }}
+  1102→          >
+  1103→            <div
+  1104→              style={{
+  1105→                width: 100,
+  1106→                height: 100,
+  1107→                borderRadius: 0,
+  1108→                background: 'rgba(80,0,170,0.15)',
+  1109→                border: '3px solid rgba(80,0,170,0.4)',
+  1110→                display: 'flex',
+  1111→                alignItems: 'center',
+  1112→                justifyContent: 'center',
+  1113→                marginBottom: 24,
+  1114→                imageRendering: 'pixelated',
+  1115→                boxShadow: '0 0 30px rgba(80,0,170,0.15)',
+  1116→              }}
+  1117→            >
+  1118→              <ShoppingBag className="h-10 w-10" style={{ color: '#A78BFA', opacity: 0.5 }} />
+  1119→            </div>
+  1120→            <h3
+  1121→              style={{
+  1122→                color: '#FBBF24',
+  1123→                fontSize: 16,
+  1124→                fontWeight: 700,
+  1125→                marginBottom: 8,
+  1126→                letterSpacing: '0.04em',
+  1127→                ...pixelFont,
+  1128→              }}
+  1129→            >
+  1130→              No Items Found
+  1131→            </h3>
+  1132→            <p style={{ color: '#A78BFA', fontSize: 12, maxWidth: 320, lineHeight: 1.6, marginBottom: 4 }}>
+  1133→              No trading hall items match your current filters, or the marketplace is empty.
+  1134→              Try adjusting your search, clearing all filters, or minting a skin to get started.
+  1135→            </p>
+  1136→            <button
+  1137→              className="premium-btn premium-btn--sm premium-btn--green"
+  1138→              style={{ marginTop: 20, borderRadius: 0, ...pixelFont }}
+  1139→              onClick={() => {
+  1140→                setSearchQuery('')
+  1141→                setRarityFilter('all')
+  1142→                setPriceMin('')
+  1143→                setPriceMax('')
+  1144→              }}
+  1145→            >
+  1146→              <X className="h-3.5 w-3.5" />
+  1147→              Clear All Filters
+  1148→            </button>
+  1149→          </motion.div>
+  1150→        ) : viewMode === 'grid' ? (
+  1151→          /* ═══ GRID VIEW — Inventory Style ═══ */
+  1152→          <motion.div
+  1153→            variants={containerVariants}
+  1154→            initial="hidden"
+  1155→            animate="visible"
+  1156→            key="grid"
+  1157→            className="marketplace-grid"
+  1158→            style={{
+  1159→              display: 'grid',
+  1160→              gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+  1161→              gap: 8,
+  1162→              gridAutoRows: 'auto',
+  1163→            }}
+  1164→          >
+  1165→            {filteredListings.map((item) => {
+  1166→              const rc = RARITY_CONFIG[item.rarity]
+  1167→              const trend = getPriceTrend(item.priceHistory)
+  1168→              const isWished = wishlist.has(item.id)
+  1169→              return (
+  1170→                <motion.div
+  1171→                  key={item.id}
+  1172→                  variants={cardVariants}
+  1173→                  layout
+  1174→                  whileHover={{
+  1175→                    y: -4,
+  1176→                    boxShadow: `0 8px 24px ${rc.glow}, 0 0 0 2px ${rc.border}, 0 0 32px ${rc.glow.replace('0.15', '0.08')}`,
+  1177→                  }}
+  1178→                  style={{
+  1179→                    background: rc.gradient,
+  1180→                    border: `3px solid ${rc.border}`,
+  1181→                    borderRadius: 0,
+  1182→                    overflow: 'hidden',
+  1183→                    cursor: 'pointer',
+  1184→                    position: 'relative',
+  1185→                    transition: 'box-shadow 0.25s ease, transform 0.2s ease',
+  1186→                    imageRendering: 'pixelated',
+  1187→                    display: 'flex',
+  1188→                    flexDirection: 'column',
+  1189→                    backdropFilter: 'blur(4px)',
+  1190→                  }}
+  1191→                  onClick={() => setSelectedItem(item)}
+  1192→                >
+  1193→                  {/* Rarity shimmer bar with glow */}
+  1194→                  <div
+  1195→                    style={{
+  1196→                      height: 2,
+  1197→                      background: `linear-gradient(90deg, transparent, ${rc.color}, transparent)`,
+  1198→                      opacity: 0.7,
+  1199→                      boxShadow: `0 0 6px ${rc.glow}`,
+  1200→                    }}
+  1201→                  />
+  1202→                  {/* Rarity corner indicator */}
+  1203→                  <div
+  1204→                    style={{
+  1205→                      position: 'absolute',
+  1206→                      top: 4,
+  1207→                      right: 4,
+  1208→                      width: 8,
+  1209→                      height: 8,
+  1210→                      background: rc.color,
+  1211→                      border: '1px solid rgba(0,0,0,0.3)',
+  1212→                      boxShadow: `0 0 8px ${rc.glow}`,
+  1213→                      zIndex: 2,
+  1214→                    }}
+  1215→                  />
+  1216→
+  1217→                  {/* Card content */}
+  1218→                  <div style={{ padding: '10px 10px 8px', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+  1219→                    {/* Item icon — Nexus Forge inventory slot */}
+  1220→                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 6 }}>
+  1221→                      <button
+  1222→                        onClick={(e) => {
+  1223→                          e.stopPropagation()
+  1224→                          toggleWishlist(item.id, item.name)
+  1225→                        }}
+  1226→                        style={{
+  1227→                          background: 'none',
+  1228→                          border: 'none',
+  1229→                          cursor: 'pointer',
+  1230→                          padding: 4,
+  1231→                          color: isWished ? '#f87171' : '#7c5eaa',
+  1232→                          transition: 'all 0.15s',
+  1233→                        }}
+  1234→                      >
+  1235→                        <Heart
+  1236→                          className="h-3.5 w-3.5"
+  1237→                          style={isWished ? { fill: '#f87171' } : {}}
+  1238→                        />
+  1239→                      </button>
+  1240→                      {/* Rarity dot */}
+  1241→                      <span style={{ fontSize: 8 }}>{rc.icon}</span>
+  1242→                    </div>
+  1243→
+  1244→                    {/* Icon slot — square inventory style */}
+  1245→                    <div
+  1246→                      style={{
+  1247→                        width: 48,
+  1248→                        height: 48,
+  1249→                        borderRadius: 0,
+  1250→                        background: 'rgba(0,0,0,0.3)',
+  1251→                        border: '3px solid rgba(255,255,255,0.15)',
+  1252→                        borderTopColor: 'rgba(255,255,255,0.3)',
+  1253→                        borderLeftColor: 'rgba(255,255,255,0.25)',
+  1254→                        borderBottomColor: 'rgba(0,0,0,0.4)',
+  1255→                        borderRightColor: 'rgba(0,0,0,0.35)',
+  1256→                        display: 'flex',
+  1257→                        alignItems: 'center',
+  1258→                        justifyContent: 'center',
+  1259→                        fontSize: 24,
+  1260→                        marginBottom: 8,
+  1261→                        imageRendering: 'pixelated',
+  1262→                        boxShadow: `inset 0 0 8px rgba(0,0,0,0.3), 0 0 8px ${rc.glow}`,
+  1263→                      }}
+  1264→                    >
+  1265→                      {item.icon}
+  1266→                    </div>
+  1267→
+  1268→                    {/* Name */}
+  1269→                    <div
+  1270→                      style={{
+  1271→                        color: rc.color,
+  1272→                        fontSize: 10,
+  1273→                        fontWeight: 700,
+  1274→                        marginBottom: 4,
+  1275→                        textAlign: 'center',
+  1276→                        whiteSpace: 'nowrap',
+  1277→                        overflow: 'hidden',
+  1278→                        textOverflow: 'ellipsis',
+  1279→                        width: '100%',
+  1280→                        ...pixelFont,
+  1281→                      }}
+  1282→                    >
+  1283→                      {item.name}
+  1284→                    </div>
+  1285→
+  1286→                    {/* Rarity badge */}
+  1287→                    <div style={{ marginBottom: 6 }}>
+  1288→                      <RarityBadge rarity={item.rarity} />
+  1289→                    </div>
+  1290→
+  1291→                    {/* Price in emerald color */}
+  1292→                    <div style={{ textAlign: 'center', marginBottom: 4 }}>
+  1293→                      <div style={{ fontSize: 13, fontWeight: 700, color: '#2DD4BF', ...pixelFont }}>
+  1294→                        {item.price.toLocaleString()} <span style={{ fontSize: 8, color: '#2DD4BF' }}>μA</span>
+  1295→                      </div>
+  1296→                      <div style={{ display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'center', marginTop: 2 }}>
+  1297→                        {trend.direction === 'up' && <TrendingUp className="h-3 w-3" style={{ color: '#C026D3' }} />}
+  1298→                        {trend.direction === 'down' && <TrendingDown className="h-3 w-3" style={{ color: '#F43F5E' }} />}
+  1299→                        <span
+  1300→                          style={{
+  1301→                            fontSize: 8,
+  1302→                            color: trend.direction === 'up' ? '#C026D3' : trend.direction === 'down' ? '#F43F5E' : '#A78BFA',
+  1303→                            fontWeight: 600,
+  1304→                          }}
+  1305→                        >
+  1306→                          {trend.direction !== 'flat' ? `${trend.pct.toFixed(1)}%` : '—'}
+  1307→                        </span>
+  1308→                      </div>
+  1309→                    </div>
+  1310→
+  1311→                    {/* Trade button */}
+  1312→                    <button
+  1313→                      className="premium-btn premium-btn--xs marketplace-card-btn"
+  1314→                      disabled={buyingId === item.id}
+  1315→                      onClick={(e) => {
+  1316→                        e.stopPropagation()
+  1317→                        void handleBuy(item)
+  1318→                      }}
+  1319→                      style={{
+  1320→                        borderRadius: 0,
+  1321→                        background: 'rgba(45, 212, 191,0.15)',
+  1322→                        border: '2px solid rgba(45, 212, 191,0.4)',
+  1323→                        color: '#2DD4BF',
+  1324→                        width: '100%',
+  1325→                        opacity: buyingId === item.id ? 0.7 : 1,
+  1326→                        cursor: buyingId === item.id ? 'wait' : 'pointer',
+  1327→                        ...pixelFont,
+  1328→                      }}
+  1329→                    >
+  1330→                      {buyingId === item.id ? (
+  1331→                        <>
+  1332→                          <Loader2 className="h-3 w-3 animate-spin" />
+  1333→                          TRADING…
+  1334→                        </>
+  1335→                      ) : (
+  1336→                        <>
+  1337→                          <Zap className="h-3 w-3" />
+  1338→                          TRADE
+  1339→                        </>
+  1340→                      )}
+  1341→                    </button>
+  1342→
+  1343→                    {/* Seller */}
+  1344→                    <div
+  1345→                      style={{
+  1346→                        marginTop: 6,
+  1347→                        width: '100%',
+  1348→                        paddingTop: 4,
+  1349→                        borderTop: '1px solid rgba(255,255,255,0.05)',
+  1350→                        display: 'flex',
+  1351→                        alignItems: 'center',
+  1352→                        justifyContent: 'space-between',
+  1353→                      }}
+  1354→                    >
+  1355→                      <span style={{ fontSize: 8, color: '#7c5eaa' }}>
+  1356→                        {item.seller}
+  1357→                      </span>
+  1358→                      <span style={{ fontSize: 8, color: '#7c5eaa' }}>
+  1359→                        {item.listedAt}
+  1360→                      </span>
+  1361→                    </div>
+  1362→                  </div>
+  1363→                </motion.div>
+  1364→              )
+  1365→            })}
+  1366→          </motion.div>
+  1367→        ) : (
+  1368→          /* ═══ LIST VIEW — Chest Inventory Style ═══ */
+  1369→          <motion.div
+  1370→            variants={containerVariants}
+  1371→            initial="hidden"
+  1372→            animate="visible"
+  1373→            key="list"
+  1374→            style={{ display: 'flex', flexDirection: 'column', gap: 0 }}
+  1375→          >
+  1376→            {/* Header row */}
+  1377→            <div
+  1378→              style={{
+  1379→                display: 'grid',
+  1380→                gridTemplateColumns: '48px 1fr 90px 100px 120px 100px',
+  1381→                gap: 12,
+  1382→                padding: '10px 16px',
+  1383→                borderBottom: '2px solid rgba(80,0,170,0.4)',
+  1384→                fontSize: 8,
+  1385→                color: '#A78BFA',
+  1386→                fontWeight: 700,
+  1387→                letterSpacing: '0.06em',
+  1388→                textTransform: 'uppercase' as const,
+  1389→                background: 'rgba(26,10,46,0.6)',
+  1390→                ...pixelFont,
+  1391→              }}
+  1392→            >
+  1393→              <span></span>
+  1394→              <span>Item</span>
+  1395→              <span>Quality</span>
+  1396→              <span>Price</span>
+  1397→              <span>Trend / Seller</span>
+  1398→              <span></span>
+  1399→            </div>
+  1400→
+  1401→            {filteredListings.map((item, idx) => {
+  1402→              const rc = RARITY_CONFIG[item.rarity]
+  1403→              const trend = getPriceTrend(item.priceHistory)
+  1404→              const isWished = wishlist.has(item.id)
+  1405→              return (
+  1406→                <motion.div
+  1407→                  key={item.id}
+  1408→                  variants={listVariants}
+  1409→                  whileHover={{
+  1410→                    background: 'rgba(45, 212, 191,0.06)',
+  1411→                  }}
+  1412→                  className="marketplace-list-row"
+  1413→                  style={{
+  1414→                    display: 'grid',
+  1415→                    gridTemplateColumns: '48px 1fr 90px 100px 120px 100px',
+  1416→                    gap: 12,
+  1417→                    padding: '12px 16px',
+  1418→                    alignItems: 'center',
+  1419→                    background: idx % 2 === 0 ? 'rgba(26,10,46,0.3)' : 'rgba(13,21,32,0.3)',
+  1420→                    borderBottom: '1px solid rgba(80,0,170,0.1)',
+  1421→                    cursor: 'pointer',
+  1422→                    transition: 'background 0.15s',
+  1423→                  }}
+  1424→                  onClick={() => setSelectedItem(item)}
+  1425→                >
+  1426→                  {/* Icon — inventory slot style */}
+  1427→                  <div
+  1428→                    style={{
+  1429→                      width: 36,
+  1430→                      height: 36,
+  1431→                      borderRadius: 0,
+  1432→                      background: 'rgba(0,0,0,0.3)',
+  1433→                      border: '2px solid rgba(255,255,255,0.15)',
+  1434→                      borderTopColor: 'rgba(255,255,255,0.25)',
+  1435→                      borderLeftColor: 'rgba(255,255,255,0.2)',
+  1436→                      borderBottomColor: 'rgba(0,0,0,0.35)',
+  1437→                      borderRightColor: 'rgba(0,0,0,0.3)',
+  1438→                      display: 'flex',
+  1439→                      alignItems: 'center',
+  1440→                      justifyContent: 'center',
+  1441→                      fontSize: 16,
+  1442→                      imageRendering: 'pixelated',
+  1443→                    }}
+  1444→                  >
+  1445→                    {item.icon}
+  1446→                  </div>
+  1447→
+  1448→                  {/* Name */}
+  1449→                  <div>
+  1450→                    <div style={{ color: rc.color, fontSize: 11, fontWeight: 600, ...pixelFont }}>{item.name}</div>
+  1451→                    <div style={{ fontSize: 8, color: '#7c5eaa', marginTop: 1 }}>{item.type} • {item.listedAt}</div>
+  1452→                  </div>
+  1453→
+  1454→                  {/* Rarity */}
+  1455→                  <RarityBadge rarity={item.rarity} />
+  1456→
+  1457→                  {/* Price — emerald color */}
+  1458→                  <div style={{ fontSize: 12, fontWeight: 700, color: '#2DD4BF', ...pixelFont }}>
+  1459→                    {item.price.toLocaleString()} <span style={{ fontSize: 8 }}>μA</span>
+  1460→                  </div>
+  1461→
+  1462→                  {/* Trend + Seller */}
+  1463→                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+  1464→                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+  1465→                      {trend.direction === 'up' && <TrendingUp className="h-3 w-3" style={{ color: '#C026D3' }} />}
+  1466→                      {trend.direction === 'down' && <TrendingDown className="h-3 w-3" style={{ color: '#F43F5E' }} />}
+  1467→                      <span
+  1468→                        style={{
+  1469→                          fontSize: 9,
+  1470→                          color: trend.direction === 'up' ? '#C026D3' : trend.direction === 'down' ? '#F43F5E' : '#A78BFA',
+  1471→                          fontWeight: 600,
+  1472→                        }}
+  1473→                      >
+  1474→                        {trend.direction !== 'flat' ? `${trend.pct.toFixed(1)}%` : '—'}
+  1475→                      </span>
+  1476→                    </div>
+  1477→                    <span style={{ fontSize: 8, color: '#7c5eaa' }}>{item.seller}</span>
+  1478→                  </div>
+  1479→
+  1480→                  {/* Actions */}
+  1481→                  <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+  1482→                    <button
+  1483→                      onClick={(e) => {
+  1484→                        e.stopPropagation()
+  1485→                        toggleWishlist(item.id, item.name)
+  1486→                      }}
+  1487→                      style={{
+  1488→                        background: 'none',
+  1489→                        border: 'none',
+  1490→                        cursor: 'pointer',
+  1491→                        padding: 6,
+  1492→                        color: isWished ? '#f87171' : '#7c5eaa',
+  1493→                      }}
+  1494→                    >
+  1495→                      <Heart className="h-3.5 w-3.5" style={isWished ? { fill: '#f87171' } : {}} />
+  1496→                    </button>
+  1497→                    <button
+  1498→                      className="premium-btn premium-btn--xs marketplace-card-btn"
+  1499→                      disabled={buyingId === item.id}
+  1500→                      onClick={(e) => {
+  1501→                        e.stopPropagation()
+  1502→                        void handleBuy(item)
+  1503→                      }}
+  1504→                      style={{
+  1505→                        borderRadius: 0,
+  1506→                        background: 'rgba(45, 212, 191,0.15)',
+  1507→                        border: '2px solid rgba(45, 212, 191,0.4)',
+  1508→                        color: '#2DD4BF',
+  1509→                        opacity: buyingId === item.id ? 0.7 : 1,
+  1510→                        cursor: buyingId === item.id ? 'wait' : 'pointer',
+  1511→                        ...pixelFont,
+  1512→                      }}
+  1513→                    >
+  1514→                      {buyingId === item.id ? (
+  1515→                        <>
+  1516→                          <Loader2 className="h-3 w-3 animate-spin" />
+  1517→                          TRADING…
+  1518→                        </>
+  1519→                      ) : (
+  1520→                        <>
+  1521→                          <Zap className="h-3 w-3" />
+  1522→                          TRADE
+  1523→                        </>
+  1524→                      )}
+  1525→                    </button>
+  1526→                  </div>
+  1527→                </motion.div>
+  1528→              )
+  1529→            })}
+  1530→          </motion.div>
+  1531→        )}
+  1532→      </div>
+  1533→
+  1534→      {/* ═══ ITEM DETAIL MODAL — Nexus Forge Tooltip Style ═══ */}
+  1535→      <AnimatePresence>
+  1536→        {selectedItem && (
+  1537→          <>
+  1538→            {/* Backdrop */}
+  1539→            <motion.div
+  1540→              variants={backdropVariants}
+  1541→              initial="hidden"
+  1542→              animate="visible"
+  1543→              exit="exit"
+  1544→              onClick={() => setSelectedItem(null)}
+  1545→              style={{
+  1546→                position: 'fixed',
+  1547→                inset: 0,
+  1548→                background: 'rgba(0, 0, 0, 0.85)',
+  1549→                backdropFilter: 'blur(4px)',
+  1550→                zIndex: 1000,
+  1551→              }}
+  1552→            />
+  1553→
+  1554→            {/* Modal — Nexus Forge tooltip style */}
+  1555→            <motion.div
+  1556→              variants={modalVariants}
+  1557→              initial="hidden"
+  1558→              animate="visible"
+  1559→              exit="exit"
+  1560→              className="marketplace-detail-modal"
+  1561→              style={{
+  1562→                position: 'fixed',
+  1563→                top: '50%',
+  1564→                left: '50%',
+  1565→                transform: 'translate(-50%, -50%)',
+  1566→                width: 'min(560px, 90%)',
+  1567→                maxHeight: '90vh',
+  1568→                overflowY: 'auto',
+  1569→                background: 'rgba(26, 10, 46, 0.95)',
+  1570→                border: '3px solid #5000AA',
+  1571→                borderRadius: 0,
+  1572→                zIndex: 1001,
+  1573→                boxShadow: `0 0 40px ${RARITY_CONFIG[selectedItem.rarity].glow}, 0 24px 48px rgba(0,0,0,0.6)`,
+  1574→                imageRendering: 'pixelated',
+  1575→              }}
+  1576→            >
+  1577→              {(() => {
+  1578→                const item = selectedItem
+  1579→                const rc = RARITY_CONFIG[item.rarity]
+  1580→                const trend = getPriceTrend(item.priceHistory)
+  1581→                const isWished = wishlist.has(item.id)
+  1582→
+  1583→                return (
+  1584→                  <>
+  1585→                    {/* Close button */}
+  1586→                    <button
+  1587→                      onClick={() => setSelectedItem(null)}
+  1588→                      style={{
+  1589→                        position: 'absolute',
+  1590→                        top: 10,
+  1591→                        right: 10,
+  1592→                        background: 'rgba(26, 10, 46, 0.8)',
+  1593→                        border: '2px solid #5000AA',
+  1594→                        borderRadius: 0,
+  1595→                        color: '#A78BFA',
+  1596→                        cursor: 'pointer',
+  1597→                        padding: 4,
+  1598→                        zIndex: 10,
+  1599→                        display: 'flex',
+  1600→                        alignItems: 'center',
+  1601→                        justifyContent: 'center',
+  1602→                        imageRendering: 'pixelated',
+  1603→                      }}
+  1604→                    >
+  1605→                      <X className="h-4 w-4" />
+  1606→                    </button>
+  1607→
+  1608→                    {/* Rarity top bar */}
+  1609→                    <div
+  1610→                      style={{
+  1611→                        height: 3,
+  1612→                        background: `linear-gradient(90deg, transparent, ${rc.color}, transparent)`,
+  1613→                      }}
+  1614→                    />
+  1615→
+  1616→                    <div style={{ padding: '20px 24px 24px' }}>
+  1617→                      {/* Header */}
+  1618→                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 16 }}>
+  1619→                        {/* Large icon — inventory slot */}
+  1620→                        <div
+  1621→                          style={{
+  1622→                            width: 72,
+  1623→                            height: 72,
+  1624→                            borderRadius: 0,
+  1625→                            background: rc.gradient,
+  1626→                            border: `3px solid ${rc.border}`,
+  1627→                            borderTopColor: rc.color,
+  1628→                            borderLeftColor: rc.border,
+  1629→                            borderBottomColor: 'rgba(0,0,0,0.5)',
+  1630→                            borderRightColor: 'rgba(0,0,0,0.45)',
+  1631→                            display: 'flex',
+  1632→                            alignItems: 'center',
+  1633→                            justifyContent: 'center',
+  1634→                            fontSize: 36,
+  1635→                            flexShrink: 0,
+  1636→                            imageRendering: 'pixelated',
+  1637→                            boxShadow: `0 0 24px ${rc.glow}`,
+  1638→                          }}
+  1639→                        >
+  1640→                          {item.icon}
+  1641→                        </div>
+  1642→
+  1643→                        <div style={{ flex: 1, minWidth: 0 }}>
+  1644→                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+  1645→                            <h3
+  1646→                              style={{
+  1647→                                color: rc.color,
+  1648→                                fontSize: 16,
+  1649→                                fontWeight: 700,
+  1650→                                margin: 0,
+  1651→                                letterSpacing: '0.02em',
+  1652→                                ...pixelFont,
+  1653→                              }}
+  1654→                            >
+  1655→                              {item.name}
+  1656→                            </h3>
+  1657→                          </div>
+  1658→                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+  1659→                            <RarityBadge rarity={item.rarity} />
+  1660→                            <span style={{ fontSize: 9, color: '#A78BFA', ...pixelFont }}>{item.type}</span>
+  1661→                            <span style={{ fontSize: 9, color: '#7c5eaa' }}>•</span>
+  1662→                            <span style={{ fontSize: 9, color: '#7c5ea' }}>Listed {item.listedAt}</span>
+  1663→                          </div>
+  1664→                          <div style={{ fontSize: 10, color: '#c4b5e0', lineHeight: 1.5, ...pixelFont }}>
+  1665→                            {item.description}
+  1666→                          </div>
+  1667→                        </div>
+  1668→                      </div>
+  1669→
+  1670→                      {/* Price + Actions */}
+  1671→                      <div
+  1672→                        style={{
+  1673→                          display: 'flex',
+  1674→                          alignItems: 'center',
+  1675→                          justifyContent: 'space-between',
+  1676→                          padding: '12px 14px',
+  1677→                          background: 'rgba(26, 10, 46, 0.7)',
+  1678→                          borderRadius: 0,
+  1679→                          border: '2px solid rgba(80,0,170,0.3)',
+  1680→                          marginBottom: 16,
+  1681→                          imageRendering: 'pixelated',
+  1682→                        }}
+  1683→                      >
+  1684→                        <div>
+  1685→                          <div style={{ fontSize: 9, color: '#A78BFA', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 2, ...pixelFont }}>
+  1686→                            CURRENT PRICE
+  1687→                          </div>
+  1688→                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+  1689→                            <span style={{ fontSize: 20, fontWeight: 700, color: '#2DD4BF', ...pixelFont }}>
+  1690→                              {item.price.toLocaleString()}
+  1691→                            </span>
+  1692→                            <span style={{ fontSize: 9, color: '#2DD4BF', ...pixelFont }}>μA</span>
+  1693→                            <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginLeft: 6 }}>
+  1694→                              {trend.direction === 'up' && <TrendingUp className="h-3 w-3" style={{ color: '#C026D3' }} />}
+  1695→                              {trend.direction === 'down' && <TrendingDown className="h-3 w-3" style={{ color: '#F43F5E' }} />}
+  1696→                              <span
+  1697→                                style={{
+  1698→                                  fontSize: 9,
+  1699→                                  color: trend.direction === 'up' ? '#C026D3' : trend.direction === 'down' ? '#F43F5E' : '#A78BFA',
+  1700→                                  fontWeight: 600,
+  1701→                                }}
+  1702→                              >
+  1703→                                {trend.direction !== 'flat' ? `${trend.pct.toFixed(1)}%` : '—'}
+  1704→                              </span>
+  1705→                            </div>
+  1706→                          </div>
+  1707→                        </div>
+  1708→                        <div style={{ display: 'flex', gap: 8 }}>
+  1709→                          <button
+  1710→                            onClick={() => toggleWishlist(item.id, item.name)}
+  1711→                            className="premium-btn premium-btn--sm"
+  1712→                            style={{
+  1713→                              borderColor: isWished ? '#f87171' : 'rgba(80,0,170,0.4)',
+  1714→                              color: isWished ? '#f87171' : '#A78BFA',
+  1715→                              background: isWished ? 'rgba(248,113,113,0.08)' : 'rgba(26,10,46,0.5)',
+  1716→                              borderRadius: 0,
+  1717→                              ...pixelFont,
+  1718→                            }}
+  1719→                          >
+  1720→                            <Heart className="h-3.5 w-3.5" style={isWished ? { fill: '#f87171' } : {}} />
+  1721→                            {isWished ? 'Saved' : 'Save'}
+  1722→                          </button>
+  1723→                          <button
+  1724→                            className="premium-btn premium-btn--sm"
+  1725→                            disabled={buyingId === item.id}
+  1726→                            onClick={() => void handleBuy(item)}
+  1727→                            style={{
+  1728→                              borderRadius: 0,
+  1729→                              background: 'rgba(45, 212, 191,0.2)',
+  1730→                              border: '2px solid rgba(45, 212, 191,0.5)',
+  1731→                              color: '#2DD4BF',
+  1732→                              opacity: buyingId === item.id ? 0.7 : 1,
+  1733→                              cursor: buyingId === item.id ? 'wait' : 'pointer',
+  1734→                              ...pixelFont,
+  1735→                            }}
+  1736→                          >
+  1737→                            {buyingId === item.id ? (
+  1738→                              <>
+  1739→                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+  1740→                                TRADING…
+  1741→                              </>
+  1742→                            ) : (
+  1743→                              <>
+  1744→                                <Zap className="h-3.5 w-3.5" />
+  1745→                                TRADE
+  1746→                              </>
+  1747→                            )}
+  1748→                          </button>
+  1749→                        </div>
+  1750→                      </div>
+  1751→
+  1752→                      {/* Trading History Chart (was Price History) */}
+  1753→                      <div style={{ marginBottom: 16 }}>
+  1754→                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+  1755→                          <BarChart3 className="h-3.5 w-3.5" style={{ color: '#2DD4BF' }} />
+  1756→                          <span style={{ fontSize: 10, fontWeight: 700, color: '#FBBF24', letterSpacing: '0.04em', ...pixelFont }}>
+  1757→                            TRADING HISTORY — 7 DAYS
+  1758→                          </span>
+  1759→                        </div>
+  1760→                        <div
+  1761→                          style={{
+  1762→                            background: 'rgba(26, 10, 46, 0.5)',
+  1763→                            borderRadius: 0,
+  1764→                            border: '2px solid rgba(80,0,170,0.3)',
+  1765→                            padding: '12px 8px 4px',
+  1766→                            imageRendering: 'pixelated',
+  1767→                          }}
+  1768→                        >
+  1769→                          <ResponsiveContainer width="100%" height={120}>
+  1770→                            <AreaChart data={item.priceHistory}>
+  1771→                              <defs>
+  1772→                                <linearGradient id={`grad-${item.id}`} x1="0" y1="0" x2="0" y2="1">
+  1773→                                  <stop offset="0%" stopColor={rc.color} stopOpacity={0.3} />
+  1774→                                  <stop offset="100%" stopColor={rc.color} stopOpacity={0.02} />
+  1775→                                </linearGradient>
+  1776→                              </defs>
+  1777→                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(80,0,170,0.15)" />
+  1778→                              <XAxis
+  1779→                                dataKey="day"
+  1780→                                tick={{ fill: '#A78BFA', fontSize: 8 }}
+  1781→                                axisLine={{ stroke: 'rgba(80,0,170,0.2)' }}
+  1782→                                tickLine={false}
+  1783→                              />
+  1784→                              <YAxis
+  1785→                                tick={{ fill: '#A78BFA', fontSize: 8 }}
+  1786→                                axisLine={{ stroke: 'rgba(80,0,170,0.2)' }}
+  1787→                                tickLine={false}
+  1788→                                width={50}
+  1789→                                tickFormatter={(v: number) => `${(v / 1000).toFixed(1)}k`}
+  1790→                              />
+  1791→                              <Tooltip content={<ChartTooltip />} />
+  1792→                              <Area
+  1793→                                type="monotone"
+  1794→                                dataKey="price"
+  1795→                                stroke={rc.color}
+  1796→                                strokeWidth={2}
+  1797→                                fill={`url(#grad-${item.id})`}
+  1798→                                dot={false}
+  1799→                                activeDot={{ r: 4, fill: rc.color, stroke: '#FBBF24', strokeWidth: 1.5 }}
+  1800→                              />
+  1801→                            </AreaChart>
+  1802→                          </ResponsiveContainer>
+  1803→                        </div>
+  1804→                      </div>
+  1805→
+  1806→                      {/* Enchantment Analysis (was AI Price Analysis) */}
+  1807→                      <div style={{ marginBottom: 16 }}>
+  1808→                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+  1809→                          <Sparkles className="h-3.5 w-3.5" style={{ color: '#A78BFA' }} />
+  1810→                          <span style={{ fontSize: 10, fontWeight: 700, color: '#FBBF24', letterSpacing: '0.04em', ...pixelFont }}>
+  1811→                            ENCHANTMENT ANALYSIS
+  1812→                          </span>
+  1813→                        </div>
+  1814→                        <div
+  1815→                          style={{
+  1816→                            display: 'grid',
+  1817→                            gridTemplateColumns: 'repeat(3, 1fr)',
+  1818→                            gap: 8,
+  1819→                          }}
+  1820→                        >
+  1821→                          {/* Enchantment Power (was Confidence) */}
+  1822→                          <div
+  1823→                            style={{
+  1824→                              background: 'rgba(45, 212, 191,0.04)',
+  1825→                              border: '2px solid rgba(45, 212, 191,0.2)',
+  1826→                              borderRadius: 0,
+  1827→                              padding: '10px 10px',
+  1828→                              imageRendering: 'pixelated',
+  1829→                            }}
+  1830→                          >
+  1831→                            <div style={{ fontSize: 7, color: '#A78BFA', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4, ...pixelFont }}>
+  1832→                              ENCHANTMENT POWER
+  1833→                            </div>
+  1834→                            <div style={{ fontSize: 16, fontWeight: 700, color: '#2DD4BF', ...pixelFont }}>
+  1835→                              {item.confidence}%
+  1836→                            </div>
+  1837→                            <div
+  1838→                              style={{
+  1839→                                marginTop: 6,
+  1840→                                height: 3,
+  1841→                                borderRadius: 0,
+  1842→                                background: 'rgba(80,0,170,0.2)',
+  1843→                                overflow: 'hidden',
+  1844→                              }}
+  1845→                            >
+  1846→                              <div
+  1847→                                style={{
+  1848→                                  height: '100%',
+  1849→                                  width: `${item.confidence}%`,
+  1850→                                  background: '#2DD4BF',
+  1851→                                  borderRadius: 0,
+  1852→                                  imageRendering: 'pixelated',
+  1853→                                }}
+  1854→                              />
+  1855→                            </div>
+  1856→                          </div>
+  1857→
+  1858→                          {/* Asset Appraisal (was Suggested Price) */}
+  1859→                          <div
+  1860→                            style={{
+  1861→                              background: 'rgba(124, 58, 237,0.04)',
+  1862→                              border: '2px solid rgba(124, 58, 237,0.2)',
+  1863→                              borderRadius: 0,
+  1864→                              padding: '10px 10px',
+  1865→                              imageRendering: 'pixelated',
+  1866→                            }}
+  1867→                          >
+  1868→                            <div style={{ fontSize: 7, color: '#A78BFA', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4, ...pixelFont }}>
+  1869→                              VILLAGER APPRAISAL
+  1870→                            </div>
+  1871→                            <div style={{ fontSize: 16, fontWeight: 700, color: '#A78BFA', ...pixelFont }}>
+  1872→                              {item.suggestedPrice.toLocaleString()}
+  1873→                            </div>
+  1874→                            <div style={{ fontSize: 8, color: '#7c5eaa', marginTop: 4, ...pixelFont }}>
+  1875→                              μA
+  1876→                            </div>
+  1877→                          </div>
+  1878→
+  1879→                          {/* Enchantment Level (was Rarity Score) */}
+  1880→                          <div
+  1881→                            style={{
+  1882→                              background: rc.bg,
+  1883→                              border: `2px solid ${rc.border}`,
+  1884→                              borderRadius: 0,
+  1885→                              padding: '10px 10px',
+  1886→                              imageRendering: 'pixelated',
+  1887→                            }}
+  1888→                          >
+  1889→                            <div style={{ fontSize: 7, color: '#A78BFA', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4, ...pixelFont }}>
+  1890→                              ENCHANTMENT LEVEL
+  1891→                            </div>
+  1892→                            <div style={{ fontSize: 16, fontWeight: 700, color: rc.color, ...pixelFont }}>
+  1893→                              {item.rarityScore}
+  1894→                            </div>
+  1895→                            <div style={{ fontSize: 8, color: '#7c5eaa', marginTop: 4, ...pixelFont }}>
+  1896→                              <span>
+  1897→                                {'█'.repeat(Math.round(item.rarityScore))}
+  1898→                                {'░'.repeat(10 - Math.round(item.rarityScore))}
+  1899→                              </span>
+  1900→                              <span style={{ marginLeft: 2 }}>{item.rarityScore}/10</span>
+  1901→                            </div>
+  1902→                          </div>
+  1903→                        </div>
+  1904→                      </div>
+  1905→
+  1906→                      {/* Seller Info */}
+  1907→                      <div
+  1908→                        style={{
+  1909→                          display: 'flex',
+  1910→                          alignItems: 'center',
+  1911→                          justifyContent: 'space-between',
+  1912→                          padding: '10px 14px',
+  1913→                          background: 'rgba(26, 10, 46, 0.5)',
+  1914→                          borderRadius: 0,
+  1915→                          border: '2px solid rgba(80,0,170,0.2)',
+  1916→                          imageRendering: 'pixelated',
+  1917→                        }}
+  1918→                      >
+  1919→                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+  1920→                          <Shield className="h-3.5 w-3.5" style={{ color: '#A78BFA' }} />
+  1921→                          <span style={{ fontSize: 9, color: '#A78BFA', ...pixelFont }}>
+  1922→                            Seller
+  1923→                          </span>
+  1924→                          <span
+  1925→                            style={{
+  1926→                              fontSize: 10,
+  1927→                              fontWeight: 600,
+  1928→                              color: '#2DD4BF',
+  1929→                              ...pixelFont,
+  1930→                            }}
+  1931→                          >
+  1932→                            {item.seller}
+  1933→                          </span>
+  1934→                        </div>
+  1935→                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+  1936→                          <Eye className="h-3 w-3" style={{ color: '#7c5eaa' }} />
+  1937→                          <span style={{ fontSize: 8, color: '#7c5eaa', ...pixelFont }}>
+  1938→                            {Math.floor(Math.random() * 200 + 50)} views
+  1939→                          </span>
+  1940→                        </div>
+  1941→                      </div>
+  1942→                    </div>
+  1943→                  </>
+  1944→                )
+  1945→              })()}
+  1946→            </motion.div>
+  1947→          </>
+  1948→        )}
+  1949→      </AnimatePresence>
+  1950→    </div>
+  1951→  )
+  1952→}
+  1953→

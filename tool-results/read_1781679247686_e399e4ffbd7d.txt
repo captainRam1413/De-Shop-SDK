@@ -1,0 +1,679 @@
+     1→'use client'
+     2→
+     3→import React, { useState, useMemo } from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import {
+     6→  AreaChart,
+     7→  Area,
+     8→  XAxis,
+     9→  YAxis,
+    10→  Tooltip,
+    11→  ResponsiveContainer,
+    12→  CartesianGrid,
+    13→} from 'recharts'
+    14→import {
+    15→  Search,
+    16→  ArrowUpDown,
+    17→  LayoutGrid,
+    18→  List,
+    19→  X,
+    20→  ShoppingCart,
+    21→  Tag,
+    22→  Sparkles,
+    23→} from 'lucide-react'
+    24→import { useDeShopStore } from '@/store/useDeShopStore'
+    25→
+    26→/* ===== TRAFFIC LIGHT DOTS ===== */
+    27→
+    28→function TrafficLights() {
+    29→  return (
+    30→    <div className="flex items-center gap-1.5 flex-shrink-0">
+    31→      <span className="terminal-dot terminal-dot-red" />
+    32→      <span className="terminal-dot terminal-dot-yellow" />
+    33→      <span className="terminal-dot terminal-dot-green" />
+    34→    </div>
+    35→  )
+    36→}
+    37→
+    38→/* ===== TYPES ===== */
+    39→
+    40→type Rarity = 'Common' | 'Rare' | 'Epic' | 'Legendary'
+    41→type SortOption = 'price-asc' | 'price-desc' | 'newest' | 'rarity'
+    42→type ViewMode = 'grid' | 'list'
+    43→
+    44→interface MarketplaceAsset {
+    45→  id: string
+    46→  name: string
+    47→  emoji: string
+    48→  rarity: Rarity
+    49→  price: number
+    50→  confidence: number
+    51→  seller: string
+    52→  description: string
+    53→  listedAt: string
+    54→  priceHistory: { day: string; price: number }[]
+    55→}
+    56→
+    57→/* ===== RARITY CONFIG ===== */
+    58→
+    59→const RARITY_CONFIG: Record<Rarity, { color: string; textColor: string; borderColor: string; glow: string; bg: string; weight: number }> = {
+    60→  Common: { color: '#888888', textColor: 'text-term-dim', borderColor: 'border-[#888888]/50', glow: '', bg: 'rgba(136, 136, 136, 0.08)', weight: 1 },
+    61→  Rare: { color: '#00D4FF', textColor: 'text-term-cyan', borderColor: 'border-[#00D4FF]/50', glow: 'glow-cyan', bg: 'rgba(0, 212, 255, 0.08)', weight: 2 },
+    62→  Epic: { color: '#FF00FF', textColor: 'text-term-magenta', borderColor: 'border-[#FF00FF]/50', glow: 'glow-magenta', bg: 'rgba(255, 0, 255, 0.08)', weight: 3 },
+    63→  Legendary: { color: '#FFB800', textColor: 'text-term-amber', borderColor: 'border-[#FFB800]/50', glow: 'glow-amber', bg: 'rgba(255, 184, 0, 0.08)', weight: 4 },
+    64→}
+    65→
+    66→/* ===== MOCK DATA ===== */
+    67→
+    68→const MOCK_ASSETS: MarketplaceAsset[] = [
+    69→  {
+    70→    id: '0xA1B2', name: 'Neon Blade', emoji: '🗡️', rarity: 'Legendary', price: 42.5, confidence: 94,
+    71→    seller: '0x7F3a...9c1D', description: 'A legendary plasma-infused blade forged in the digital crucible. Cuts through any blockchain defense.',
+    72→    listedAt: '2h ago',
+    73→    priceHistory: [{ day: 'Mon', price: 38 }, { day: 'Tue', price: 40 }, { day: 'Wed', price: 39 }, { day: 'Thu', price: 41 }, { day: 'Fri', price: 42 }, { day: 'Sat', price: 44 }, { day: 'Sun', price: 42.5 }],
+    74→  },
+    75→  {
+    76→    id: '0xC3D4', name: 'Cyber Shield', emoji: '🛡️', rarity: 'Epic', price: 18.0, confidence: 88,
+    77→    seller: '0x2B8e...4fA2', description: 'Reinforced quantum-barrier shield. Absorbs 80% of incoming digital attacks.',
+    78→    listedAt: '4h ago',
+    79→    priceHistory: [{ day: 'Mon', price: 15 }, { day: 'Tue', price: 16 }, { day: 'Wed', price: 17 }, { day: 'Thu', price: 16.5 }, { day: 'Fri', price: 17.5 }, { day: 'Sat', price: 18 }, { day: 'Sun', price: 18 }],
+    80→  },
+    81→  {
+    82→    id: '0xE5F6', name: 'Quantum Helm', emoji: '⛑️', rarity: 'Epic', price: 22.3, confidence: 85,
+    83→    seller: '0x9C4d...1eB3', description: 'Helmet equipped with quantum processors for enhanced battlefield awareness.',
+    84→    listedAt: '1h ago',
+    85→    priceHistory: [{ day: 'Mon', price: 20 }, { day: 'Tue', price: 21 }, { day: 'Wed', price: 19.5 }, { day: 'Thu', price: 21.5 }, { day: 'Fri', price: 22 }, { day: 'Sat', price: 23 }, { day: 'Sun', price: 22.3 }],
+    86→  },
+    87→  {
+    88→    id: '0xA7B8', name: 'Digital Crown', emoji: '👑', rarity: 'Legendary', price: 50.0, confidence: 97,
+    89→    seller: '0x5E2f...8aD4', description: 'The ultimate symbol of digital sovereignty. Grants governance rights across all realms.',
+    90→    listedAt: '30m ago',
+    91→    priceHistory: [{ day: 'Mon', price: 45 }, { day: 'Tue', price: 47 }, { day: 'Wed', price: 48 }, { day: 'Thu', price: 49 }, { day: 'Fri', price: 50 }, { day: 'Sat', price: 52 }, { day: 'Sun', price: 50 }],
+    92→  },
+    93→  {
+    94→    id: '0xC9D0', name: 'Plasma Rifle', emoji: '🔫', rarity: 'Rare', price: 8.5, confidence: 76,
+    95→    seller: '0x1A3b...7cE5', description: 'Standard-issue plasma weapon with overclocked fire rate module.',
+    96→    listedAt: '6h ago',
+    97→    priceHistory: [{ day: 'Mon', price: 7 }, { day: 'Tue', price: 7.5 }, { day: 'Wed', price: 8 }, { day: 'Thu', price: 8.2 }, { day: 'Fri', price: 8.5 }, { day: 'Sat', price: 9 }, { day: 'Sun', price: 8.5 }],
+    98→  },
+    99→  {
+   100→    id: '0xE1F2', name: 'Void Cape', emoji: '🧥', rarity: 'Epic', price: 15.8, confidence: 82,
+   101→    seller: '0x6D4c...3fA9', description: 'A cape woven from void energy. Grants invisibility in shadow realms.',
+   102→    listedAt: '3h ago',
+   103→    priceHistory: [{ day: 'Mon', price: 14 }, { day: 'Tue', price: 14.5 }, { day: 'Wed', price: 15 }, { day: 'Thu', price: 15.2 }, { day: 'Fri', price: 15.8 }, { day: 'Sat', price: 16 }, { day: 'Sun', price: 15.8 }],
+   104→  },
+   105→  {
+   106→    id: '0x3A4B', name: 'Iron Gauntlet', emoji: '🧤', rarity: 'Common', price: 1.2, confidence: 65,
+   107→    seller: '0x8F7e...2bC6', description: 'Basic iron hand protection. Reliable but unremarkable.',
+   108→    listedAt: '12h ago',
+   109→    priceHistory: [{ day: 'Mon', price: 1.0 }, { day: 'Tue', price: 1.1 }, { day: 'Wed', price: 1.15 }, { day: 'Thu', price: 1.2 }, { day: 'Fri', price: 1.2 }, { day: 'Sat', price: 1.25 }, { day: 'Sun', price: 1.2 }],
+   110→  },
+   111→  {
+   112→    id: '0x5C6D', name: 'Shadow Dagger', emoji: '🔪', rarity: 'Rare', price: 6.7, confidence: 72,
+   113→    seller: '0x3B9a...5dE1', description: 'A swift blade infused with shadow essence. Critical hit chance +25%.',
+   114→    listedAt: '5h ago',
+   115→    priceHistory: [{ day: 'Mon', price: 5.5 }, { day: 'Tue', price: 6 }, { day: 'Wed', price: 6.3 }, { day: 'Thu', price: 6.5 }, { day: 'Fri', price: 6.7 }, { day: 'Sat', price: 7 }, { day: 'Sun', price: 6.7 }],
+   116→  },
+   117→  {
+   118→    id: '0x7E8F', name: 'Pixel Potion', emoji: '🧪', rarity: 'Common', price: 0.5, confidence: 60,
+   119→    seller: '0x4C2d...9aF8', description: 'Restores 50 HP. Basic healing item found in the starter zone.',
+   120→    listedAt: '1d ago',
+   121→    priceHistory: [{ day: 'Mon', price: 0.4 }, { day: 'Tue', price: 0.45 }, { day: 'Wed', price: 0.48 }, { day: 'Thu', price: 0.5 }, { day: 'Fri', price: 0.5 }, { day: 'Sat', price: 0.52 }, { day: 'Sun', price: 0.5 }],
+   122→  },
+   123→  {
+   124→    id: '0x9A0B', name: 'Titan Armor', emoji: '🦺', rarity: 'Legendary', price: 35.0, confidence: 91,
+   125→    seller: '0xD1e3...6bC7', description: 'Mythical armor forged by titans. Provides 95% damage reduction.',
+   126→    listedAt: '45m ago',
+   127→    priceHistory: [{ day: 'Mon', price: 30 }, { day: 'Tue', price: 31 }, { day: 'Wed', price: 32 }, { day: 'Thu', price: 33 }, { day: 'Fri', price: 34 }, { day: 'Sat', price: 35 }, { day: 'Sun', price: 35 }],
+   128→  },
+   129→  {
+   130→    id: '0xB2C3', name: 'Storm Ring', emoji: '💍', rarity: 'Rare', price: 5.2, confidence: 70,
+   131→    seller: '0xA7f8...3eD2', description: 'A ring that channels storm energy. Lightning damage +40%.',
+   132→    listedAt: '8h ago',
+   133→    priceHistory: [{ day: 'Mon', price: 4.5 }, { day: 'Tue', price: 4.8 }, { day: 'Wed', price: 5 }, { day: 'Thu', price: 5.1 }, { day: 'Fri', price: 5.2 }, { day: 'Sat', price: 5.5 }, { day: 'Sun', price: 5.2 }],
+   134→  },
+   135→  {
+   136→    id: '0xD4E5', name: 'Byte Staff', emoji: '🪄', rarity: 'Epic', price: 19.9, confidence: 86,
+   137→    seller: '0xE2c1...7fA4', description: 'A staff that manipulates raw bytecode. Casts system-level spells.',
+   138→    listedAt: '2h ago',
+   139→    priceHistory: [{ day: 'Mon', price: 17 }, { day: 'Tue', price: 18 }, { day: 'Wed', price: 18.5 }, { day: 'Thu', price: 19 }, { day: 'Fri', price: 19.5 }, { day: 'Sat', price: 20 }, { day: 'Sun', price: 19.9 }],
+   140→  },
+   141→  {
+   142→    id: '0xF6A7', name: 'Chain Mail', emoji: '⛓️', rarity: 'Common', price: 2.0, confidence: 63,
+   143→    seller: '0x1D5f...4bE9', description: 'Standard chain mail with interlocking blockchain links.',
+   144→    listedAt: '10h ago',
+   145→    priceHistory: [{ day: 'Mon', price: 1.8 }, { day: 'Tue', price: 1.9 }, { day: 'Wed', price: 1.95 }, { day: 'Thu', price: 2 }, { day: 'Fri', price: 2 }, { day: 'Sat', price: 2.1 }, { day: 'Sun', price: 2 }],
+   146→  },
+   147→  {
+   148→    id: '0x1829', name: 'Data Crystal', emoji: '💎', rarity: 'Rare', price: 9.8, confidence: 78,
+   149→    seller: '0x6A3c...8dF1', description: 'Crystallized data matrix. Stores 1TB of encrypted information.',
+   150→    listedAt: '7h ago',
+   151→    priceHistory: [{ day: 'Mon', price: 8 }, { day: 'Tue', price: 8.5 }, { day: 'Wed', price: 9 }, { day: 'Thu', price: 9.5 }, { day: 'Fri', price: 9.8 }, { day: 'Sat', price: 10 }, { day: 'Sun', price: 9.8 }],
+   152→  },
+   153→  {
+   154→    id: '0x3B4C', name: 'Flame Scroll', emoji: '📜', rarity: 'Common', price: 0.8, confidence: 61,
+   155→    seller: '0xB9e2...5cD7', description: 'A basic scroll containing the flame spell. Good for beginners.',
+   156→    listedAt: '18h ago',
+   157→    priceHistory: [{ day: 'Mon', price: 0.7 }, { day: 'Tue', price: 0.75 }, { day: 'Wed', price: 0.78 }, { day: 'Thu', price: 0.8 }, { day: 'Fri', price: 0.8 }, { day: 'Sat', price: 0.82 }, { day: 'Sun', price: 0.8 }],
+   158→  },
+   159→  {
+   160→    id: '0x5D6E', name: 'Neural Core', emoji: '🧠', rarity: 'Legendary', price: 48.0, confidence: 96,
+   161→    seller: '0xC4a7...2eB3', description: 'An advanced neural processing core. Unlocks AI companion features.',
+   162→    listedAt: '15m ago',
+   163→    priceHistory: [{ day: 'Mon', price: 42 }, { day: 'Tue', price: 44 }, { day: 'Wed', price: 45 }, { day: 'Thu', price: 46 }, { day: 'Fri', price: 47 }, { day: 'Sat', price: 48 }, { day: 'Sun', price: 48 }],
+   164→  },
+   165→]
+   166→
+   167→/* ===== FLOOR PRICE HELPER ===== */
+   168→
+   169→function getFloorPrices(assets: MarketplaceAsset[]) {
+   170→  const floors: Partial<Record<Rarity, number>> = {}
+   171→  for (const a of assets) {
+   172→    if (floors[a.rarity] === undefined || a.price < floors[a.rarity]!) {
+   173→      floors[a.rarity] = a.price
+   174→    }
+   175→  }
+   176→  return floors
+   177→}
+   178→
+   179→/* ===== CUSTOM TERMINAL TOOLTIP ===== */
+   180→
+   181→function TerminalTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string }>; label?: string }) {
+   182→  if (!active || !payload || !payload.length) return null
+   183→  return (
+   184→    <div className="bg-[#1E1E1E] border border-[#444444] p-2 rounded-sm shadow-lg font-terminal text-xs">
+   185→      <div className="text-term-dim mb-1">{label}</div>
+   186→      {payload.map((entry, i) => (
+   187→        <div key={i} className="text-term-green">
+   188→          {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(1) : entry.value} ALGO
+   189→        </div>
+   190→      ))}
+   191→    </div>
+   192→  )
+   193→}
+   194→
+   195→/* ===== CONFIDENCE BAR ===== */
+   196→
+   197→function ConfidenceBar({ value }: { value: number }) {
+   198→  const filled = Math.round(value / 5)
+   199→  const empty = 20 - filled
+   200→  return (
+   201→    <span className="text-[11px] font-terminal">
+   202→      <span className="text-term-green">{'█'.repeat(filled)}</span>
+   203→      <span className="text-term-dim">{'░'.repeat(empty)}</span>
+   204→      <span className="text-term-amber ml-1">{value}%</span>
+   205→    </span>
+   206→  )
+   207→}
+   208→
+   209→/* ===== DETAIL MODAL ===== */
+   210→
+   211→function DetailModal({ asset, onClose }: { asset: MarketplaceAsset; onClose: () => void }) {
+   212→  const { walletConnected, addNotification, setShowWalletModal } = useDeShopStore()
+   213→  const config = RARITY_CONFIG[asset.rarity]
+   214→  const rarityScore = config.weight * 25
+   215→
+   216→  const handleBuy = () => {
+   217→    if (!walletConnected) {
+   218→      setShowWalletModal(true)
+   219→      return
+   220→    }
+   221→    addNotification('success', `Purchased ${asset.name} for ${asset.price} ALGO`)
+   222→    onClose()
+   223→  }
+   224→
+   225→  return (
+   226→    <motion.div
+   227→      initial={{ opacity: 0 }}
+   228→      animate={{ opacity: 1 }}
+   229→      exit={{ opacity: 0 }}
+   230→      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+   231→      onClick={onClose}
+   232→    >
+   233→      <div className="absolute inset-0 bg-black/70" />
+   234→      <motion.div
+   235→        initial={{ scale: 0.95, opacity: 0 }}
+   236→        animate={{ scale: 1, opacity: 1 }}
+   237→        exit={{ scale: 0.95, opacity: 0 }}
+   238→        transition={{ duration: 0.2 }}
+   239→        className="relative w-full max-w-lg terminal-card z-10"
+   240→        onClick={(e) => e.stopPropagation()}
+   241→      >
+   242→        {/* Modal Chrome */}
+   243→        <div className="terminal-card-header">
+   244→          <TrafficLights />
+   245→          <span className="terminal-title">asset_detail.log</span>
+   246→          <button onClick={onClose} className="ml-auto terminal-dot terminal-dot-red cursor-pointer hover:opacity-80 flex-shrink-0" />
+   247→        </div>
+   248→
+   249→        <div className="terminal-card-body bg-[#1E1E1E] space-y-4 max-h-[80vh] overflow-y-auto">
+   250→          {/* Asset Header */}
+   251→          <div className="flex items-start gap-4">
+   252→            <div className="text-5xl flex-shrink-0 w-16 h-16 flex items-center justify-center bg-[#2D2D2D] border border-[#444444] rounded-sm">
+   253→              {asset.emoji}
+   254→            </div>
+   255→            <div className="flex-1 min-w-0">
+   256→              <div className="text-xs text-term-dim font-terminal mb-1">ID: {asset.id}</div>
+   257→              <div className={`text-lg font-terminal font-bold text-term-green glow-green`}>{asset.name}</div>
+   258→              <div className="flex items-center gap-2 mt-1">
+   259→                <span
+   260→                  className={`px-1.5 py-0.5 rounded-sm text-[10px] font-terminal font-bold border ${config.textColor}`}
+   261→                  style={{ borderColor: config.color, backgroundColor: config.bg }}
+   262→                >
+   263→                  {asset.rarity.toUpperCase()}
+   264→                </span>
+   265→                <span className="text-term-amber text-sm font-terminal">◆ {asset.price} ALGO</span>
+   266→              </div>
+   267→            </div>
+   268→          </div>
+   269→
+   270→          {/* Price Chart */}
+   271→          <div>
+   272→            <div className="text-term-dim text-[10px] font-terminal mb-2">PRICE HISTORY (7D)</div>
+   273→            <ResponsiveContainer width="100%" height={120}>
+   274→              <AreaChart data={asset.priceHistory} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
+   275→                <defs>
+   276→                  <linearGradient id="modalPriceGrad" x1="0" y1="0" x2="0" y2="1">
+   277→                    <stop offset="5%" stopColor={config.color} stopOpacity={0.3} />
+   278→                    <stop offset="95%" stopColor={config.color} stopOpacity={0.02} />
+   279→                  </linearGradient>
+   280→                </defs>
+   281→                <CartesianGrid strokeDasharray="3 3" stroke="#333333" />
+   282→                <XAxis dataKey="day" tick={{ fill: '#888888', fontSize: 9, fontFamily: 'monospace' }} axisLine={{ stroke: '#444444' }} tickLine={{ stroke: '#444444' }} />
+   283→                <YAxis tick={{ fill: '#888888', fontSize: 9, fontFamily: 'monospace' }} axisLine={{ stroke: '#444444' }} tickLine={{ stroke: '#444444' }} domain={['dataMin - 1', 'dataMax + 1']} />
+   284→                <Tooltip content={<TerminalTooltip />} />
+   285→                <Area type="monotone" dataKey="price" stroke={config.color} strokeWidth={2} fill="url(#modalPriceGrad)" name="Price" />
+   286→              </AreaChart>
+   287→            </ResponsiveContainer>
+   288→          </div>
+   289→
+   290→          {/* AI Confidence */}
+   291→          <div>
+   292→            <div className="text-term-dim text-[10px] font-terminal mb-1">AI CONFIDENCE</div>
+   293→            <ConfidenceBar value={asset.confidence} />
+   294→          </div>
+   295→
+   296→          {/* Rarity Score */}
+   297→          <div>
+   298→            <div className="text-term-dim text-[10px] font-terminal mb-1">RARITY SCORE</div>
+   299→            <div className="flex items-center gap-2">
+   300→              <div className="flex-1 h-3 bg-[#2D2D2D] border border-[#444444] rounded-sm overflow-hidden">
+   301→                <div
+   302→                  className="h-full rounded-sm transition-all"
+   303→                  style={{ width: `${rarityScore}%`, backgroundColor: config.color, opacity: 0.7 }}
+   304→                />
+   305→              </div>
+   306→              <span className={`text-xs font-terminal ${config.textColor}`}>{rarityScore}/100</span>
+   307→            </div>
+   308→          </div>
+   309→
+   310→          {/* Description */}
+   311→          <div>
+   312→            <div className="text-term-dim text-[10px] font-terminal mb-1">DESCRIPTION</div>
+   313→            <div className="text-term-text text-xs font-terminal leading-relaxed">{asset.description}</div>
+   314→          </div>
+   315→
+   316→          {/* Seller Info */}
+   317→          <div className="flex items-center justify-between">
+   318→            <div>
+   319→              <div className="text-term-dim text-[10px] font-terminal">SELLER</div>
+   320→              <div className="text-term-cyan text-xs font-terminal">{asset.seller}</div>
+   321→            </div>
+   322→            <div>
+   323→              <div className="text-term-dim text-[10px] font-terminal">LISTED</div>
+   324→              <div className="text-term-text text-xs font-terminal">{asset.listedAt}</div>
+   325→            </div>
+   326→          </div>
+   327→
+   328→          {/* Action Buttons */}
+   329→          <div className="flex gap-3 pt-2">
+   330→            <button
+   331→              onClick={handleBuy}
+   332→              className="terminal-btn terminal-btn-primary flex-1 flex items-center justify-center gap-2"
+   333→            >
+   334→              <ShoppingCart className="w-3.5 h-3.5" />
+   335→              <span>Buy for {asset.price} ALGO</span>
+   336→            </button>
+   337→            <button
+   338→              onClick={() => { addNotification('info', `Listing ${asset.name}...`); onClose() }}
+   339→              className="terminal-btn flex items-center justify-center gap-2 border-term-cyan/50 text-term-cyan hover:bg-[#1E1E1E]"
+   340→            >
+   341→              <Tag className="w-3.5 h-3.5" />
+   342→              <span>List</span>
+   343→            </button>
+   344→          </div>
+   345→        </div>
+   346→      </motion.div>
+   347→    </motion.div>
+   348→  )
+   349→}
+   350→
+   351→/* ===== GRID CARD ===== */
+   352→
+   353→function GridCard({ asset, onClick, index }: { asset: MarketplaceAsset; onClick: () => void; index: number }) {
+   354→  const config = RARITY_CONFIG[asset.rarity]
+   355→
+   356→  return (
+   357→    <motion.div
+   358→      initial={{ opacity: 0, y: 12 }}
+   359→      animate={{ opacity: 1, y: 0 }}
+   360→      transition={{ delay: index * 0.04, duration: 0.25 }}
+   361→      className={`terminal-card cursor-pointer border ${config.borderColor} hover:border-[${config.color}] transition-all group`}
+   362→      onClick={onClick}
+   363→      style={{
+   364→        boxShadow: undefined,
+   365→      }}
+   366→      onMouseEnter={(e) => {
+   367→        e.currentTarget.style.boxShadow = `0 0 12px ${config.color}33`
+   368→      }}
+   369→      onMouseLeave={(e) => {
+   370→        e.currentTarget.style.boxShadow = undefined
+   371→      }}
+   372→    >
+   373→      {/* Card Chrome Header */}
+   374→      <div className="terminal-card-header py-1.5 px-3">
+   375→        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: config.color }} />
+   376→        <span className="terminal-title text-[10px] text-left ml-2">{asset.id}</span>
+   377→      </div>
+   378→
+   379→      {/* Card Body */}
+   380→      <div className="p-4 bg-[#1E1E1E]">
+   381→        {/* Emoji Icon */}
+   382→        <div className="text-4xl mb-3 text-center py-2">{asset.emoji}</div>
+   383→
+   384→        {/* Name */}
+   385→        <div className="text-term-green text-sm font-terminal font-bold text-center mb-2 glow-green">
+   386→          {asset.name}
+   387→        </div>
+   388→
+   389→        {/* Price + Confidence */}
+   390→        <div className="flex items-center justify-between mb-2">
+   391→          <span className="text-term-amber text-xs font-terminal">◆ {asset.price} ALGO</span>
+   392→          <span className="text-term-dim text-[10px] font-terminal">{asset.confidence}% conf.</span>
+   393→        </div>
+   394→
+   395→        {/* Rarity Badge */}
+   396→        <div className="flex items-center justify-center mb-2">
+   397→          <span
+   398→            className={`px-2 py-0.5 rounded-sm text-[10px] font-terminal font-bold border ${config.textColor}`}
+   399→            style={{ borderColor: config.color, backgroundColor: config.bg }}
+   400→          >
+   401→            {asset.rarity.toUpperCase()}
+   402→          </span>
+   403→        </div>
+   404→
+   405→        {/* Seller */}
+   406→        <div className="text-center">
+   407→          <span className="text-term-dim text-[10px] font-terminal">seller: {asset.seller}</span>
+   408→        </div>
+   409→      </div>
+   410→    </motion.div>
+   411→  )
+   412→}
+   413→
+   414→/* ===== LIST ROW ===== */
+   415→
+   416→function ListRow({ asset, index }: { asset: MarketplaceAsset; index: number }) {
+   417→  const { walletConnected, addNotification, setShowWalletModal } = useDeShopStore()
+   418→  const config = RARITY_CONFIG[asset.rarity]
+   419→
+   420→  const handleBuy = () => {
+   421→    if (!walletConnected) {
+   422→      setShowWalletModal(true)
+   423→      return
+   424→    }
+   425→    addNotification('success', `Purchased ${asset.name} for ${asset.price} ALGO`)
+   426→  }
+   427→
+   428→  return (
+   429→    <motion.div
+   430→      initial={{ opacity: 0, x: -8 }}
+   431→      animate={{ opacity: 1, x: 0 }}
+   432→      transition={{ delay: index * 0.03, duration: 0.2 }}
+   433→      className="flex items-center gap-2 py-2 px-3 text-[11px] font-terminal border-b border-[#333333] hover:bg-[#252525] transition-colors"
+   434→    >
+   435→      <span className="text-term-dim w-14 flex-shrink-0">{asset.id}</span>
+   436→      <span className="text-term-green flex-1 min-w-0 truncate">{asset.name}</span>
+   437→      <span className={`w-16 text-center flex-shrink-0 ${config.textColor}`} style={{ color: config.color }}>{asset.rarity}</span>
+   438→      <span className="text-term-amber w-20 text-right flex-shrink-0">◆ {asset.price} ALGO</span>
+   439→      <span className="text-term-dim w-14 text-right flex-shrink-0">{asset.confidence}%</span>
+   440→      <span className="text-term-dim w-20 text-right flex-shrink-0 truncate">{asset.seller}</span>
+   441→      <button
+   442→        onClick={handleBuy}
+   443→        className="terminal-btn terminal-btn-primary text-[10px] px-2 py-1 flex-shrink-0"
+   444→      >
+   445→        Buy
+   446→      </button>
+   447→    </motion.div>
+   448→  )
+   449→}
+   450→
+   451→/* ===== MAIN MARKETPLACE PAGE ===== */
+   452→
+   453→export default function MarketplacePage() {
+   454→  const [search, setSearch] = useState('')
+   455→  const [rarityFilter, setRarityFilter] = useState<Rarity | 'All'>('All')
+   456→  const [sort, setSort] = useState<SortOption>('newest')
+   457→  const [viewMode, setViewMode] = useState<ViewMode>('grid')
+   458→  const [selectedAsset, setSelectedAsset] = useState<MarketplaceAsset | null>(null)
+   459→
+   460→  const filteredAssets = useMemo(() => {
+   461→    let result = [...MOCK_ASSETS]
+   462→
+   463→    // Search filter
+   464→    if (search.trim()) {
+   465→      const q = search.toLowerCase()
+   466→      result = result.filter(
+   467→        (a) => a.name.toLowerCase().includes(q) || a.id.toLowerCase().includes(q) || a.rarity.toLowerCase().includes(q)
+   468→      )
+   469→    }
+   470→
+   471→    // Rarity filter
+   472→    if (rarityFilter !== 'All') {
+   473→      result = result.filter((a) => a.rarity === rarityFilter)
+   474→    }
+   475→
+   476→    // Sort
+   477→    switch (sort) {
+   478→      case 'price-asc':
+   479→        result.sort((a, b) => a.price - b.price)
+   480→        break
+   481→      case 'price-desc':
+   482→        result.sort((a, b) => b.price - a.price)
+   483→        break
+   484→      case 'newest':
+   485→        // Keep original order (simulated newest first by listing time)
+   486→        break
+   487→      case 'rarity':
+   488→        result.sort((a, b) => RARITY_CONFIG[b.rarity].weight - RARITY_CONFIG[a.rarity].weight)
+   489→        break
+   490→    }
+   491→
+   492→    return result
+   493→  }, [search, rarityFilter, sort])
+   494→
+   495→  const floorPrices = useMemo(() => getFloorPrices(MOCK_ASSETS), [])
+   496→
+   497→  return (
+   498→    <div className="space-y-4">
+   499→      {/* Terminal Window Header */}
+   500→      <div className="terminal-card">
+   501→        <div className="terminal-chrome">
+   502→          <TrafficLights />
+   503→          <span className="terminal-title font-terminal">marketplace@de-shop:~/market</span>
+   504→        </div>
+   505→        <div className="px-4 py-3 flex items-center gap-2 bg-[#1E1E1E]">
+   506→          <span className="prompt-prefix text-sm">$</span>
+   507→          <span className="text-term-cyan text-sm font-terminal glow-cyan">./marketplace</span>
+   508→          <span className="text-term-dim text-xs font-terminal">--browse --filter --trade</span>
+   509→          <span className="cursor-blink" />
+   510→        </div>
+   511→      </div>
+   512→
+   513→      {/* Search & Filter Bar */}
+   514→      <div className="terminal-card">
+   515→        <div className="terminal-card-header">
+   516→          <TrafficLights />
+   517→          <span className="terminal-title">search_and_filter.sh</span>
+   518→          <Sparkles className="w-3.5 h-3.5 text-term-amber" />
+   519→        </div>
+   520→        <div className="p-4 bg-[#1E1E1E] space-y-3">
+   521→          {/* Search Row */}
+   522→          <div className="flex flex-col sm:flex-row gap-3">
+   523→            <div className="flex-1 relative">
+   524→              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-term-green text-sm font-terminal">$</span>
+   525→              <input
+   526→                type="text"
+   527→                value={search}
+   528→                onChange={(e) => setSearch(e.target.value)}
+   529→                placeholder="search --query"
+   530→                className="terminal-input pl-7"
+   531→              />
+   532→              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-term-dim" />
+   533→            </div>
+   534→
+   535→            {/* Rarity Filter */}
+   536→            <select
+   537→              value={rarityFilter}
+   538→              onChange={(e) => setRarityFilter(e.target.value as Rarity | 'All')}
+   539→              className="terminal-input w-auto min-w-[120px]"
+   540→            >
+   541→              <option value="All">All Rarities</option>
+   542→              <option value="Common">Common</option>
+   543→              <option value="Rare">Rare</option>
+   544→              <option value="Epic">Epic</option>
+   545→              <option value="Legendary">Legendary</option>
+   546→            </select>
+   547→
+   548→            {/* Sort */}
+   549→            <select
+   550→              value={sort}
+   551→              onChange={(e) => setSort(e.target.value as SortOption)}
+   552→              className="terminal-input w-auto min-w-[140px]"
+   553→            >
+   554→              <option value="newest">Newest</option>
+   555→              <option value="price-asc">Price Low→High</option>
+   556→              <option value="price-desc">Price High→Low</option>
+   557→              <option value="rarity">Rarity</option>
+   558→            </select>
+   559→
+   560→            {/* View Toggle */}
+   561→            <div className="flex border border-[#444444] rounded-sm overflow-hidden flex-shrink-0">
+   562→              <button
+   563→                onClick={() => setViewMode('grid')}
+   564→                className={`px-3 py-1.5 text-xs font-terminal transition-colors ${viewMode === 'grid' ? 'bg-[#3D3D3D] text-term-green' : 'bg-[#2D2D2D] text-term-dim hover:text-term-text'}`}
+   565→              >
+   566→                <LayoutGrid className="w-3.5 h-3.5" />
+   567→              </button>
+   568→              <button
+   569→                onClick={() => setViewMode('list')}
+   570→                className={`px-3 py-1.5 text-xs font-terminal transition-colors ${viewMode === 'list' ? 'bg-[#3D3D3D] text-term-green' : 'bg-[#2D2D2D] text-term-dim hover:text-term-text'}`}
+   571→              >
+   572→                <List className="w-3.5 h-3.5" />
+   573→              </button>
+   574→            </div>
+   575→          </div>
+   576→
+   577→          {/* Floor Price Summary */}
+   578→          <div className="flex flex-wrap items-center gap-3">
+   579→            <span className="text-term-dim text-[10px] font-terminal">FLOOR:</span>
+   580→            {(['Common', 'Rare', 'Epic', 'Legendary'] as Rarity[]).map((r) => {
+   581→              const cfg = RARITY_CONFIG[r]
+   582→              const floor = floorPrices[r]
+   583→              return (
+   584→                <div key={r} className="flex items-center gap-1">
+   585→                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: cfg.color }} />
+   586→                  <span className={`text-[10px] font-terminal ${cfg.textColor}`} style={{ color: cfg.color }}>
+   587→                    {r}
+   588→                  </span>
+   589→                  <span className="text-term-amber text-[10px] font-terminal">
+   590→                    {floor !== undefined ? `${floor} ALGO` : '—'}
+   591→                  </span>
+   592→                </div>
+   593→              )
+   594→            })}
+   595→            <span className="text-term-dim text-[10px] font-terminal ml-auto">
+   596→              {filteredAssets.length} result{filteredAssets.length !== 1 ? 's' : ''}
+   597→            </span>
+   598→          </div>
+   599→        </div>
+   600→      </div>
+   601→
+   602→      {/* Content: Grid or List */}
+   603→      <AnimatePresence mode="wait">
+   604→        {viewMode === 'grid' ? (
+   605→          <motion.div
+   606→            key="grid"
+   607→            initial={{ opacity: 0 }}
+   608→            animate={{ opacity: 1 }}
+   609→            exit={{ opacity: 0 }}
+   610→            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+   611→          >
+   612→            {filteredAssets.map((asset, i) => (
+   613→              <GridCard
+   614→                key={asset.id}
+   615→                asset={asset}
+   616→                onClick={() => setSelectedAsset(asset)}
+   617→                index={i}
+   618→              />
+   619→            ))}
+   620→          </motion.div>
+   621→        ) : (
+   622→          <motion.div
+   623→            key="list"
+   624→            initial={{ opacity: 0 }}
+   625→            animate={{ opacity: 1 }}
+   626→            exit={{ opacity: 0 }}
+   627→            className="terminal-card"
+   628→          >
+   629→            <div className="terminal-card-header">
+   630→              <TrafficLights />
+   631→              <span className="terminal-title">listings_table.log</span>
+   632→              <ArrowUpDown className="w-3.5 h-3.5 text-term-dim" />
+   633→            </div>
+   634→            <div className="bg-[#1E1E1E] max-h-[500px] overflow-y-auto">
+   635→              {/* Table Header */}
+   636→              <div className="flex items-center gap-2 py-2 px-3 text-[10px] font-terminal text-term-dim border-b border-[#444444] bg-[#252525] sticky top-0 z-10">
+   637→                <span className="w-14 flex-shrink-0">ID</span>
+   638→                <span className="flex-1">NAME</span>
+   639→                <span className="w-16 text-center flex-shrink-0">RARITY</span>
+   640→                <span className="w-20 text-right flex-shrink-0">PRICE</span>
+   641→                <span className="w-14 text-right flex-shrink-0">CONF</span>
+   642→                <span className="w-20 text-right flex-shrink-0">SELLER</span>
+   643→                <span className="w-12 text-center flex-shrink-0">ACTION</span>
+   644→              </div>
+   645→              {/* Table Body */}
+   646→              {filteredAssets.map((asset, i) => (
+   647→                <ListRow key={asset.id} asset={asset} index={i} />
+   648→              ))}
+   649→              {filteredAssets.length === 0 && (
+   650→                <div className="py-8 text-center text-term-dim text-xs font-terminal">
+   651→                  No assets found matching your criteria.
+   652→                </div>
+   653→              )}
+   654→            </div>
+   655→          </motion.div>
+   656→        )}
+   657→      </AnimatePresence>
+   658→
+   659→      {viewMode === 'grid' && filteredAssets.length === 0 && (
+   660→        <div className="terminal-card">
+   661→          <div className="p-8 text-center text-term-dim text-xs font-terminal">
+   662→            No assets found matching your criteria.
+   663→          </div>
+   664→        </div>
+   665→      )}
+   666→
+   667→      {/* Detail Modal */}
+   668→      <AnimatePresence>
+   669→        {selectedAsset && (
+   670→          <DetailModal
+   671→            asset={selectedAsset}
+   672→            onClose={() => setSelectedAsset(null)}
+   673→          />
+   674→        )}
+   675→      </AnimatePresence>
+   676→    </div>
+   677→  )
+   678→}
+   679→

@@ -1,0 +1,894 @@
+     1→'use client'
+     2→
+     3→import React, { useEffect, useState, useCallback } from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import {
+     6→  BarChart3,
+     7→  Store,
+     8→  Package,
+     9→  Terminal,
+    10→  User,
+    11→  BookOpen,
+    12→  Puzzle,
+    13→  Bell,
+    14→  Wallet,
+    15→  ChevronLeft,
+    16→  ChevronRight,
+    17→  Menu,
+    18→  X,
+    19→  Github,
+    20→  MessageCircle,
+    21→  FileText,
+    22→  Wifi,
+    23→  WifiOff,
+    24→  Loader2,
+    25→  LogOut,
+    26→  Home,
+    27→} from 'lucide-react'
+    28→import { useDeShopStore, type ActivePage } from '@/store/useDeShopStore'
+    29→
+    30→/* ===== NAV CONFIG ===== */
+    31→
+    32→interface NavItem {
+    33→  page: ActivePage
+    34→  label: string
+    35→  command: string
+    36→  icon: React.ElementType
+    37→}
+    38→
+    39→const NAV_ITEMS: NavItem[] = [
+    40→  { page: 'dashboard', label: 'Dashboard', command: 'cd dashboard', icon: BarChart3 },
+    41→  { page: 'market', label: 'Marketplace', command: 'cd marketplace', icon: Store },
+    42→  { page: 'inventory', label: 'Inventory', command: 'cd inventory', icon: Package },
+    43→  { page: 'terminal', label: 'Terminal', command: 'cd terminal', icon: Terminal },
+    44→  { page: 'profile', label: 'Profile', command: 'cd profile', icon: User },
+    45→  { page: 'docs', label: 'Docs', command: 'cd docs', icon: BookOpen },
+    46→  { page: 'plugins', label: 'Plugins', command: 'cd plugins', icon: Puzzle },
+    47→]
+    48→
+    49→const PAGE_TITLES: Record<ActivePage, string> = {
+    50→  dashboard: 'Dashboard',
+    51→  market: 'Marketplace',
+    52→  inventory: 'Inventory',
+    53→  terminal: 'Terminal',
+    54→  profile: 'Profile',
+    55→  docs: 'Documentation',
+    56→  plugins: 'Plugins',
+    57→}
+    58→
+    59→/* ===== TRAFFIC LIGHT DOTS ===== */
+    60→
+    61→function TrafficLights() {
+    62→  return (
+    63→    <div className="flex items-center gap-1.5 flex-shrink-0">
+    64→      <span className="terminal-dot terminal-dot-red" />
+    65→      <span className="terminal-dot terminal-dot-yellow" />
+    66→      <span className="terminal-dot terminal-dot-green" />
+    67→    </div>
+    68→  )
+    69→}
+    70→
+    71→/* ===== NOTIFICATION TOAST ===== */
+    72→
+    73→function NotificationToast() {
+    74→  const notifications = useDeShopStore((s) => s.notifications)
+    75→  const removeNotification = useDeShopStore((s) => s.removeNotification)
+    76→
+    77→  const typeClass = {
+    78→    success: 'terminal-toast-success',
+    79→    error: 'terminal-toast-error',
+    80→    warning: 'terminal-toast-warning',
+    81→    info: 'terminal-toast-info',
+    82→  }
+    83→
+    84→  const typeIcon = {
+    85→    success: '✓',
+    86→    error: '✗',
+    87→    warning: '⚠',
+    88→    info: 'ℹ',
+    89→  }
+    90→
+    91→  const typeColor = {
+    92→    success: 'text-term-green',
+    93→    error: 'text-term-red',
+    94→    warning: 'text-term-amber',
+    95→    info: 'text-term-cyan',
+    96→  }
+    97→
+    98→  return (
+    99→    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+   100→      <AnimatePresence>
+   101→        {notifications.map((notif) => (
+   102→          <motion.div
+   103→            key={notif.id}
+   104→            initial={{ opacity: 0, x: 40, scale: 0.95 }}
+   105→            animate={{ opacity: 1, x: 0, scale: 1 }}
+   106→            exit={{ opacity: 0, x: 40, scale: 0.95 }}
+   107→            transition={{ duration: 0.2 }}
+   108→            className={`terminal-toast ${typeClass[notif.type]} pointer-events-auto cursor-pointer`}
+   109→            onClick={() => removeNotification(notif.id)}
+   110→          >
+   111→            <div className="flex items-start gap-2">
+   112→              <span className={`font-bold ${typeColor[notif.type]}`}>
+   113→                {typeIcon[notif.type]}
+   114→              </span>
+   115→              <span className="flex-1">{notif.message}</span>
+   116→              <button
+   117→                className="text-term-dim hover:text-term-white ml-2"
+   118→                onClick={(e) => {
+   119→                  e.stopPropagation()
+   120→                  removeNotification(notif.id)
+   121→                }}
+   122→              >
+   123→                <X size={12} />
+   124→              </button>
+   125→            </div>
+   126→          </motion.div>
+   127→        ))}
+   128→      </AnimatePresence>
+   129→    </div>
+   130→  )
+   131→}
+   132→
+   133→/* ===== WALLET MODAL ===== */
+   134→
+   135→function WalletModal() {
+   136→  const showWalletModal = useDeShopStore((s) => s.showWalletModal)
+   137→  const setShowWalletModal = useDeShopStore((s) => s.setShowWalletModal)
+   138→  const connectWallet = useDeShopStore((s) => s.connectWallet)
+   139→  const addNotification = useDeShopStore((s) => s.addNotification)
+   140→
+   141→  const [connecting, setConnecting] = useState(false)
+   142→
+   143→  const handleConnect = useCallback(
+   144→    async (wallet: string) => {
+   145→      setConnecting(true)
+   146→      // Simulate wallet connection
+   147→      await new Promise((r) => setTimeout(r, 1500))
+   148→      const mockAddress =
+   149→        wallet === 'pera'
+   150→          ? 'ALGO7K4B...X3F9QM'
+   151→          : 'ALGO9DJ2N...R7H4PK'
+   152→      connectWallet(mockAddress)
+   153→      addNotification('success', `Wallet connected via ${wallet === 'pera' ? 'Pera' : 'Defly'}`)
+   154→      setConnecting(false)
+   155→    },
+   156→    [connectWallet, addNotification]
+   157→  )
+   158→
+   159→  if (!showWalletModal) return null
+   160→
+   161→  return (
+   162→    <motion.div
+   163→      initial={{ opacity: 0 }}
+   164→      animate={{ opacity: 1 }}
+   165→      exit={{ opacity: 0 }}
+   166→      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+   167→      onClick={() => setShowWalletModal(false)}
+   168→    >
+   169→      <motion.div
+   170→        initial={{ scale: 0.95, opacity: 0 }}
+   171→        animate={{ scale: 1, opacity: 1 }}
+   172→        exit={{ scale: 0.95, opacity: 0 }}
+   173→        className="terminal-card w-full max-w-sm mx-4"
+   174→        onClick={(e) => e.stopPropagation()}
+   175→      >
+   176→        <div className="terminal-card-header">
+   177→          <TrafficLights />
+   178→          <span className="terminal-title">connect-wallet.sh</span>
+   179→        </div>
+   180→        <div className="terminal-card-body space-y-4">
+   181→          <div className="text-term-dim text-xs">
+   182→            <span className="prompt-prefix">$ </span>
+   183→            <span>Initializing Algorand wallet connection...</span>
+   184→          </div>
+   185→
+   186→          <div className="text-xs text-term-text mb-3">
+   187→            Select a wallet provider:
+   188→          </div>
+   189→
+   190→          <button
+   191→            onClick={() => handleConnect('pera')}
+   192→            disabled={connecting}
+   193→            className="terminal-btn terminal-btn-primary w-full text-left flex items-center gap-3"
+   194→          >
+   195→            {connecting ? (
+   196→              <Loader2 size={14} className="animate-spin" />
+   197→            ) : (
+   198→              <Wallet size={14} />
+   199→            )}
+   200→            <div>
+   201→              <div className="font-bold">Pera Wallet</div>
+   202→              <div className="text-term-dim text-[10px]">Algorand&apos;s leading mobile wallet</div>
+   203→            </div>
+   204→          </button>
+   205→
+   206→          <button
+   207→            onClick={() => handleConnect('defly')}
+   208→            disabled={connecting}
+   209→            className="terminal-btn terminal-btn-primary w-full text-left flex items-center gap-3"
+   210→          >
+   211→            {connecting ? (
+   212→              <Loader2 size={14} className="animate-spin" />
+   213→            ) : (
+   214→              <Wallet size={14} />
+   215→            )}
+   216→            <div>
+   217→              <div className="font-bold">Defly Wallet</div>
+   218→              <div className="text-term-dim text-[10px]">Advanced DeFi wallet for Algorand</div>
+   219→            </div>
+   220→          </button>
+   221→
+   222→          <button
+   223→            onClick={() => setShowWalletModal(false)}
+   224→            className="terminal-btn w-full text-center text-term-dim"
+   225→          >
+   226→            Cancel
+   227→          </button>
+   228→        </div>
+   229→      </motion.div>
+   230→    </motion.div>
+   231→  )
+   232→}
+   233→
+   234→/* ===== SIDEBAR ===== */
+   235→
+   236→function Sidebar() {
+   237→  const activePage = useDeShopStore((s) => s.activePage)
+   238→  const setActivePage = useDeShopStore((s) => s.setActivePage)
+   239→  const sidebarCollapsed = useDeShopStore((s) => s.sidebarCollapsed)
+   240→  const toggleSidebar = useDeShopStore((s) => s.toggleSidebar)
+   241→  const walletConnected = useDeShopStore((s) => s.walletConnected)
+   242→  const walletAddress = useDeShopStore((s) => s.walletAddress)
+   243→  const setShowWalletModal = useDeShopStore((s) => s.setShowWalletModal)
+   244→  const disconnectWallet = useDeShopStore((s) => s.disconnectWallet)
+   245→  const addNotification = useDeShopStore((s) => s.addNotification)
+   246→  const mobileSidebarOpen = useDeShopStore((s) => s.mobileSidebarOpen)
+   247→  const setMobileSidebarOpen = useDeShopStore((s) => s.setMobileSidebarOpen)
+   248→
+   249→  const handleDisconnect = useCallback(() => {
+   250→    disconnectWallet()
+   251→    addNotification('info', 'Wallet disconnected')
+   252→  }, [disconnectWallet, addNotification])
+   253→
+   254→  return (
+   255→    <>
+   256→      {/* Mobile overlay */}
+   257→      {mobileSidebarOpen && (
+   258→        <div
+   259→          className="mobile-overlay md:hidden"
+   260→          onClick={() => setMobileSidebarOpen(false)}
+   261→        />
+   262→      )}
+   263→
+   264→      <aside
+   265→        className={`app-sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${
+   266→          mobileSidebarOpen ? 'mobile-open' : ''
+   267→        }`}
+   268→      >
+   269→        {/* Sidebar header */}
+   270→        <div className="terminal-chrome flex-shrink-0">
+   271→          <TrafficLights />
+   272→          {!sidebarCollapsed && (
+   273→            <span className="terminal-title">De-Shop SDK</span>
+   274→          )}
+   275→        </div>
+   276→
+   277→        {/* ASCII Art Logo */}
+   278→        {!sidebarCollapsed && (
+   279→          <div className="px-4 py-3 border-b border-term">
+   280→            <pre className="ascii-art text-[8px] leading-tight glow-green">
+   281→{`  ___       _   _       _
+   282→ / _ \\  ___| |_| |_ ___| |
+   283→| |_| |/ _ \\ __| __/ _ \\ |
+   284→|  _  |  __/ |_| ||  __/ |
+   285→|_| |_|\\___|\\__|\\__\\___|_|`}
+   286→            </pre>
+   287→            <div className="text-term-dim text-[9px] mt-1">SDK v2.0 — Terminal Mode</div>
+   288→          </div>
+   289→        )}
+   290→
+   291→        {/* Navigation */}
+   292→        <nav className="flex-1 py-2 overflow-y-auto">
+   293→          {NAV_ITEMS.map((item) => {
+   294→            const isActive = activePage === item.page
+   295→            const Icon = item.icon
+   296→            return (
+   297→              <motion.button
+   298→                key={item.page}
+   299→                onClick={() => setActivePage(item.page)}
+   300→                className={`nav-item w-full text-left ${isActive ? 'active' : ''}`}
+   301→                whileHover={{ x: 2 }}
+   302→                whileTap={{ scale: 0.98 }}
+   303→              >
+   304→                {isActive ? (
+   305→                  <span className="prompt-prefix text-sm flex-shrink-0">&gt;</span>
+   306→                ) : (
+   307→                  <span className="prompt-prefix-dim text-sm flex-shrink-0">$</span>
+   308→                )}
+   309→                <Icon className="nav-icon" />
+   310→                {!sidebarCollapsed && (
+   311→                  <span className="nav-label">
+   312→                    {isActive ? (
+   313→                      <span className="text-term-green">cd {item.label.toLowerCase()}</span>
+   314→                    ) : (
+   315→                      <span>cd {item.label.toLowerCase()}</span>
+   316→                    )}
+   317→                  </span>
+   318→                )}
+   319→              </motion.button>
+   320→            )
+   321→          })}
+   322→        </nav>
+   323→
+   324→        {/* Sidebar footer - Wallet status */}
+   325→        <div className="border-t border-term p-3 flex-shrink-0">
+   326→          {walletConnected ? (
+   327→            <div className={`flex items-center gap-2 ${sidebarCollapsed ? 'justify-center' : ''}`}>
+   328→              <span className="status-dot status-dot-online" />
+   329→              {!sidebarCollapsed && (
+   330→                <div className="flex-1 min-w-0">
+   331→                  <div className="text-[10px] text-term-green truncate">
+   332→                    {walletAddress}
+   333→                  </div>
+   334→                  <button
+   335→                    onClick={handleDisconnect}
+   336→                    className="text-[9px] text-term-dim hover:text-term-red flex items-center gap-1"
+   337→                  >
+   338→                    <LogOut size={8} /> disconnect
+   339→                  </button>
+   340→                </div>
+   341→              )}
+   342→            </div>
+   343→          ) : (
+   344→            <button
+   345→              onClick={() => setShowWalletModal(true)}
+   346→              className={`terminal-btn terminal-btn-primary text-[10px] w-full ${
+   347→                sidebarCollapsed ? 'px-2' : ''
+   348→              }`}
+   349→            >
+   350→              <Wallet size={10} className="inline mr-1" />
+   351→              {!sidebarCollapsed && 'Connect Wallet'}
+   352→            </button>
+   353→          )}
+   354→        </div>
+   355→
+   356→        {/* Collapse toggle (desktop only) */}
+   357→        <button
+   358→          onClick={toggleSidebar}
+   359→          className="hidden md:flex items-center justify-center p-2 border-t border-term text-term-dim hover:text-term-green transition-colors"
+   360→          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+   361→        >
+   362→          {sidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+   363→        </button>
+   364→      </aside>
+   365→    </>
+   366→  )
+   367→}
+   368→
+   369→/* ===== HEADER ===== */
+   370→
+   371→function Header() {
+   372→  const activePage = useDeShopStore((s) => s.activePage)
+   373→  const walletConnected = useDeShopStore((s) => s.walletConnected)
+   374→  const walletAddress = useDeShopStore((s) => s.walletAddress)
+   375→  const notifications = useDeShopStore((s) => s.notifications)
+   376→  const setShowWalletModal = useDeShopStore((s) => s.setShowWalletModal)
+   377→  const disconnectWallet = useDeShopStore((s) => s.disconnectWallet)
+   378→  const addNotification = useDeShopStore((s) => s.addNotification)
+   379→  const setMobileSidebarOpen = useDeShopStore((s) => s.setMobileSidebarOpen)
+   380→  const sidebarCollapsed = useDeShopStore((s) => s.sidebarCollapsed)
+   381→  const status = useDeShopStore((s) => s.status)
+   382→
+   383→  const handleDisconnect = useCallback(() => {
+   384→    disconnectWallet()
+   385→    addNotification('info', 'Wallet disconnected')
+   386→  }, [disconnectWallet, addNotification])
+   387→
+   388→  const pageTitle = PAGE_TITLES[activePage]
+   389→
+   390→  return (
+   391→    <header className="app-header">
+   392→      {/* Terminal chrome bar */}
+   393→      <div className="terminal-chrome">
+   394→        <TrafficLights />
+   395→        <span className="terminal-title">
+   396→          De-Shop SDK — {pageTitle}
+   397→        </span>
+   398→
+   399→        {/* Mobile menu toggle */}
+   400→        <button
+   401→          className="md:hidden text-term-dim hover:text-term-green mr-2"
+   402→          onClick={() => setMobileSidebarOpen(true)}
+   403→          aria-label="Open menu"
+   404→        >
+   405→          <Menu size={16} />
+   406→        </button>
+   407→      </div>
+   408→
+   409→      {/* Info bar */}
+   410→      <div className="flex items-center justify-between px-4 py-2 text-[11px]">
+   411→        {/* Breadcrumb */}
+   412→        <div className="flex items-center gap-1 text-term-dim">
+   413→          <Home size={11} className="text-term-green" />
+   414→          <span className="text-term-dim">~</span>
+   415→          <span className="breadcrumb-sep">/</span>
+   416→          <span className="text-term-text">de-shop</span>
+   417→          <span className="breadcrumb-sep">/</span>
+   418→          <span className="text-term-green">{activePage}</span>
+   419→        </div>
+   420→
+   421→        {/* Right side controls */}
+   422→        <div className="flex items-center gap-3">
+   423→          {/* Network badge */}
+   424→          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-term-elevated border border-term rounded-sm">
+   425→            <span className="status-dot status-dot-online" style={{ width: 6, height: 6 }} />
+   426→            <span className="text-term-cyan text-[10px] font-bold tracking-wider">
+   427→              ALGORAND TESTNET
+   428→            </span>
+   429→          </div>
+   430→
+   431→          {/* Notification bell */}
+   432→          <button
+   433→            className="relative text-term-dim hover:text-term-green transition-colors"
+   434→            aria-label="Notifications"
+   435→          >
+   436→            <Bell size={14} />
+   437→            {notifications.length > 0 && (
+   438→              <span className="absolute -top-1 -right-1 w-3 h-3 bg-term-red rounded-full text-[7px] text-white flex items-center justify-center font-bold">
+   439→                {notifications.length}
+   440→              </span>
+   441→            )}
+   442→          </button>
+   443→
+   444→          {/* Wallet button */}
+   445→          {walletConnected ? (
+   446→            <button
+   447→              onClick={handleDisconnect}
+   448→              className="flex items-center gap-1.5 text-[10px] text-term-green hover:text-term-red transition-colors"
+   449→            >
+   450→              <Wallet size={12} />
+   451→              <span className="hidden sm:inline">{walletAddress}</span>
+   452→            </button>
+   453→          ) : (
+   454→            <button
+   455→              onClick={() => setShowWalletModal(true)}
+   456→              className="terminal-btn terminal-btn-primary text-[10px] py-1 px-2"
+   457→            >
+   458→              <Wallet size={10} className="inline mr-1" />
+   459→              Connect
+   460→            </button>
+   461→          )}
+   462→        </div>
+   463→      </div>
+   464→    </header>
+   465→  )
+   466→}
+   467→
+   468→/* ===== FOOTER ===== */
+   469→
+   470→function Footer() {
+   471→  const status = useDeShopStore((s) => s.status)
+   472→  const walletConnected = useDeShopStore((s) => s.walletConnected)
+   473→
+   474→  return (
+   475→    <footer className="app-footer">
+   476→      <div className="flex items-center justify-between text-[10px] text-term-dim">
+   477→        <div className="flex items-center gap-3">
+   478→          <span className="text-term-green">De-Shop SDK v2.0</span>
+   479→          <span>|</span>
+   480→          <span>Terminal Mode</span>
+   481→        </div>
+   482→
+   483→        <div className="flex items-center gap-2">
+   484→          {/* Network status */}
+   485→          <div className="flex items-center gap-1.5">
+   486→            {status === 'online' ? (
+   487→              <>
+   488→                <Wifi size={10} className="text-term-green" />
+   489→                <span className="text-term-green">Connected</span>
+   490→              </>
+   491→            ) : status === 'connecting' ? (
+   492→              <>
+   493→                <Loader2 size={10} className="animate-spin text-term-amber" />
+   494→                <span className="text-term-amber">Connecting...</span>
+   495→              </>
+   496→            ) : (
+   497→              <>
+   498→                <WifiOff size={10} className="text-term-red" />
+   499→                <span className="text-term-red">Offline</span>
+   500→              </>
+   501→            )}
+   502→          </div>
+   503→
+   504→          <span className="mx-1">|</span>
+   505→
+   506→          {/* Links */}
+   507→          <a
+   508→            href="https://github.com"
+   509→            target="_blank"
+   510→            rel="noopener noreferrer"
+   511→            className="flex items-center gap-1 hover:text-term-green transition-colors"
+   512→          >
+   513→            <Github size={10} />
+   514→            <span className="hidden sm:inline">GitHub</span>
+   515→          </a>
+   516→          <a
+   517→            href="#"
+   518→            className="flex items-center gap-1 hover:text-term-cyan transition-colors"
+   519→          >
+   520→            <FileText size={10} />
+   521→            <span className="hidden sm:inline">Docs</span>
+   522→          </a>
+   523→          <a
+   524→            href="#"
+   525→            className="flex items-center gap-1 hover:text-term-magenta transition-colors"
+   526→          >
+   527→            <MessageCircle size={10} />
+   528→            <span className="hidden sm:inline">Discord</span>
+   529→          </a>
+   530→        </div>
+   531→      </div>
+   532→    </footer>
+   533→  )
+   534→}
+   535→
+   536→/* ===== PAGE PLACEHOLDERS ===== */
+   537→
+   538→function DashboardPage() {
+   539→  return (
+   540→    <div className="space-y-4">
+   541→      <div className="flex items-center gap-2 mb-6">
+   542→        <span className="prompt-prefix text-lg">$</span>
+   543→        <h1 className="text-lg text-term-green glow-green">Dashboard</h1>
+   544→        <span className="cursor-blink" />
+   545→      </div>
+   546→
+   547→      {/* Stats row */}
+   548→      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+   549→        {[
+   550→          { label: 'Total Assets', value: '1,247', color: 'text-term-green', icon: '◆' },
+   551→          { label: 'Volume (24h)', value: '$42.5K', color: 'text-term-cyan', icon: '◇' },
+   552→          { label: 'Active Listings', value: '89', color: 'text-term-amber', icon: '▸' },
+   553→          { label: 'Collections', value: '23', color: 'text-term-magenta', icon: '★' },
+   554→        ].map((stat) => (
+   555→          <div key={stat.label} className="terminal-card">
+   556→            <div className="terminal-card-body">
+   557→              <div className="text-term-dim text-[10px] mb-1">{stat.label}</div>
+   558→              <div className="flex items-center gap-2">
+   559→                <span className={`${stat.color} text-lg`}>{stat.icon}</span>
+   560→                <span className={`text-xl font-bold ${stat.color}`}>{stat.value}</span>
+   561→              </div>
+   562→            </div>
+   563→          </div>
+   564→        ))}
+   565→      </div>
+   566→
+   567→      {/* Activity log placeholder */}
+   568→      <div className="terminal-card">
+   569→        <div className="terminal-card-header">
+   570→          <TrafficLights />
+   571→          <span className="terminal-title">activity.log</span>
+   572→        </div>
+   573→        <div className="terminal-card-body">
+   574→          <div className="space-y-2 text-xs">
+   575→            <div><span className="text-term-dim">[12:04:33]</span> <span className="text-term-green">+</span> New listing: Diamond Sword #1337</div>
+   576→            <div><span className="text-term-dim">[12:03:21]</span> <span className="text-term-cyan">↔</span> Trade completed: Gold Pickaxe → 50 ALGO</div>
+   577→            <div><span className="text-term-dim">[12:01:45]</span> <span className="text-term-amber">⚠</span> Price alert: Enchanted Bow below floor</div>
+   578→            <div><span className="text-term-dim">[11:58:12]</span> <span className="text-term-magenta">★</span> Collection &quot;Nether Artifacts&quot; trending</div>
+   579→            <div><span className="text-term-dim">[11:55:00]</span> <span className="text-term-green">+</span> New user registered: algo_x7k9...</div>
+   580→          </div>
+   581→        </div>
+   582→      </div>
+   583→    </div>
+   584→  )
+   585→}
+   586→
+   587→function MarketplacePage() {
+   588→  return (
+   589→    <div className="space-y-4">
+   590→      <div className="flex items-center gap-2 mb-6">
+   591→        <span className="prompt-prefix text-lg">$</span>
+   592→        <h1 className="text-lg text-term-cyan glow-cyan">Marketplace</h1>
+   593→        <span className="cursor-blink" />
+   594→      </div>
+   595→      <div className="terminal-card">
+   596→        <div className="terminal-card-header">
+   597→          <TrafficLights />
+   598→          <span className="terminal-title">marketplace.browse</span>
+   599→        </div>
+   600→        <div className="terminal-card-body">
+   601→          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+   602→            {['Diamond Sword', 'Gold Pickaxe', 'Enchanted Bow', 'Nether Shield', 'Ender Pearl', 'Dragon Helm'].map((item, i) => (
+   603→              <div key={item} className="terminal-card hover:border-term-green transition-colors cursor-pointer">
+   604→                <div className="p-3">
+   605→                  <div className="text-xs text-term-dim mb-1">#{1000 + i}</div>
+   606→                  <div className="text-term-cyan text-sm font-bold">{item}</div>
+   607→                  <div className="text-term-amber text-xs mt-1">◆ {(25 + i * 10).toFixed(1)} ALGO</div>
+   608→                </div>
+   609→              </div>
+   610→            ))}
+   611→          </div>
+   612→        </div>
+   613→      </div>
+   614→    </div>
+   615→  )
+   616→}
+   617→
+   618→function InventoryPage() {
+   619→  return (
+   620→    <div className="space-y-4">
+   621→      <div className="flex items-center gap-2 mb-6">
+   622→        <span className="prompt-prefix text-lg">$</span>
+   623→        <h1 className="text-lg text-term-amber glow-amber">Inventory</h1>
+   624→        <span className="cursor-blink" />
+   625→      </div>
+   626→      <div className="terminal-card">
+   627→        <div className="terminal-card-header">
+   628→          <TrafficLights />
+   629→          <span className="terminal-title">inventory.list</span>
+   630→        </div>
+   631→        <div className="terminal-card-body text-xs">
+   632→          <div className="space-y-1">
+   633→            <div className="text-term-dim">You own 7 items across 3 collections</div>
+   634→            <div className="mt-3 space-y-2">
+   635→              {[
+   636→                { name: 'Diamond Sword #1337', rarity: 'Legendary', color: 'text-term-red' },
+   637→                { name: 'Gold Pickaxe #042', rarity: 'Epic', color: 'text-term-magenta' },
+   638→                { name: 'Iron Shield #891', rarity: 'Rare', color: 'text-term-cyan' },
+   639→                { name: 'Wooden Bow #256', rarity: 'Common', color: 'text-term-text' },
+   640→              ].map((item) => (
+   641→                <div key={item.name} className="flex items-center justify-between p-2 bg-term-bg border border-term rounded-sm">
+   642→                  <span>{item.name}</span>
+   643→                  <span className={`${item.color} text-[10px]`}>{item.rarity}</span>
+   644→                </div>
+   645→              ))}
+   646→            </div>
+   647→          </div>
+   648→        </div>
+   649→      </div>
+   650→    </div>
+   651→  )
+   652→}
+   653→
+   654→function TerminalPage() {
+   655→  const [command, setCommand] = useState('')
+   656→  const [history, setHistory] = useState<string[]>([
+   657→    'De-Shop SDK Terminal v2.0',
+   658→    'Type "help" for available commands.',
+   659→    '',
+   660→  ])
+   661→
+   662→  const handleCommand = (e: React.KeyboardEvent) => {
+   663→    if (e.key === 'Enter' && command.trim()) {
+   664→      const newHistory = [...history, `$ ${command}`]
+   665→
+   666→      switch (command.trim().toLowerCase()) {
+   667→        case 'help':
+   668→          newHistory.push(
+   669→            'Available commands:',
+   670→            '  help     - Show this help message',
+   671→            '  status   - Show network status',
+   672→            '  balance  - Show wallet balance',
+   673→            '  ls       - List marketplace items',
+   674→            '  clear    - Clear terminal',
+   675→            '  version  - Show SDK version'
+   676→          )
+   677→          break
+   678→        case 'status':
+   679→          newHistory.push('Network: ALGORAND TESTNET | Status: ● Online | Block: 31,247,891')
+   680→          break
+   681→        case 'balance':
+   682→          newHistory.push('Wallet: Not connected | Balance: 0 ALGO')
+   683→          break
+   684→        case 'ls':
+   685→          newHistory.push('Diamond Sword  Gold Pickaxe  Enchanted Bow  Nether Shield')
+   686→          break
+   687→        case 'clear':
+   688→          setHistory([])
+   689→          setCommand('')
+   690→          return
+   691→        case 'version':
+   692→          newHistory.push('De-Shop SDK v2.0.0 — Terminal Mode (Algorand)')
+   693→          break
+   694→        default:
+   695→          newHistory.push(`command not found: ${command.trim()}`)
+   696→          newHistory.push('Type "help" for available commands.')
+   697→      }
+   698→
+   699→      newHistory.push('')
+   700→      setHistory(newHistory)
+   701→      setCommand('')
+   702→    }
+   703→  }
+   704→
+   705→  return (
+   706→    <div className="h-full flex flex-col">
+   707→      <div className="flex items-center gap-2 mb-4">
+   708→        <span className="prompt-prefix text-lg">$</span>
+   709→        <h1 className="text-lg text-term-green glow-green">Terminal</h1>
+   710→      </div>
+   711→      <div className="terminal-card flex-1 flex flex-col">
+   712→        <div className="terminal-card-header">
+   713→          <TrafficLights />
+   714→          <span className="terminal-title">de-shop@terminal:~</span>
+   715→        </div>
+   716→        <div className="flex-1 p-4 overflow-y-auto font-terminal text-xs space-y-0.5">
+   717→          {history.map((line, i) => (
+   718→            <div key={i} className={line.startsWith('$') ? 'text-term-green' : 'text-term-text'}>
+   719→              {line || '\u00A0'}
+   720→            </div>
+   721→          ))}
+   722→          <div className="flex items-center">
+   723→            <span className="prompt-prefix mr-2">$</span>
+   724→            <input
+   725→              type="text"
+   726→              value={command}
+   727→              onChange={(e) => setCommand(e.target.value)}
+   728→              onKeyDown={handleCommand}
+   729→              className="flex-1 bg-transparent text-term-green outline-none text-xs font-terminal caret-term-green"
+   730→              autoFocus
+   731→              spellCheck={false}
+   732→              autoComplete="off"
+   733→            />
+   734→          </div>
+   735→        </div>
+   736→      </div>
+   737→    </div>
+   738→  )
+   739→}
+   740→
+   741→function ProfilePage() {
+   742→  return (
+   743→    <div className="space-y-4">
+   744→      <div className="flex items-center gap-2 mb-6">
+   745→        <span className="prompt-prefix text-lg">$</span>
+   746→        <h1 className="text-lg text-term-green glow-green">Profile</h1>
+   747→        <span className="cursor-blink" />
+   748→      </div>
+   749→      <div className="terminal-card">
+   750→        <div className="terminal-card-header">
+   751→          <TrafficLights />
+   752→          <span className="terminal-title">user.profile</span>
+   753→        </div>
+   754→        <div className="terminal-card-body text-xs space-y-3">
+   755→          <div><span className="text-term-dim">Address:</span> <span className="text-term-green">Not connected</span></div>
+   756→          <div><span className="text-term-dim">Joined:</span> 2024-01-15</div>
+   757→          <div><span className="text-term-dim">Trades:</span> 42</div>
+   758→          <div><span className="text-term-dim">Reputation:</span> <span className="text-term-amber">◆ ◆ ◆ ◆ ◇</span></div>
+   759→          <div><span className="text-term-dim">Collections:</span> 3</div>
+   760→        </div>
+   761→      </div>
+   762→    </div>
+   763→  )
+   764→}
+   765→
+   766→function DocsPage() {
+   767→  return (
+   768→    <div className="space-y-4">
+   769→      <div className="flex items-center gap-2 mb-6">
+   770→        <span className="prompt-prefix text-lg">$</span>
+   771→        <h1 className="text-lg text-term-cyan glow-cyan">Documentation</h1>
+   772→        <span className="cursor-blink" />
+   773→      </div>
+   774→      <div className="terminal-card">
+   775→        <div className="terminal-card-header">
+   776→          <TrafficLights />
+   777→          <span className="terminal-title">docs/index.md</span>
+   778→        </div>
+   779→        <div className="terminal-card-body text-xs space-y-4">
+   780→          <div className="text-term-green font-bold text-sm"># De-Shop SDK Documentation</div>
+   781→          <div className="space-y-2">
+   782→            <div className="text-term-text">## Getting Started</div>
+   783→            <div className="text-term-dim pl-4">Install the SDK and configure your Algorand wallet to begin trading digital assets.</div>
+   784→          </div>
+   785→          <div className="space-y-2">
+   786→            <div className="text-term-text">## API Reference</div>
+   787→            <div className="text-term-dim pl-4">Full API documentation for marketplace, inventory, and wallet endpoints.</div>
+   788→          </div>
+   789→          <div className="space-y-2">
+   790→            <div className="text-term-text">## Plugin System</div>
+   791→            <div className="text-term-dim pl-4">Extend De-Shop with custom plugins and integrations.</div>
+   792→          </div>
+   793→        </div>
+   794→      </div>
+   795→    </div>
+   796→  )
+   797→}
+   798→
+   799→function PluginsPage() {
+   800→  return (
+   801→    <div className="space-y-4">
+   802→      <div className="flex items-center gap-2 mb-6">
+   803→        <span className="prompt-prefix text-lg">$</span>
+   804→        <h1 className="text-lg text-term-magenta glow-magenta">Plugins</h1>
+   805→        <span className="cursor-blink" />
+   806→      </div>
+   807→      <div className="terminal-card">
+   808→        <div className="terminal-card-header">
+   809→          <TrafficLights />
+   810→          <span className="terminal-title">plugins.list</span>
+   811→        </div>
+   812→        <div className="terminal-card-body">
+   813→          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+   814→            {[
+   815→              { name: 'algo-tracker', desc: 'Real-time Algorand price tracking', status: 'installed' },
+   816→              { name: 'nft-minter', desc: 'Bulk NFT minting tool', status: 'available' },
+   817→              { name: 'market-analytics', desc: 'Advanced market analytics', status: 'installed' },
+   818→              { name: 'wallet-guard', desc: 'Transaction security scanner', status: 'available' },
+   819→            ].map((plugin) => (
+   820→              <div key={plugin.name} className="terminal-card">
+   821→                <div className="p-3">
+   822→                  <div className="flex items-center justify-between">
+   823→                    <span className="text-term-magenta text-sm font-bold">{plugin.name}</span>
+   824→                    <span className={`text-[9px] px-1.5 py-0.5 rounded-sm ${
+   825→                      plugin.status === 'installed'
+   826→                        ? 'bg-term-selection text-term-green'
+   827→                        : 'bg-term-elevated text-term-dim'
+   828→                    }`}>
+   829→                      {plugin.status}
+   830→                    </span>
+   831→                  </div>
+   832→                  <div className="text-term-dim text-[10px] mt-1">{plugin.desc}</div>
+   833→                </div>
+   834→              </div>
+   835→            ))}
+   836→          </div>
+   837→        </div>
+   838→      </div>
+   839→    </div>
+   840→  )
+   841→}
+   842→
+   843→/* ===== MAIN TERMINAL LAYOUT ===== */
+   844→
+   845→export default function TerminalLayout() {
+   846→  const activePage = useDeShopStore((s) => s.activePage)
+   847→
+   848→  const renderPage = () => {
+   849→    switch (activePage) {
+   850→      case 'dashboard':
+   851→        return <DashboardPage />
+   852→      case 'market':
+   853→        return <MarketplacePage />
+   854→      case 'inventory':
+   855→        return <InventoryPage />
+   856→      case 'terminal':
+   857→        return <TerminalPage />
+   858→      case 'profile':
+   859→        return <ProfilePage />
+   860→      case 'docs':
+   861→        return <DocsPage />
+   862→      case 'plugins':
+   863→        return <PluginsPage />
+   864→      default:
+   865→        return <DashboardPage />
+   866→    }
+   867→  }
+   868→
+   869→  return (
+   870→    <div className="app-layout scanline-overlay min-h-screen">
+   871→      <Sidebar />
+   872→      <div className="app-main min-h-screen flex flex-col">
+   873→        <Header />
+   874→        <main className="app-content flex-1">
+   875→          <AnimatePresence mode="wait">
+   876→            <motion.div
+   877→              key={activePage}
+   878→              initial={{ opacity: 0, y: 8 }}
+   879→              animate={{ opacity: 1, y: 0 }}
+   880→              exit={{ opacity: 0, y: -8 }}
+   881→              transition={{ duration: 0.15 }}
+   882→            >
+   883→              {renderPage()}
+   884→            </motion.div>
+   885→          </AnimatePresence>
+   886→        </main>
+   887→        <Footer />
+   888→      </div>
+   889→      <NotificationToast />
+   890→      <WalletModal />
+   891→    </div>
+   892→  )
+   893→}
+   894→

@@ -1,0 +1,773 @@
+     1→'use client'
+     2→
+     3→import React, { useState, useEffect, useCallback } from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import {
+     6→  Download,
+     7→  ExternalLink,
+     8→  Star,
+     9→  X,
+    10→  Check,
+    11→  ChevronDown,
+    12→  Github,
+    13→  Puzzle,
+    14→} from 'lucide-react'
+    15→import { useDeShopStore } from '@/store/useDeShopStore'
+    16→
+    17→/* ===== TRAFFIC LIGHTS ===== */
+    18→
+    19→function TrafficLights() {
+    20→  return (
+    21→    <div className="flex items-center gap-1.5 flex-shrink-0">
+    22→      <span className="terminal-dot terminal-dot-red" />
+    23→      <span className="terminal-dot terminal-dot-yellow" />
+    24→      <span className="terminal-dot terminal-dot-green" />
+    25→    </div>
+    26→  )
+    27→}
+    28→
+    29→/* ===== PLUGIN DATA ===== */
+    30→
+    31→interface Plugin {
+    32→  id: string
+    33→  name: string
+    34→  description: string
+    35→  version: string
+    36→  language: string
+    37→  platform: string
+    38→  status: 'Stable' | 'Beta' | 'Alpha'
+    39→  downloads: number
+    40→  rating: number
+    41→  lastUpdated: string
+    42→  tags: string[]
+    43→  size: string
+    44→  checksum: string
+    45→  featured?: boolean
+    46→}
+    47→
+    48→const PLUGINS: Plugin[] = [
+    49→  {
+    50→    id: 'minecraft',
+    51→    name: 'De-Shop Minecraft Plugin',
+    52→    description:
+    53→      'Full-featured Minecraft server integration with NFT skins, marketplace GUI, and in-game trading. Supports Bukkit/Spigot servers with automatic asset syncing and NPC shopkeepers.',
+    54→    version: 'v2.1.0',
+    55→    language: 'Java',
+    56→    platform: 'Bukkit/Spigot',
+    57→    status: 'Stable',
+    58→    downloads: 12450,
+    59→    rating: 4.8,
+    60→    lastUpdated: '2026-06-10',
+    61→    tags: ['Game Engine', 'Java', 'Minecraft', 'Server Plugin'],
+    62→    size: '4.2 MB',
+    63→    checksum: 'sha256:a1b2c3d4e5f6...',
+    64→    featured: true,
+    65→  },
+    66→  {
+    67→    id: 'unity',
+    68→    name: 'De-Shop Unity SDK',
+    69→    description:
+    70→      'Native Unity package for integrating De-Shop marketplace and NFT management. Includes prefabs, UI components, and full C# API bindings.',
+    71→    version: 'v1.8.0',
+    72→    language: 'C#',
+    73→    platform: 'Unity 2021+',
+    74→    status: 'Stable',
+    75→    downloads: 8320,
+    76→    rating: 4.6,
+    77→    lastUpdated: '2026-06-05',
+    78→    tags: ['Game Engine', 'C#', 'Unity', 'Package'],
+    79→    size: '2.8 MB',
+    80→    checksum: 'sha256:b2c3d4e5f6a1...',
+    81→  },
+    82→  {
+    83→    id: 'unreal',
+    84→    name: 'De-Shop Unreal Plugin',
+    85→    description:
+    86→      'Unreal Engine 5 plugin with Blueprint-compatible nodes, C++ API, and in-game marketplace widgets. Currently in active beta development.',
+    87→    version: 'v1.3.0',
+    88→    language: 'C++',
+    89→    platform: 'UE5',
+    90→    status: 'Beta',
+    91→    downloads: 3450,
+    92→    rating: 4.2,
+    93→    lastUpdated: '2026-05-28',
+    94→    tags: ['Game Engine', 'C++', 'Unreal', 'Plugin'],
+    95→    size: '6.1 MB',
+    96→    checksum: 'sha256:c3d4e5f6a1b2...',
+    97→  },
+    98→  {
+    99→    id: 'web3-bridge',
+   100→    name: 'De-Shop Web3 Bridge',
+   101→    description:
+   102→      'TypeScript bridge service for connecting De-Shop to other Web3 protocols and chains. Supports cross-chain asset verification and price feeds.',
+   103→    version: 'v1.0.0',
+   104→    language: 'TypeScript',
+   105→    platform: 'Node.js',
+   106→    status: 'Stable',
+   107→    downloads: 5670,
+   108→    rating: 4.5,
+   109→    lastUpdated: '2026-06-12',
+   110→    tags: ['Bridge', 'TypeScript', 'Node.js', 'Web3'],
+   111→    size: '1.4 MB',
+   112→    checksum: 'sha256:d4e5f6a1b2c3...',
+   113→  },
+   114→  {
+   115→    id: 'ai-pricing',
+   116→    name: 'De-Shop AI Pricing Engine',
+   117→    description:
+   118→      'AI-powered pricing engine that analyzes market data to suggest optimal NFT prices. Includes confidence scoring and historical trend analysis.',
+   119→    version: 'v0.9.0',
+   120→    language: 'Python',
+   121→    platform: 'Python 3.9+',
+   122→    status: 'Beta',
+   123→    downloads: 2180,
+   124→    rating: 4.0,
+   125→    lastUpdated: '2026-05-15',
+   126→    tags: ['AI/ML', 'Python', 'Pricing', 'Analytics'],
+   127→    size: '3.5 MB',
+   128→    checksum: 'sha256:e5f6a1b2c3d4...',
+   129→  },
+   130→  {
+   131→    id: 'steam',
+   132→    name: 'De-Shop Steam Integration',
+   133→    description:
+   134→      'Connect De-Shop assets to Steam inventory. Enables Steam overlay marketplace, achievement-linked NFTs, and Steam trade offer support.',
+   135→    version: 'v1.1.0',
+   136→    language: 'TypeScript',
+   137→    platform: 'Node.js',
+   138→    status: 'Stable',
+   139→    downloads: 4290,
+   140→    rating: 4.4,
+   141→    lastUpdated: '2026-06-08',
+   142→    tags: ['Platform', 'TypeScript', 'Steam', 'Integration'],
+   143→    size: '1.9 MB',
+   144→    checksum: 'sha256:f6a1b2c3d4e5...',
+   145→  },
+   146→]
+   147→
+   148→/* ===== STATUS BADGE ===== */
+   149→
+   150→function StatusBadge({ status }: { status: 'Stable' | 'Beta' | 'Alpha' }) {
+   151→  const styles = {
+   152→    Stable: 'bg-term-selection text-term-green border-term-green',
+   153→    Beta: 'bg-term-elevated text-term-amber border-term-amber',
+   154→    Alpha: 'bg-term-elevated text-term-red border-term-red',
+   155→  }
+   156→  return (
+   157→    <span
+   158→      className={`text-[9px] px-1.5 py-0.5 border rounded-sm font-bold uppercase tracking-wider ${styles[status]}`}
+   159→    >
+   160→      {status}
+   161→    </span>
+   162→  )
+   163→}
+   164→
+   165→/* ===== STAR RATING ===== */
+   166→
+   167→function StarRating({ rating }: { rating: number }) {
+   168→  return (
+   169→    <div className="flex items-center gap-0.5">
+   170→      {[1, 2, 3, 4, 5].map((i) => (
+   171→        <Star
+   172→          key={i}
+   173→          size={10}
+   174→          className={
+   175→            i <= Math.floor(rating)
+   176→              ? 'text-term-amber fill-term-amber'
+   177→              : i - 0.5 <= rating
+   178→                ? 'text-term-amber fill-term-amber/50'
+   179→                : 'text-term-border'
+   180→          }
+   181→        />
+   182→      ))}
+   183→      <span className="text-[10px] text-term-dim ml-1">{rating.toFixed(1)}</span>
+   184→    </div>
+   185→  )
+   186→}
+   187→
+   188→/* ===== DOWNLOAD MODAL ===== */
+   189→
+   190→function DownloadModal({
+   191→  plugin,
+   192→  onClose,
+   193→}: {
+   194→  plugin: Plugin
+   195→  onClose: () => void
+   196→}) {
+   197→  const [progress, setProgress] = useState(0)
+   198→  const [downloading, setDownloading] = useState(false)
+   199→  const [downloaded, setDownloaded] = useState(false)
+   200→  const addNotification = useDeShopStore((s) => s.addNotification)
+   201→
+   202→  const startDownload = useCallback(() => {
+   203→    setDownloading(true)
+   204→    setProgress(0)
+   205→    const interval = setInterval(() => {
+   206→      setProgress((prev) => {
+   207→        if (prev >= 100) {
+   208→          clearInterval(interval)
+   209→          setDownloading(false)
+   210→          setDownloaded(true)
+   211→          addNotification('success', `Downloaded ${plugin.name} ${plugin.version}`)
+   212→          return 100
+   213→        }
+   214→        return prev + Math.random() * 15 + 5
+   215→      })
+   216→    }, 200)
+   217→  }, [plugin, addNotification])
+   218→
+   219→  const progressClamped = Math.min(100, Math.round(progress))
+   220→  const barWidth = progressClamped
+   221→  const filledBlocks = Math.floor(barWidth / 5)
+   222→  const emptyBlocks = 20 - filledBlocks
+   223→  const progressBar =
+   224→    '█'.repeat(filledBlocks) + '░'.repeat(emptyBlocks)
+   225→
+   226→  return (
+   227→    <motion.div
+   228→      initial={{ opacity: 0 }}
+   229→      animate={{ opacity: 1 }}
+   230→      exit={{ opacity: 0 }}
+   231→      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+   232→      onClick={onClose}
+   233→    >
+   234→      <motion.div
+   235→        initial={{ scale: 0.95, opacity: 0 }}
+   236→        animate={{ scale: 1, opacity: 1 }}
+   237→        exit={{ scale: 0.95, opacity: 0 }}
+   238→        className="terminal-card w-full max-w-md mx-4"
+   239→        onClick={(e) => e.stopPropagation()}
+   240→      >
+   241→        <div className="terminal-card-header">
+   242→          <TrafficLights />
+   243→          <span className="terminal-title">download_manager.log</span>
+   244→          <button
+   245→            onClick={onClose}
+   246→            className="text-term-dim hover:text-term-red transition-colors"
+   247→          >
+   248→            <X size={12} />
+   249→          </button>
+   250→        </div>
+   251→        <div className="terminal-card-body space-y-4">
+   252→          {!downloaded ? (
+   253→            <>
+   254→              {/* File Info */}
+   255→              <div className="space-y-2 text-xs">
+   256→                <div className="flex items-center justify-between">
+   257→                  <span className="text-term-dim">File:</span>
+   258→                  <span className="text-term-green">{plugin.name.toLowerCase().replace(/\s+/g, '-')}-{plugin.version}.zip</span>
+   259→                </div>
+   260→                <div className="flex items-center justify-between">
+   261→                  <span className="text-term-dim">Size:</span>
+   262→                  <span className="text-term-text">{plugin.size}</span>
+   263→                </div>
+   264→                <div className="flex items-center justify-between">
+   265→                  <span className="text-term-dim">Version:</span>
+   266→                  <span className="text-term-cyan">{plugin.version}</span>
+   267→                </div>
+   268→                <div className="flex items-center justify-between">
+   269→                  <span className="text-term-dim">Checksum:</span>
+   270→                  <span className="text-term-text text-[10px]">{plugin.checksum}</span>
+   271→                </div>
+   272→              </div>
+   273→
+   274→              {/* Progress Bar */}
+   275→              {downloading && (
+   276→                <div className="space-y-1">
+   277→                  <div className="text-[10px] text-term-dim">Downloading...</div>
+   278→                  <div className="font-terminal text-[11px] text-term-green">
+   279→                    [{progressBar}] {progressClamped}%
+   280→                  </div>
+   281→                </div>
+   282→              )}
+   283→
+   284→              {/* Installation Instructions */}
+   285→              {!downloading && (
+   286→                <div className="bg-[#1a1a1a] border border-term rounded-sm p-3">
+   287→                  <div className="text-[10px] text-term-amber mb-1">Installation:</div>
+   288→                  <pre className="text-[10px] text-term-green overflow-x-auto">
+   289→                    {plugin.id === 'minecraft'
+   290→                      ? `$ mv deshop-plugin-2.1.0.jar /server/plugins/\n$ ./restart.sh`
+   291→                      : plugin.id === 'unity'
+   292→                        ? `$ open Package Manager > Add from Git URL\n> https://github.com/deshop-sdk/unity-package.git`
+   293→                        : plugin.id === 'unreal'
+   294→                          ? `$ cd Plugins && git clone \n  https://github.com/deshop-sdk/unreal-plugin.git`
+   295→                          : `$ npm install @deshop/${plugin.id.replace(/-/g, '')}`}
+   296→                  </pre>
+   297→                </div>
+   298→              )}
+   299→
+   300→              {/* Buttons */}
+   301→              <div className="flex gap-2">
+   302→                <button
+   303→                  onClick={startDownload}
+   304→                  disabled={downloading}
+   305→                  className="terminal-btn terminal-btn-primary flex-1 flex items-center justify-center gap-2"
+   306→                >
+   307→                  <Download size={12} />
+   308→                  {downloading ? 'Downloading...' : 'Confirm Download'}
+   309→                </button>
+   310→                <button
+   311→                  onClick={onClose}
+   312→                  disabled={downloading}
+   313→                  className="terminal-btn flex-1"
+   314→                >
+   315→                  Cancel
+   316→                </button>
+   317→              </div>
+   318→            </>
+   319→          ) : (
+   320→            <>
+   321→              {/* Success State */}
+   322→              <div className="text-center space-y-3">
+   323→                <div className="text-2xl">✓</div>
+   324→                <div className="text-term-green font-bold text-sm">
+   325→                  Download Complete!
+   326→                </div>
+   327→                <div className="text-term-text text-xs">
+   328→                  {plugin.name} {plugin.version} has been downloaded successfully.
+   329→                </div>
+   330→
+   331→                {/* Next Steps */}
+   332→                <div className="bg-[#1a1a1a] border border-term rounded-sm p-3 text-left">
+   333→                  <div className="text-[10px] text-term-amber mb-2">Next Steps:</div>
+   334→                  <ol className="text-[11px] text-term-text space-y-1 ml-3 list-decimal">
+   335→                    <li>Extract the archive to your project directory</li>
+   336→                    <li>Configure your API key in the settings file</li>
+   337→                    <li>Initialize the plugin with your De-Shop config</li>
+   338→                    <li>
+   339→                      Read the{' '}
+   340→                      <span className="text-term-cyan cursor-pointer hover:underline">
+   341→                        integration guide
+   342→                      </span>
+   343→                    </li>
+   344→                  </ol>
+   345→                </div>
+   346→
+   347→                <button
+   348→                  onClick={onClose}
+   349→                  className="terminal-btn terminal-btn-primary w-full flex items-center justify-center gap-2"
+   350→                >
+   351→                  <Check size={12} />
+   352→                  Done
+   353→                </button>
+   354→              </div>
+   355→            </>
+   356→          )}
+   357→        </div>
+   358→      </motion.div>
+   359→    </motion.div>
+   360→  )
+   361→}
+   362→
+   363→/* ===== FEATURED PLUGIN ===== */
+   364→
+   365→function FeaturedPlugin({ plugin, onDownload }: { plugin: Plugin; onDownload: (p: Plugin) => void }) {
+   366→  return (
+   367→    <div className="terminal-card border-term-green/30">
+   368→      <div className="terminal-card-header">
+   369→        <TrafficLights />
+   370→        <span className="terminal-title">
+   371→          <span className="text-term-green">★ FEATURED</span> — {plugin.name}
+   372→        </span>
+   373→      </div>
+   374→      <div className="terminal-card-body">
+   375→        <div className="flex flex-col lg:flex-row gap-4">
+   376→          {/* Left: Info */}
+   377→          <div className="flex-1 space-y-3">
+   378→            <div className="flex items-center gap-2 flex-wrap">
+   379→              <span className="text-term-green text-lg font-bold glow-green">{plugin.name}</span>
+   380→              <StatusBadge status={plugin.status} />
+   381→              <span className="text-term-cyan text-xs">{plugin.version}</span>
+   382→            </div>
+   383→            <div className="text-xs text-term-text leading-relaxed">{plugin.description}</div>
+   384→            <div className="flex items-center gap-4 text-[11px]">
+   385→              <div className="flex items-center gap-1">
+   386→                <Download size={11} className="text-term-cyan" />
+   387→                <span className="text-term-cyan">{plugin.downloads.toLocaleString()}</span>
+   388→                <span className="text-term-dim">downloads</span>
+   389→              </div>
+   390→              <StarRating rating={plugin.rating} />
+   391→              <div className="text-term-dim">
+   392→                Updated {plugin.lastUpdated}
+   393→              </div>
+   394→            </div>
+   395→
+   396→            {/* Tags */}
+   397→            <div className="flex flex-wrap gap-1.5">
+   398→              {plugin.tags.map((tag) => (
+   399→                <span
+   400→                  key={tag}
+   401→                  className="text-[9px] px-2 py-0.5 bg-term-elevated border border-term rounded-sm text-term-dim"
+   402→                >
+   403→                  {tag}
+   404→                </span>
+   405→              ))}
+   406→            </div>
+   407→
+   408→            {/* Buttons */}
+   409→            <div className="flex items-center gap-2 pt-1">
+   410→              <button
+   411→                onClick={() => onDownload(plugin)}
+   412→                className="terminal-btn terminal-btn-primary flex items-center gap-2 text-xs"
+   413→              >
+   414→                <Download size={12} />
+   415→                Download {plugin.version}
+   416→              </button>
+   417→              <button className="terminal-btn flex items-center gap-2 text-xs">
+   418→                <ExternalLink size={12} />
+   419→                View Source
+   420→              </button>
+   421→            </div>
+   422→          </div>
+   423→
+   424→          {/* Right: ASCII Preview */}
+   425→          <div className="lg:w-64 flex-shrink-0">
+   426→            <div className="bg-[#1a1a1a] border border-term rounded-sm p-3">
+   427→              <div className="text-[10px] text-term-amber mb-2">PREVIEW: Minecraft Server</div>
+   428→              <pre className="text-[9px] leading-tight text-term-green overflow-x-auto">
+   429→{`┌──────────────────────────┐
+   430→│  ⛏ De-Shop Plugin v2.1  │
+   431→├──────────────────────────┤
+   432→│  Status:  ● Connected    │
+   433→│  Assets:  47 synced      │
+   434→│  Shop:    ● Open         │
+   435→│  Bridge:  ● Active       │
+   436→├──────────────────────────┤
+   437→│  > /shop  - Marketplace  │
+   438→│  > /dshop - Inventory    │
+   439→│  > /mint  - Mint NFT     │
+   440→└──────────────────────────┘`}
+   441→              </pre>
+   442→            </div>
+   443→          </div>
+   444→        </div>
+   445→      </div>
+   446→    </div>
+   447→  )
+   448→}
+   449→
+   450→/* ===== PLUGIN CARD ===== */
+   451→
+   452→function PluginCard({ plugin, onDownload }: { plugin: Plugin; onDownload: (p: Plugin) => void }) {
+   453→  return (
+   454→    <motion.div
+   455→      whileHover={{ y: -2 }}
+   456→      transition={{ duration: 0.15 }}
+   457→      className="terminal-card h-full flex flex-col"
+   458→    >
+   459→      <div className="terminal-card-header">
+   460→        <span className="text-[11px] text-term-green font-bold flex-1 truncate">
+   461→          {plugin.name}
+   462→        </span>
+   463→        <span className="text-[9px] text-term-cyan">{plugin.version}</span>
+   464→      </div>
+   465→      <div className="terminal-card-body flex-1 flex flex-col space-y-3">
+   466→        {/* Description */}
+   467→        <div className="text-[11px] text-term-text leading-relaxed line-clamp-3">
+   468→          {plugin.description}
+   469→        </div>
+   470→
+   471→        {/* Tags */}
+   472→        <div className="flex flex-wrap gap-1">
+   473→          {plugin.tags.slice(0, 3).map((tag) => (
+   474→            <span
+   475→              key={tag}
+   476→              className="text-[8px] px-1.5 py-0.5 bg-term-elevated border border-term rounded-sm text-term-dim"
+   477→            >
+   478→              {tag}
+   479→            </span>
+   480→          ))}
+   481→        </div>
+   482→
+   483→        {/* Stats */}
+   484→        <div className="space-y-1.5 mt-auto">
+   485→          <div className="flex items-center justify-between text-[10px]">
+   486→            <div className="flex items-center gap-1">
+   487→              <Download size={9} className="text-term-cyan" />
+   488→              <span className="text-term-cyan">{plugin.downloads.toLocaleString()}</span>
+   489→            </div>
+   490→            <StarRating rating={plugin.rating} />
+   491→          </div>
+   492→          <div className="flex items-center justify-between text-[10px]">
+   493→            <div className="flex items-center gap-1">
+   494→              <StatusBadge status={plugin.status} />
+   495→            </div>
+   496→            <span className="text-term-dim">{plugin.lastUpdated}</span>
+   497→          </div>
+   498→        </div>
+   499→
+   500→        {/* Buttons */}
+   501→        <div className="flex gap-2 pt-1 border-t border-term">
+   502→          <button
+   503→            onClick={() => onDownload(plugin)}
+   504→            className="terminal-btn terminal-btn-primary flex-1 flex items-center justify-center gap-1.5 text-[10px] py-1.5"
+   505→          >
+   506→            <Download size={10} />
+   507→            Download
+   508→          </button>
+   509→          <button className="terminal-btn flex-1 flex items-center justify-center gap-1.5 text-[10px] py-1.5">
+   510→            <ExternalLink size={10} />
+   511→            Docs
+   512→          </button>
+   513→        </div>
+   514→      </div>
+   515→    </motion.div>
+   516→  )
+   517→}
+   518→
+   519→/* ===== INSTALLATION GUIDE TABS ===== */
+   520→
+   521→function InstallationGuide() {
+   522→  const [activeTab, setActiveTab] = useState<'minecraft' | 'unity' | 'unreal' | 'node'>('minecraft')
+   523→
+   524→  const tabs = [
+   525→    { id: 'minecraft' as const, label: 'Minecraft', icon: '⛏️' },
+   526→    { id: 'unity' as const, label: 'Unity', icon: '🎮' },
+   527→    { id: 'unreal' as const, label: 'Unreal', icon: '🎯' },
+   528→    { id: 'node' as const, label: 'Node.js', icon: '📦' },
+   529→  ]
+   530→
+   531→  const prerequisites: Record<string, string[]> = {
+   532→    minecraft: ['Java 17+', 'Bukkit/Spigot 1.19+', 'De-Shop API Key'],
+   533→    unity: ['Unity 2021.3+', '.NET Standard 2.1', 'De-Shop API Key'],
+   534→    unreal: ['Unreal Engine 5.0+', 'C++ Build Tools', 'De-Shop API Key'],
+   535→    node: ['Node.js 18+', 'npm/bun/pnpm', 'De-Shop API Key'],
+   536→  }
+   537→
+   538→  const installCommands: Record<string, string> = {
+   539→    minecraft: `$ # Download the plugin JAR\n$ wget https://plugins.deshop.dev/minecraft/deshop-plugin-2.1.0.jar\n\n$ # Move to server plugins\n$ mv deshop-plugin-2.1.0.jar /server/plugins/\n\n$ # Edit configuration\n$ nano /server/plugins/DeShop/config.yml\n\n$ # Restart server\n$ ./restart.sh`,
+   540→    unity: `$ # Open Unity Package Manager\n$ # Window > Package Manager > + > Add from git URL\n\n$ # Paste the repository URL\n> https://github.com/deshop-sdk/unity-package.git#v1.8.0\n\n$ # Configure in Project Settings\n$ # Edit > Project Settings > De-Shop SDK\n$ # Enter your API key and select network`,
+   541→    unreal: `$ # Clone into your project plugins\n$ cd YourProject/Plugins\n$ git clone https://github.com/deshop-sdk/unreal-plugin.git DeShopSDK\n$ git checkout v1.3.0\n\n$ # Regenerate project files\n$ ./GenerateProjectFiles.sh\n\n$ # Build the project\n$ make\n\n$ # Enable plugin in Edit > Plugins > De-Shop`,
+   542→    node: `$ # Install the package\n$ npm install @deshop/sdk\n# or\n$ bun add @deshop/sdk\n\n$ # Create config file\n$ echo 'DESHOP_API_KEY=your-key' > .env\n\n$ # Import and initialize\n$ node -e "const { DeShopSDK } = require('@deshop/sdk'); \\nconsole.log('SDK loaded!')"`,
+   543→  }
+   544→
+   545→  return (
+   546→    <div className="terminal-card">
+   547→      <div className="terminal-card-header">
+   548→        <TrafficLights />
+   549→        <span className="terminal-title">installation_guide.sh</span>
+   550→      </div>
+   551→      <div className="terminal-card-body space-y-4">
+   552→        <div className="text-term-green font-bold text-sm"># Installation Guide</div>
+   553→
+   554→        {/* Tab buttons */}
+   555→        <div className="flex gap-1 border-b border-term">
+   556→          {tabs.map((tab) => (
+   557→            <button
+   558→              key={tab.id}
+   559→              onClick={() => setActiveTab(tab.id)}
+   560→              className={`px-3 py-2 text-[11px] transition-colors border-b-2 ${
+   561→                activeTab === tab.id
+   562→                  ? 'text-term-green border-term-green bg-term-elevated'
+   563→                  : 'text-term-dim border-transparent hover:text-term-text'
+   564→              }`}
+   565→            >
+   566→              <span className="mr-1">{tab.icon}</span>
+   567→              {tab.label}
+   568→            </button>
+   569→          ))}
+   570→        </div>
+   571→
+   572→        <AnimatePresence mode="wait">
+   573→          <motion.div
+   574→            key={activeTab}
+   575→            initial={{ opacity: 0, y: 4 }}
+   576→            animate={{ opacity: 1, y: 0 }}
+   577→            exit={{ opacity: 0, y: -4 }}
+   578→            transition={{ duration: 0.15 }}
+   579→            className="space-y-3"
+   580→          >
+   581→            {/* Prerequisites */}
+   582→            <div>
+   583→              <div className="text-xs text-term-amber font-bold mb-2">Prerequisites</div>
+   584→              <div className="space-y-1">
+   585→                {prerequisites[activeTab]?.map((req) => (
+   586→                  <div key={req} className="flex items-center gap-2 text-[11px]">
+   587→                    <span className="text-term-green">☑</span>
+   588→                    <span className="text-term-text">{req}</span>
+   589→                  </div>
+   590→                ))}
+   591→              </div>
+   592→            </div>
+   593→
+   594→            {/* Install Commands */}
+   595→            <div>
+   596→              <div className="text-xs text-term-amber font-bold mb-2">Installation Steps</div>
+   597→              <div className="bg-[#1a1a1a] border border-term rounded-sm overflow-hidden">
+   598→                <div className="flex items-center justify-between px-3 py-1 bg-term-elevated border-b border-term">
+   599→                  <span className="text-[10px] text-term-dim">bash</span>
+   600→                  <button
+   601→                    onClick={() => {
+   602→                      navigator.clipboard.writeText(installCommands[activeTab] || '')
+   603→                    }}
+   604→                    className="text-[9px] px-1.5 py-0.5 bg-term-elevated border border-term rounded-sm text-term-dim hover:text-term-green transition-colors flex items-center gap-1"
+   605→                  >
+   606→                    <Download size={8} />
+   607→                    [COPY]
+   608→                  </button>
+   609→                </div>
+   610→                <pre className="p-3 text-[11px] text-term-green leading-relaxed overflow-x-auto whitespace-pre-wrap">
+   611→                  {installCommands[activeTab]}
+   612→                </pre>
+   613→              </div>
+   614→            </div>
+   615→          </motion.div>
+   616→        </AnimatePresence>
+   617→      </div>
+   618→    </div>
+   619→  )
+   620→}
+   621→
+   622→/* ===== CONTRIBUTE SECTION ===== */
+   623→
+   624→function ContributeSection() {
+   625→  return (
+   626→    <div className="terminal-card">
+   627→      <div className="terminal-card-header">
+   628→        <TrafficLights />
+   629→        <span className="terminal-title">contribute.md</span>
+   630→      </div>
+   631→      <div className="terminal-card-body space-y-3">
+   632→        <div className="text-term-green font-bold text-sm"># Contribute</div>
+   633→        <div className="text-xs text-term-text leading-relaxed">
+   634→          All De-Shop plugins are open-source. We welcome contributions from the community!
+   635→        </div>
+   636→
+   637→        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+   638→          {/* GitHub */}
+   639→          <div className="border border-term rounded-sm p-3 space-y-2">
+   640→            <div className="flex items-center gap-2">
+   641→              <Github size={14} className="text-term-text" />
+   642→              <span className="text-xs text-term-cyan font-bold">GitHub Repository</span>
+   643→            </div>
+   644→            <div className="text-[11px] text-term-dim">
+   645→              Browse source code, report issues, and submit pull requests.
+   646→            </div>
+   647→            <a
+   648→              href="https://github.com/deshop-sdk"
+   649→              target="_blank"
+   650→              rel="noopener noreferrer"
+   651→              className="terminal-btn text-[10px] inline-flex items-center gap-1.5"
+   652→            >
+   653→              <ExternalLink size={10} />
+   654→              github.com/deshop-sdk
+   655→            </a>
+   656→          </div>
+   657→
+   658→          {/* Plugin Template */}
+   659→          <div className="border border-term rounded-sm p-3 space-y-2">
+   660→            <div className="flex items-center gap-2">
+   661→              <Puzzle size={14} className="text-term-magenta" />
+   662→              <span className="text-xs text-term-magenta font-bold">Plugin Template</span>
+   663→            </div>
+   664→            <div className="text-[11px] text-term-dim">
+   665→              Start building your own plugin from our official template.
+   666→            </div>
+   667→            <div className="bg-[#1a1a1a] border border-term rounded-sm p-2 mt-1">
+   668→              <pre className="text-[10px] text-term-green overflow-x-auto">
+   669→{`$ npx @deshop/create-plugin my-plugin
+   670→$ cd my-plugin
+   671→$ npm install
+   672→$ npm run dev`}
+   673→              </pre>
+   674→            </div>
+   675→          </div>
+   676→        </div>
+   677→
+   678→        {/* Development Setup */}
+   679→        <div className="mt-3">
+   680→          <div className="text-xs text-term-amber font-bold mb-2">Development Setup</div>
+   681→          <div className="bg-[#1a1a1a] border border-term rounded-sm p-3">
+   682→            <pre className="text-[10px] text-term-green overflow-x-auto whitespace-pre-wrap">
+   683→{`$ # Clone the monorepo
+   684→$ git clone https://github.com/deshop-sdk/monorepo.git
+   685→$ cd monorepo
+   686→
+   687→$ # Install dependencies
+   688→$ npm install
+   689→
+   690→$ # Build all packages
+   691→$ npm run build
+   692→
+   693→$ # Run tests
+   694→$ npm run test
+   695→
+   696→$ # Start development
+   697→$ npm run dev`}
+   698→            </pre>
+   699→          </div>
+   700→        </div>
+   701→      </div>
+   702→    </div>
+   703→  )
+   704→}
+   705→
+   706→/* ===== MAIN PLUGINS PAGE ===== */
+   707→
+   708→export default function PluginsPage() {
+   709→  const [downloadingPlugin, setDownloadingPlugin] = useState<Plugin | null>(null)
+   710→
+   711→  const featuredPlugin = PLUGINS.find((p) => p.featured)!
+   712→  const otherPlugins = PLUGINS.filter((p) => !p.featured)
+   713→
+   714→  return (
+   715→    <div className="space-y-4">
+   716→      {/* Terminal Window Header */}
+   717→      <div className="terminal-card">
+   718→        <div className="terminal-card-header">
+   719→          <TrafficLights />
+   720→          <span className="terminal-title">plugins@de-shop:~/plugins</span>
+   721→        </div>
+   722→        <div className="terminal-card-body space-y-6">
+   723→          {/* Page Title */}
+   724→          <div className="flex items-center gap-2 mb-2">
+   725→            <Puzzle size={16} className="text-term-magenta" />
+   726→            <span className="text-sm text-term-magenta glow-magenta font-bold">Plugin Marketplace</span>
+   727→            <span className="text-term-dim text-xs">— {PLUGINS.length} plugins available</span>
+   728→          </div>
+   729→
+   730→          {/* Featured Plugin */}
+   731→          <FeaturedPlugin plugin={featuredPlugin} onDownload={setDownloadingPlugin} />
+   732→
+   733→          {/* Plugin Grid */}
+   734→          <div>
+   735→            <div className="flex items-center gap-2 mb-3">
+   736→              <span className="prompt-prefix text-xs">$</span>
+   737→              <span className="text-xs text-term-text">ls -la ~/plugins/</span>
+   738→            </div>
+   739→            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+   740→              {otherPlugins.map((plugin, i) => (
+   741→                <motion.div
+   742→                  key={plugin.id}
+   743→                  initial={{ opacity: 0, y: 10 }}
+   744→                  animate={{ opacity: 1, y: 0 }}
+   745→                  transition={{ delay: i * 0.05 }}
+   746→                >
+   747→                  <PluginCard plugin={plugin} onDownload={setDownloadingPlugin} />
+   748→                </motion.div>
+   749→              ))}
+   750→            </div>
+   751→          </div>
+   752→
+   753→          {/* Installation Guide */}
+   754→          <InstallationGuide />
+   755→
+   756→          {/* Contribute */}
+   757→          <ContributeSection />
+   758→        </div>
+   759→      </div>
+   760→
+   761→      {/* Download Modal */}
+   762→      <AnimatePresence>
+   763→        {downloadingPlugin && (
+   764→          <DownloadModal
+   765→            plugin={downloadingPlugin}
+   766→            onClose={() => setDownloadingPlugin(null)}
+   767→          />
+   768→        )}
+   769→      </AnimatePresence>
+   770→    </div>
+   771→  )
+   772→}
+   773→

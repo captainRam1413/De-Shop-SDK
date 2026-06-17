@@ -1,0 +1,807 @@
+     1→/**
+     2→ * Minecraft Voxel Game Component
+     3→ * ══════════════════════════════════
+     4→ * A playable 3D voxel world using Three.js.
+     5→ * Features: WASD movement, mouse look, block place/break, hotbar, terrain.
+     6→ */
+     7→
+     8→import { useEffect, useRef, useState, useCallback } from 'react'
+     9→import * as THREE from 'three'
+    10→import { VoxelWorld, WORLD_WIDTH, WORLD_HEIGHT, WORLD_DEPTH, WATER_LEVEL } from '../game/voxel-world'
+    11→import {
+    12→  BlockType,
+    13→  BLOCK_NAMES,
+    14→  HOTBAR_BLOCKS,
+    15→  generateAllTextures,
+    16→  type BlockTextures,
+    17→} from '../game/texture-generator'
+    18→
+    19→// ─── Constants ───────────────────────────────────────────────────────────────
+    20→
+    21→const PLAYER_HEIGHT = 1.7
+    22→const PLAYER_SPEED = 5.5
+    23→const JUMP_FORCE = 8
+    24→const GRAVITY = 22
+    25→const MOUSE_SENSITIVITY = 0.002
+    26→const REACH_DISTANCE = 7
+    27→const FOG_NEAR = 30
+    28→const FOG_FAR = 70
+    29→
+    30→// ─── Face definitions ────────────────────────────────────────────────────────
+    31→// Each face: [normal direction, 4 vertex offsets (CCW), texture type: 'top'|'side'|'bottom']
+    32→
+    33→type FaceDef = {
+    34→  dir: [number, number, number]
+    35→  corners: [number, number, number][]
+    36→  texType: 'top' | 'side' | 'bottom'
+    37→}
+    38→
+    39→const FACES: FaceDef[] = [
+    40→  { // Right (+X)
+    41→    dir: [1, 0, 0],
+    42→    corners: [[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]],
+    43→    texType: 'side',
+    44→  },
+    45→  { // Left (-X)
+    46→    dir: [-1, 0, 0],
+    47→    corners: [[0, 0, 1], [0, 1, 1], [0, 1, 0], [0, 0, 0]],
+    48→    texType: 'side',
+    49→  },
+    50→  { // Top (+Y)
+    51→    dir: [0, 1, 0],
+    52→    corners: [[0, 1, 1], [1, 1, 1], [1, 1, 0], [0, 1, 0]],
+    53→    texType: 'top',
+    54→  },
+    55→  { // Bottom (-Y)
+    56→    dir: [0, -1, 0],
+    57→    corners: [[0, 0, 0], [1, 0, 0], [1, 0, 1], [0, 0, 1]],
+    58→    texType: 'bottom',
+    59→  },
+    60→  { // Front (+Z)
+    61→    dir: [0, 0, 1],
+    62→    corners: [[1, 0, 1], [1, 1, 1], [0, 1, 1], [0, 0, 1]],
+    63→    texType: 'side',
+    64→  },
+    65→  { // Back (-Z)
+    66→    dir: [0, 0, -1],
+    67→    corners: [[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0]],
+    68→    texType: 'side',
+    69→  },
+    70→]
+    71→
+    72→// ─── Component ───────────────────────────────────────────────────────────────
+    73→
+    74→export default function MinecraftVoxelGame() {
+    75→  const containerRef = useRef<HTMLDivElement>(null)
+    76→  const [isPlaying, setIsPlaying] = useState(false)
+    77→  const [fps, setFps] = useState(0)
+    78→  const [selectedSlot, setSelectedSlot] = useState(0)
+    79→  const [worldBlocks, setWorldBlocks] = useState<{ total: number; placed: number }>({ total: 0, placed: 0 })
+    80→  const [loading, setLoading] = useState(true)
+    81→  const [textures, setTextures] = useState<Map<BlockType, BlockTextures> | null>(null)
+    82→
+    83→  // Game state refs (not React state — mutated every frame)
+    84→  const gameRef = useRef<{
+    85→    renderer: THREE.WebGLRenderer
+    86→    scene: THREE.Scene
+    87→    camera: THREE.PerspectiveCamera
+    88→    world: VoxelWorld
+    89→    meshes: Map<string, THREE.Mesh>
+    90→    textures: Map<BlockType, BlockTextures>
+    91→    textureAtlas: Map<string, THREE.Texture>
+    92→    // Player state
+    93→    position: THREE.Vector3
+    94→    velocity: THREE.Vector3
+    95→    yaw: number
+    96→    pitch: number
+    97→    onGround: boolean
+    98→    // Input state
+    99→    keys: Set<string>
+   100→    // Pointer lock
+   101→    isLocked: boolean
+   102→    // Selection
+   103→    highlightMesh: THREE.Mesh
+   104→    selectedBlock: { position: [number, number, number]; normal: [number, number, number] } | null
+   105→    // Hotbar
+   106→    hotbarBlocks: BlockType[]
+   107→    selectedSlot: number
+   108→    // Animation
+   109→    animFrame: number
+   110→    // FPS
+   111→    frameCount: number
+   112→    lastFpsTime: number
+   113→    // Cleanup flag
+   114→    disposed: boolean
+   115→    // Block count
+   116→    placedCount: number
+   117→    // Callbacks for UI updates
+   118→    onFpsUpdate: (fps: number) => void
+   119→    onBlockCountUpdate: (total: number, placed: number) => void
+   120→  } | null>(null)
+   121→
+   122→  // ─── Generate textures on mount ──────────────────────────────────────────
+   123→
+   124→  useEffect(() => {
+   125→    const tex = generateAllTextures()
+   126→    setTextures(tex)
+   127→    setLoading(false)
+   128→  }, [])
+   129→
+   130→  // Ref for slot tracking that the game loop closure can read
+   131→  const currentSlotRef = useRef(0)
+   132→
+   133→  // ─── Sync selectedSlot to game ref ───────────────────────────────────────
+   134→
+   135→  useEffect(() => {
+   136→    currentSlotRef.current = selectedSlot
+   137→    if (gameRef.current) {
+   138→      gameRef.current.selectedSlot = selectedSlot
+   139→    }
+   140→  }, [selectedSlot])
+   141→
+   142→  // ─── Main game initialization ────────────────────────────────────────────
+   143→
+   144→  useEffect(() => {
+   145→    if (!textures || !containerRef.current) return
+   146→
+   147→    const container = containerRef.current
+   148→
+   149→    // ── Create renderer ──────────────────────────────────────────────────
+   150→    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false })
+   151→    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+   152→    renderer.setSize(container.clientWidth, container.clientHeight)
+   153→    renderer.setClearColor(0x87CEEB) // Sky blue
+   154→    container.appendChild(renderer.domElement)
+   155→
+   156→    // ── Create scene ─────────────────────────────────────────────────────
+   157→    const scene = new THREE.Scene()
+   158→    scene.fog = new THREE.Fog(0x87CEEB, FOG_NEAR, FOG_FAR)
+   159→
+   160→    // ── Add ambient light ────────────────────────────────────────────────
+   161→    const ambient = new THREE.AmbientLight(0xffffff, 0.6)
+   162→    scene.add(ambient)
+   163→
+   164→    const sun = new THREE.DirectionalLight(0xffffff, 0.8)
+   165→    sun.position.set(50, 100, 30)
+   166→    scene.add(sun)
+   167→
+   168→    // ── Create camera ────────────────────────────────────────────────────
+   169→    const camera = new THREE.PerspectiveCamera(
+   170→      75,
+   171→      container.clientWidth / container.clientHeight,
+   172→      0.1,
+   173→      200
+   174→    )
+   175→
+   176→    // ── Create voxel world ───────────────────────────────────────────────
+   177→    const world = new VoxelWorld(12345)
+   178→    world.generateTerrain()
+   179→
+   180→    // ── Create texture atlas ─────────────────────────────────────────────
+   181→    const textureAtlas = new Map<string, THREE.Texture>()
+   182→
+   183→    const createThreeTexture = (canvas: HTMLCanvasElement): THREE.Texture => {
+   184→      const tex = new THREE.CanvasTexture(canvas)
+   185→      tex.magFilter = THREE.NearestFilter
+   186→      tex.minFilter = THREE.NearestFilter
+   187→      tex.wrapS = THREE.RepeatWrapping
+   188→      tex.wrapT = THREE.RepeatWrapping
+   189→      tex.colorSpace = THREE.SRGBColorSpace
+   190→      return tex
+   191→    }
+   192→
+   193→    // Generate textures for each block type
+   194→    for (const [blockType, blockTex] of textures) {
+   195→      textureAtlas.set(`${blockType}-top`, createThreeTexture(blockTex.top))
+   196→      textureAtlas.set(`${blockType}-side`, createThreeTexture(blockTex.side))
+   197→      textureAtlas.set(`${blockType}-bottom`, createThreeTexture(blockTex.bottom))
+   198→    }
+   199→
+   200→    // ── Create highlight mesh (wireframe cube for selected block) ─────────
+   201→    const highlightGeo = new THREE.BoxGeometry(1.005, 1.005, 1.005)
+   202→    const highlightMat = new THREE.MeshBasicMaterial({
+   203→      color: 0x000000,
+   204→      wireframe: true,
+   205→      transparent: true,
+   206→      opacity: 0.5,
+   207→    })
+   208→    const highlightMesh = new THREE.Mesh(highlightGeo, highlightMat)
+   209→    highlightMesh.visible = false
+   210→    scene.add(highlightMesh)
+   211→
+   212→    // ── Player state ─────────────────────────────────────────────────────
+   213→    // Find a spawn position (center of world, on top of terrain)
+   214→    const spawnX = WORLD_WIDTH / 2
+   215→    const spawnZ = WORLD_DEPTH / 2
+   216→    let spawnY = WORLD_HEIGHT - 1
+   217→    for (let y = WORLD_HEIGHT - 1; y >= 0; y--) {
+   218→      if (world.isSolid(Math.floor(spawnX), y, Math.floor(spawnZ))) {
+   219→        spawnY = y + 1
+   220→        break
+   221→      }
+   222→    }
+   223→
+   224→    const position = new THREE.Vector3(spawnX + 0.5, spawnY + PLAYER_HEIGHT, spawnZ + 0.5)
+   225→    const velocity = new THREE.Vector3(0, 0, 0)
+   226→    let yaw = 0
+   227→    let pitch = 0
+   228→    let onGround = false
+   229→
+   230→    // ── Input state ──────────────────────────────────────────────────────
+   231→    const keys = new Set<string>()
+   232→    let isLocked = false
+   233→    let selectedBlock: { position: [number, number, number]; normal: [number, number, number] } | null = null
+   234→    const hotbarBlocks = [...HOTBAR_BLOCKS]
+   235→    let currentSlot = 0
+   236→    let placedCount = 0
+   237→
+   238→    // ── Build world meshes ───────────────────────────────────────────────
+   239→    const meshes = new Map<string, THREE.Mesh>()
+   240→
+   241→    const buildWorldMeshes = () => {
+   242→      // Remove existing meshes
+   243→      for (const [, mesh] of meshes) {
+   244→        scene.remove(mesh)
+   245→        mesh.geometry.dispose()
+   246→        ;(mesh.material as THREE.Material).dispose()
+   247→      }
+   248→      meshes.clear()
+   249→
+   250→      // Group faces by texture key
+   251→      const faceGroups = new Map<string, { positions: number[]; normals: number[]; uvs: number[]; indices: number[] }>()
+   252→
+   253→      for (let y = 0; y < WORLD_HEIGHT; y++) {
+   254→        for (let z = 0; z < WORLD_DEPTH; z++) {
+   255→          for (let x = 0; x < WORLD_WIDTH; x++) {
+   256→            const block = world.getBlock(x, y, z)
+   257→            if (block === BlockType.AIR) continue
+   258→
+   259→            const exposedFaces = world.getExposedFaces(x, y, z)
+   260→
+   261→            for (let fi = 0; fi < FACES.length; fi++) {
+   262→              const face = FACES[fi]
+   263→              const faceKey = ['right', 'left', 'top', 'bottom', 'front', 'back'][fi] as keyof typeof exposedFaces
+   264→              if (!exposedFaces[faceKey]) continue
+   265→
+   266→              const texKey = `${block}-${face.texType}`
+   267→              if (!faceGroups.has(texKey)) {
+   268→                faceGroups.set(texKey, { positions: [], normals: [], uvs: [], indices: [] })
+   269→              }
+   270→              const group = faceGroups.get(texKey)!
+   271→
+   272→              const baseIndex = group.positions.length / 3
+   273→
+   274→              // Add 4 vertices
+   275→              for (const corner of face.corners) {
+   276→                group.positions.push(x + corner[0], y + corner[1], z + corner[2])
+   277→                group.normals.push(face.dir[0], face.dir[1], face.dir[2])
+   278→              }
+   279→
+   280→              // UVs
+   281→              group.uvs.push(0, 0, 1, 0, 1, 1, 0, 1)
+   282→
+   283→              // Two triangles
+   284→              group.indices.push(
+   285→                baseIndex, baseIndex + 1, baseIndex + 2,
+   286→                baseIndex, baseIndex + 2, baseIndex + 3
+   287→              )
+   288→            }
+   289→          }
+   290→        }
+   291→      }
+   292→
+   293→      // Create meshes for each texture group
+   294→      for (const [texKey, group] of faceGroups) {
+   295→        const geometry = new THREE.BufferGeometry()
+   296→        geometry.setAttribute('position', new THREE.Float32BufferAttribute(group.positions, 3))
+   297→        geometry.setAttribute('normal', new THREE.Float32BufferAttribute(group.normals, 3))
+   298→        geometry.setAttribute('uv', new THREE.Float32BufferAttribute(group.uvs, 2))
+   299→        geometry.setIndex(group.indices)
+   300→
+   301→        const threeTex = textureAtlas.get(texKey)
+   302→        const blockTypeNum = parseInt(texKey.split('-')[0])
+   303→
+   304→        const isTransparent = blockTypeNum === BlockType.WATER || blockTypeNum === BlockType.GLASS || blockTypeNum === BlockType.LEAVES
+   305→
+   306→        const material = new THREE.MeshLambertMaterial({
+   307→          map: threeTex || undefined,
+   308→          transparent: isTransparent,
+   309→          opacity: blockTypeNum === BlockType.WATER ? 0.6 : blockTypeNum === BlockType.GLASS ? 0.4 : 1,
+   310→          side: isTransparent ? THREE.DoubleSide : THREE.FrontSide,
+   311→        })
+   312→
+   313→        const mesh = new THREE.Mesh(geometry, material)
+   314→        scene.add(mesh)
+   315→        meshes.set(texKey, mesh)
+   316→      }
+   317→
+   318→      // Count total blocks
+   319→      let total = 0
+   320→      for (let y = 0; y < WORLD_HEIGHT; y++) {
+   321→        for (let z = 0; z < WORLD_DEPTH; z++) {
+   322→          for (let x = 0; x < WORLD_WIDTH; x++) {
+   323→            if (world.getBlock(x, y, z) !== BlockType.AIR) total++
+   324→          }
+   325→        }
+   326→      }
+   327→      onBlockCountUpdate(total, placedCount)
+   328→    }
+   329→
+   330→    // ── FPS tracking ─────────────────────────────────────────────────────
+   331→    let frameCount = 0
+   332→    let lastFpsTime = performance.now()
+   333→    let disposed = false
+   334→
+   335→    const onFpsUpdate = (newFps: number) => {
+   336→      setFps(newFps)
+   337→    }
+   338→
+   339→    const onBlockCountUpdate = (total: number, placed: number) => {
+   340→      setWorldBlocks({ total, placed })
+   341→    }
+   342→
+   343→    // Build initial meshes
+   344→    buildWorldMeshes()
+   345→
+   346→    // ── Rebuild meshes for a single block (optimized) ────────────────────
+   347→    const rebuildAroundBlock = (bx: number, by: number, bz: number) => {
+   348→      // For simplicity, rebuild all meshes. In a production app, 
+   349→      // you'd only rebuild chunks near the modified block.
+   350→      buildWorldMeshes()
+   351→    }
+   352→
+   353→    // ── Player physics ───────────────────────────────────────────────────
+   354→
+   355→    const checkCollision = (px: number, py: number, pz: number): boolean => {
+   356→      // Check player bounding box (0.6 wide, PLAYER_HEIGHT tall)
+   357→      const hw = 0.3 // half width
+   358→      for (let dy = 0; dy < PLAYER_HEIGHT; dy += 0.5) {
+   359→        for (let dx = -hw; dx <= hw; dx += hw * 2) {
+   360→          for (let dz = -hw; dz <= hw; dz += hw * 2) {
+   361→            const checkX = Math.floor(px + dx)
+   362→            const checkY = Math.floor(py + dy)
+   363→            const checkZ = Math.floor(pz + dz)
+   364→            if (world.isSolid(checkX, checkY, checkZ)) {
+   365→              return true
+   366→            }
+   367→          }
+   368→        }
+   369→      }
+   370→      return false
+   371→    }
+   372→
+   373→    const updatePlayer = (dt: number) => {
+   374→      // Apply gravity
+   375→      velocity.y -= GRAVITY * dt
+   376→
+   377→      // Movement direction
+   378→      const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw))
+   379→      const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw))
+   380→
+   381→      const moveDir = new THREE.Vector3(0, 0, 0)
+   382→      if (keys.has('w') || keys.has('arrowup')) moveDir.add(forward)
+   383→      if (keys.has('s') || keys.has('arrowdown')) moveDir.sub(forward)
+   384→      if (keys.has('a') || keys.has('arrowleft')) moveDir.sub(right)
+   385→      if (keys.has('d') || keys.has('arrowright')) moveDir.add(right)
+   386→
+   387→      if (moveDir.length() > 0) {
+   388→        moveDir.normalize().multiplyScalar(PLAYER_SPEED)
+   389→      }
+   390→
+   391→      // Horizontal movement
+   392→      const newX = position.x + moveDir.x * dt
+   393→      const newZ = position.z + moveDir.z * dt
+   394→
+   395→      // Check X collision
+   396→      if (!checkCollision(newX, position.y, position.z)) {
+   397→        position.x = newX
+   398→      }
+   399→      // Check Z collision
+   400→      if (!checkCollision(position.x, position.y, newZ)) {
+   401→        position.z = newZ
+   402→      }
+   403→
+   404→      // Vertical movement
+   405→      const newY = position.y + velocity.y * dt
+   406→      if (!checkCollision(position.x, newY, position.z)) {
+   407→        position.y = newY
+   408→        onGround = false
+   409→      } else {
+   410→        if (velocity.y < 0) {
+   411→          // Landing: snap to block top
+   412→          position.y = Math.floor(position.y) + 0.001
+   413→          onGround = true
+   414→        }
+   415→        velocity.y = 0
+   416→      }
+   417→
+   418→      // Jump
+   419→      if (onGround && keys.has(' ')) {
+   420→        velocity.y = JUMP_FORCE
+   421→        onGround = false
+   422→      }
+   423→
+   424→      // Keep player in world bounds
+   425→      position.x = Math.max(0.5, Math.min(WORLD_WIDTH - 0.5, position.x))
+   426→      position.z = Math.max(0.5, Math.min(WORLD_DEPTH - 0.5, position.z))
+   427→
+   428→      // Reset if fell below world
+   429→      if (position.y < -10) {
+   430→        position.set(spawnX + 0.5, spawnY + PLAYER_HEIGHT + 5, spawnZ + 0.5)
+   431→        velocity.set(0, 0, 0)
+   432→      }
+   433→
+   434→      // Update camera
+   435→      camera.position.copy(position)
+   436→      camera.rotation.order = 'YXZ'
+   437→      camera.rotation.y = yaw
+   438→      camera.rotation.x = pitch
+   439→    }
+   440→
+   441→    // ── Block interaction ────────────────────────────────────────────────
+   442→
+   443→    const updateSelection = () => {
+   444→      const dir = new THREE.Vector3(0, 0, -1)
+   445→      dir.applyEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'))
+   446→
+   447→      const hit = world.raycast(
+   448→        { x: position.x, y: position.y, z: position.z },
+   449→        { x: dir.x, y: dir.y, z: dir.z },
+   450→        REACH_DISTANCE
+   451→      )
+   452→
+   453→      if (hit) {
+   454→        selectedBlock = hit
+   455→        highlightMesh.position.set(
+   456→          hit.position[0] + 0.5,
+   457→          hit.position[1] + 0.5,
+   458→          hit.position[2] + 0.5
+   459→        )
+   460→        highlightMesh.visible = true
+   461→      } else {
+   462→        selectedBlock = null
+   463→        highlightMesh.visible = false
+   464→      }
+   465→    }
+   466→
+   467→    const breakBlock = () => {
+   468→      if (!selectedBlock) return
+   469→      const [x, y, z] = selectedBlock.position
+   470→      if (world.getBlock(x, y, z) === BlockType.BEDROCK) return // Can't break bedrock
+   471→      world.setBlock(x, y, z, BlockType.AIR)
+   472→      rebuildAroundBlock(x, y, z)
+   473→    }
+   474→
+   475→    const placeBlock = () => {
+   476→      if (!selectedBlock) return
+   477→      const [x, y, z] = selectedBlock.position
+   478→      const [nx, ny, nz] = selectedBlock.normal
+   479→      const px = x + nx
+   480→      const py = y + ny
+   481→      const pz = z + nz
+   482→
+   483→      // Don't place outside world
+   484→      if (px < 0 || px >= WORLD_WIDTH || py < 0 || py >= WORLD_HEIGHT || pz < 0 || pz >= WORLD_DEPTH) return
+   485→
+   486→      // Don't place where player is standing
+   487→      if (world.isSolid(px, py, pz)) return
+   488→
+   489→      // Check player isn't in the way
+   490→      const playerMinX = position.x - 0.3
+   491→      const playerMaxX = position.x + 0.3
+   492→      const playerMinY = position.y
+   493→      const playerMaxY = position.y + PLAYER_HEIGHT
+   494→      const playerMinZ = position.z - 0.3
+   495→      const playerMaxZ = position.z + 0.3
+   496→
+   497→      if (px + 1 > playerMinX && px < playerMaxX &&
+   498→          py + 1 > playerMinY && py < playerMaxY &&
+   499→          pz + 1 > playerMinZ && pz < playerMaxZ) {
+   500→        return
+   501→      }
+   502→
+   503→      const blockToPlace = hotbarBlocks[currentSlotRef.current]
+   504→      world.setBlock(px, py, pz, blockToPlace)
+   505→      placedCount++
+   506→      rebuildAroundBlock(px, py, pz)
+   507→    }
+   508→
+   509→    // ── Event handlers ───────────────────────────────────────────────────
+   510→
+   511→    const onKeyDown = (e: KeyboardEvent) => {
+   512→      keys.add(e.key.toLowerCase())
+   513→
+   514→      // Hotbar selection (1-9)
+   515→      const num = parseInt(e.key)
+   516→      if (num >= 1 && num <= 9 && num <= hotbarBlocks.length) {
+   517→        currentSlot = num - 1
+   518→        setSelectedSlot(currentSlot)
+   519→      }
+   520→
+   521→      // Scroll hotbar with Q/E
+   522→      if (e.key.toLowerCase() === 'q') {
+   523→        currentSlot = (currentSlot - 1 + hotbarBlocks.length) % hotbarBlocks.length
+   524→        setSelectedSlot(currentSlot)
+   525→      }
+   526→      if (e.key.toLowerCase() === 'e') {
+   527→        currentSlot = (currentSlot + 1) % hotbarBlocks.length
+   528→        setSelectedSlot(currentSlot)
+   529→      }
+   530→    }
+   531→
+   532→    const onKeyUp = (e: KeyboardEvent) => {
+   533→      keys.delete(e.key.toLowerCase())
+   534→    }
+   535→
+   536→    const onMouseMove = (e: MouseEvent) => {
+   537→      if (!isLocked) return
+   538→      yaw -= e.movementX * MOUSE_SENSITIVITY
+   539→      pitch -= e.movementY * MOUSE_SENSITIVITY
+   540→      pitch = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, pitch))
+   541→    }
+   542→
+   543→    const onMouseDown = (e: MouseEvent) => {
+   544→      if (!isLocked) return
+   545→      if (e.button === 0) breakBlock()   // Left click: break
+   546→      if (e.button === 2) placeBlock()    // Right click: place
+   547→    }
+   548→
+   549→    const onWheel = (e: WheelEvent) => {
+   550→      if (!isLocked) return
+   551→      if (e.deltaY > 0) {
+   552→        currentSlot = (currentSlot + 1) % hotbarBlocks.length
+   553→      } else {
+   554→        currentSlot = (currentSlot - 1 + hotbarBlocks.length) % hotbarBlocks.length
+   555→      }
+   556→      setSelectedSlot(currentSlot)
+   557→    }
+   558→
+   559→    const onContextMenu = (e: Event) => {
+   560→      e.preventDefault()
+   561→    }
+   562→
+   563→    const onPointerLockChange = () => {
+   564→      isLocked = document.pointerLockElement === renderer.domElement
+   565→      if (!isLocked) {
+   566→        keys.clear()
+   567→      }
+   568→    }
+   569→
+   570→    const onResize = () => {
+   571→      const w = container.clientWidth
+   572→      const h = container.clientHeight
+   573→      camera.aspect = w / h
+   574→      camera.updateProjectionMatrix()
+   575→      renderer.setSize(w, h)
+   576→    }
+   577→
+   578→    // Register events
+   579→    document.addEventListener('keydown', onKeyDown)
+   580→    document.addEventListener('keyup', onKeyUp)
+   581→    document.addEventListener('mousemove', onMouseMove)
+   582→    document.addEventListener('mousedown', onMouseDown)
+   583→    document.addEventListener('wheel', onWheel)
+   584→    document.addEventListener('contextmenu', onContextMenu)
+   585→    document.addEventListener('pointerlockchange', onPointerLockChange)
+   586→    window.addEventListener('resize', onResize)
+   587→
+   588→    // ── Game loop ────────────────────────────────────────────────────────
+   589→
+   590→    let lastTime = performance.now()
+   591→
+   592→    const animate = () => {
+   593→      if (disposed) return
+   594→
+   595→      const now = performance.now()
+   596→      const dt = Math.min((now - lastTime) / 1000, 0.1) // Cap at 100ms
+   597→      lastTime = now
+   598→
+   599→      // FPS
+   600→      frameCount++
+   601→      if (now - lastFpsTime >= 1000) {
+   602→        onFpsUpdate(frameCount)
+   603→        frameCount = 0
+   604→        lastFpsTime = now
+   605→      }
+   606→
+   607→      if (isLocked) {
+   608→        updatePlayer(dt)
+   609→        updateSelection()
+   610→      }
+   611→
+   612→      renderer.render(scene, camera)
+   613→      requestAnimationFrame(animate)
+   614→    }
+   615→
+   616→    requestAnimationFrame(animate)
+   617→
+   618→    // ── Store game ref ───────────────────────────────────────────────────
+   619→    gameRef.current = {
+   620→      renderer, scene, camera, world, meshes, textures, textureAtlas,
+   621→      position, velocity, yaw, pitch, onGround,
+   622→      keys, isLocked, highlightMesh, selectedBlock,
+   623→      hotbarBlocks, selectedSlot: currentSlot,
+   624→      animFrame: 0, frameCount, lastFpsTime, disposed: false,
+   625→      placedCount, onFpsUpdate, onBlockCountUpdate,
+   626→    }
+   627→
+   628→    // ── Cleanup ──────────────────────────────────────────────────────────
+   629→    return () => {
+   630→      disposed = true
+   631→      gameRef.current = null
+   632→
+   633→      document.removeEventListener('keydown', onKeyDown)
+   634→      document.removeEventListener('keyup', onKeyUp)
+   635→      document.removeEventListener('mousemove', onMouseMove)
+   636→      document.removeEventListener('mousedown', onMouseDown)
+   637→      document.removeEventListener('wheel', onWheel)
+   638→      document.removeEventListener('contextmenu', onContextMenu)
+   639→      document.removeEventListener('pointerlockchange', onPointerLockChange)
+   640→      window.removeEventListener('resize', onResize)
+   641→
+   642→      // Exit pointer lock
+   643→      if (document.pointerLockElement) {
+   644→        document.exitPointerLock()
+   645→      }
+   646→
+   647→      // Dispose meshes
+   648→      for (const [, mesh] of meshes) {
+   649→        mesh.geometry.dispose()
+   650→        ;(mesh.material as THREE.Material).dispose()
+   651→      }
+   652→
+   653→      // Dispose textures
+   654→      for (const [, tex] of textureAtlas) {
+   655→        tex.dispose()
+   656→      }
+   657→
+   658→      // Dispose highlight
+   659→      highlightGeo.dispose()
+   660→      highlightMat.dispose()
+   661→
+   662→      renderer.dispose()
+   663→      if (container.contains(renderer.domElement)) {
+   664→        container.removeChild(renderer.domElement)
+   665→      }
+   666→    }
+   667→  }, [textures]) // Re-run when textures are ready
+   668→
+   669→  // ─── Click to play handler ───────────────────────────────────────────────
+   670→
+   671→  const handleClickToPlay = useCallback(() => {
+   672→    if (!gameRef.current) return
+   673→    gameRef.current.renderer.domElement.requestPointerLock()
+   674→    setIsPlaying(true)
+   675→  }, [])
+   676→
+   677→  // Handle pointer lock exit
+   678→  useEffect(() => {
+   679→    const handler = () => {
+   680→      if (document.pointerLockElement === null) {
+   681→        setIsPlaying(false)
+   682→      }
+   683→    }
+   684→    document.addEventListener('pointerlockchange', handler)
+   685→    return () => document.removeEventListener('pointerlockchange', handler)
+   686→  }, [])
+   687→
+   688→  // ─── Render ──────────────────────────────────────────────────────────────
+   689→
+   690→  return (
+   691→    <div className="voxel-game">
+   692→      {/* Game Canvas Container */}
+   693→      <div ref={containerRef} className="voxel-game__canvas" />
+   694→
+   695→      {/* Loading overlay */}
+   696→      {loading && (
+   697→        <div className="voxel-game__overlay">
+   698→          <div className="voxel-game__loading">
+   699→            <div className="voxel-game__loading-spinner" />
+   700→            <div className="voxel-game__loading-text">Generating World...</div>
+   701→          </div>
+   702→        </div>
+   703→      )}
+   704→
+   705→      {/* Click to Play overlay */}
+   706→      {!isPlaying && !loading && (
+   707→        <div className="voxel-game__overlay" onClick={handleClickToPlay}>
+   708→          <div className="voxel-game__start">
+   709→            <div className="voxel-game__start-title">◆ Nexus Arena</div>
+   710→            <div className="voxel-game__start-subtitle">Click to Play</div>
+   711→            <div className="voxel-game__controls-help">
+   712→              <div className="voxel-game__control-row">
+   713→                <span className="voxel-game__key">W A S D</span>
+   714→                <span>Move</span>
+   715→              </div>
+   716→              <div className="voxel-game__control-row">
+   717→                <span className="voxel-game__key">Mouse</span>
+   718→                <span>Look around</span>
+   719→              </div>
+   720→              <div className="voxel-game__control-row">
+   721→                <span className="voxel-game__key">Space</span>
+   722→                <span>Jump</span>
+   723→              </div>
+   724→              <div className="voxel-game__control-row">
+   725→                <span className="voxel-game__key">Left Click</span>
+   726→                <span>Break block</span>
+   727→              </div>
+   728→              <div className="voxel-game__control-row">
+   729→                <span className="voxel-game__key">Right Click</span>
+   730→                <span>Place block</span>
+   731→              </div>
+   732→              <div className="voxel-game__control-row">
+   733→                <span className="voxel-game__key">1-9 / Scroll</span>
+   734→                <span>Select block</span>
+   735→              </div>
+   736→              <div className="voxel-game__control-row">
+   737→                <span className="voxel-game__key">ESC</span>
+   738→                <span>Pause</span>
+   739→              </div>
+   740→            </div>
+   741→          </div>
+   742→        </div>
+   743→      )}
+   744→
+   745→      {/* HUD - Crosshair */}
+   746→      {isPlaying && (
+   747→        <div className="voxel-game__crosshair">
+   748→          <div className="voxel-game__crosshair-h" />
+   749→          <div className="voxel-game__crosshair-v" />
+   750→        </div>
+   751→      )}
+   752→
+   753→      {/* HUD - FPS Counter */}
+   754→      <div className="voxel-game__fps">
+   755→        {fps} FPS
+   756→      </div>
+   757→
+   758→      {/* HUD - Block count */}
+   759→      <div className="voxel-game__block-count">
+   760→        {worldBlocks.total.toLocaleString()} blocks · {worldBlocks.placed} placed
+   761→      </div>
+   762→
+   763→      {/* HUD - Hotbar */}
+   764→      {textures && (
+   765→        <div className="voxel-game__hotbar">
+   766→          {HOTBAR_BLOCKS.map((blockType, i) => {
+   767→            const tex = textures.get(blockType)
+   768→            return (
+   769→              <div
+   770→                key={i}
+   771→                className={`voxel-game__hotbar-slot ${selectedSlot === i ? 'voxel-game__hotbar-slot--active' : ''}`}
+   772→                onClick={() => setSelectedSlot(i)}
+   773→              >
+   774→                {tex && (
+   775→                  <canvas
+   776→                    ref={(el) => {
+   777→                      if (el && tex) {
+   778→                        const ctx = el.getContext('2d')
+   779→                        if (ctx) {
+   780→                          ctx.imageSmoothingEnabled = false
+   781→                          ctx.clearRect(0, 0, 32, 32)
+   782→                          ctx.drawImage(tex.top, 0, 0, 32, 32)
+   783→                        }
+   784→                      }
+   785→                    }}
+   786→                    width={32}
+   787→                    height={32}
+   788→                    className="voxel-game__hotbar-icon"
+   789→                  />
+   790→                )}
+   791→                <span className="voxel-game__hotbar-number">{i + 1}</span>
+   792→              </div>
+   793→            )
+   794→          })}
+   795→        </div>
+   796→      )}
+   797→
+   798→      {/* HUD - Selected block name */}
+   799→      {isPlaying && (
+   800→        <div className="voxel-game__selected-name">
+   801→          {BLOCK_NAMES[HOTBAR_BLOCKS[selectedSlot]]}
+   802→        </div>
+   803→      )}
+   804→    </div>
+   805→  )
+   806→}
+   807→

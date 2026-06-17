@@ -1,0 +1,1203 @@
+     1→     1→import { useEffect, useRef, useCallback, useState } from 'react'
+     2→     2→import type { Asset } from '../sdk/DeShopSDK'
+     3→     3→import { normalizeRarity } from '../sdk/DeShopSDK'
+     4→     4→
+     5→     5→type GameArenaProps = {
+     6→     6→  activeGunSkin: Asset | null
+     7→     7→  activeCharSkin: Asset | null
+     8→     8→}
+     9→     9→
+    10→    10→// ─── Rarity Skin Palette ─────────────────────────────────────────────────────
+    11→    11→const SKIN_PALETTE: Record<string, {
+    12→    12→  helmet: string; helmetLight: string; visor: string
+    13→    13→  body: string; bodyLight: string; bodyDark: string
+    14→    14→  legs: string; legsDark: string
+    15→    15→  sword: string; swordLight: string; swordGlow: string; swordTrail: string
+    16→    16→  aura: string; particleColor: string
+    17→    17→  dmgMulti: number
+    18→    18→}> = {
+    19→    19→  common: {
+    20→    20→    helmet: '#6b7280', helmetLight: '#9ca3af', visor: '#374151',
+    21→    21→    body: '#4b5563', bodyLight: '#6b7280', bodyDark: '#374151',
+    22→    22→    legs: '#4b5563', legsDark: '#374151',
+    23→    23→    sword: '#9ca3af', swordLight: '#d1d5db', swordGlow: 'rgba(156,163,175,0)', swordTrail: 'rgba(156,163,175,0.15)',
+    24→    24→    aura: 'rgba(156,163,175,0.05)', particleColor: '#9ca3af',
+    25→    25→    dmgMulti: 1,
+    26→    26→  },
+    27→    27→  rare: {
+    28→    28→    helmet: '#2563eb', helmetLight: '#60a5fa', visor: '#1e3a5f',
+    29→    29→    body: '#1d4ed8', bodyLight: '#8B5CF6', bodyDark: '#1e40af',
+    30→    30→    legs: '#7C3AED', legsDark: '#1e3070',
+    31→    31→    sword: '#60a5fa', swordLight: '#93c5fd', swordGlow: 'rgba(59,130,246,0.4)', swordTrail: 'rgba(59,130,246,0.3)',
+    32→    32→    aura: 'rgba(59,130,246,0.08)', particleColor: '#60a5fa',
+    33→    33→    dmgMulti: 1.5,
+    34→    34→  },
+    35→    35→  epic: {
+    36→    36→    helmet: '#7c3aed', helmetLight: '#a78bfa', visor: '#4c1d95',
+    37→    37→    body: '#6d28d9', bodyLight: '#8b5cf6', bodyDark: '#5b21b6',
+    38→    38→    legs: '#4c1d95', legsDark: '#3b0f80',
+    39→    39→    sword: '#A78BFA', swordLight: '#e9d5ff', swordGlow: 'rgba(124, 58, 237,0.5)', swordTrail: 'rgba(124, 58, 237,0.35)',
+    40→    40→    aura: 'rgba(124, 58, 237,0.1)', particleColor: '#a78bfa',
+    41→    41→    dmgMulti: 2,
+    42→    42→  },
+    43→    43→  legendary: {
+    44→    44→    helmet: '#d97706', helmetLight: '#fbbf24', visor: '#92400e',
+    45→    45→    body: '#b45309', bodyLight: '#f59e0b', bodyDark: '#92400e',
+    46→    46→    legs: '#78350f', legsDark: '#5c2a0a',
+    47→    47→    sword: '#fbbf24', swordLight: '#fef3c7', swordGlow: 'rgba(245,158,11,0.6)', swordTrail: 'rgba(245,158,11,0.4)',
+    48→    48→    aura: 'rgba(245,158,11,0.12)', particleColor: '#fbbf24',
+    49→    49→    dmgMulti: 3,
+    50→    50→  },
+    51→    51→}
+    52→    52→
+    53→    53→function getSkinPalette(asset: Asset | null): typeof SKIN_PALETTE['common'] {
+    54→    54→  if (!asset) return SKIN_PALETTE.common
+    55→    55→  const rarity = normalizeRarity(asset.rarity ?? 'common')
+    56→    56→  return SKIN_PALETTE[rarity] || SKIN_PALETTE.common
+    57→    57→}
+    58→    58→
+    59→    59→// ─── Block tiles ─────────────────────────────────────────────────────────────
+    60→    60→const TILE = { GRASS: 0, DIRT: 1, STONE: 2, WATER: 3, SAND: 4, WOOD: 5, LEAVES: 6, FLOWER: 7, PATH: 8 }
+    61→    61→const TILE_COLORS: Record<number, { base: string; shade: string; detail?: string }> = {
+    62→    62→  [TILE.GRASS]:  { base: '#4a8c2a', shade: '#3d7522', detail: '#5da035' },
+    63→    63→  [TILE.DIRT]:   { base: '#8b6b3d', shade: '#7a5c32' },
+    64→    64→  [TILE.STONE]:  { base: '#787878', shade: '#606060', detail: '#6a6a6a' },
+    65→    65→  [TILE.WATER]:  { base: '#2878c8', shade: '#2060a8', detail: '#3090e0' },
+    66→    66→  [TILE.SAND]:   { base: '#e0c878', shade: '#c8b060' },
+    67→    67→  [TILE.WOOD]:   { base: '#6e4e28', shade: '#5a3e1e', detail: '#7e5e38' },
+    68→    68→  [TILE.LEAVES]: { base: '#2d7a1a', shade: '#246812', detail: '#3a9025' },
+    69→    69→  [TILE.FLOWER]: { base: '#4a8c2a', shade: '#3d7522', detail: '#e04060' },
+    70→    70→  [TILE.PATH]:   { base: '#a08858', shade: '#907848' },
+    71→    71→}
+    72→    72→
+    73→    73→const MAP_W = 40, MAP_H = 30, TILE_S = 32
+    74→    74→
+    75→    75→// ─── World Generation ────────────────────────────────────────────────────────
+    76→    76→function generateMap(): number[][] {
+    77→    77→  const map: number[][] = []
+    78→    78→  for (let y = 0; y < MAP_H; y++) {
+    79→    79→    map[y] = []
+    80→    80→    for (let x = 0; x < MAP_W; x++) {
+    81→    81→      // Base terrain
+    82→    82→      const n = Math.sin(x * 0.2) * Math.cos(y * 0.15) + Math.sin(x * 0.08 + y * 0.06) * 2
+    83→    83→      if (n > 1.5) map[y][x] = TILE.STONE
+    84→    84→      else if (n > 0.5) map[y][x] = TILE.DIRT
+    85→    85→      else if (n < -1.5) map[y][x] = TILE.WATER
+    86→    86→      else if (n < -1) map[y][x] = TILE.SAND
+    87→    87→      else map[y][x] = TILE.GRASS
+    88→    88→    }
+    89→    89→  }
+    90→    90→
+    91→    91→  // Place trees (trunk + leaves)
+    92→    92→  for (let i = 0; i < 15; i++) {
+    93→    93→    const tx = 3 + Math.floor(Math.random() * (MAP_W - 6))
+    94→    94→    const ty = 3 + Math.floor(Math.random() * (MAP_H - 6))
+    95→    95→    if (map[ty][tx] === TILE.GRASS) {
+    96→    96→      map[ty][tx] = TILE.WOOD
+    97→    97→      for (let dy = -1; dy <= 1; dy++) {
+    98→    98→        for (let dx = -1; dx <= 1; dx++) {
+    99→    99→          if (map[ty + dy] && map[ty + dy][tx + dx] === TILE.GRASS && !(dx === 0 && dy === 0)) {
+   100→   100→            map[ty + dy][tx + dx] = TILE.LEAVES
+   101→   101→          }
+   102→   102→        }
+   103→   103→      }
+   104→   104→    }
+   105→   105→  }
+   106→   106→
+   107→   107→  // Flowers
+   108→   108→  for (let i = 0; i < 20; i++) {
+   109→   109→    const fx = Math.floor(Math.random() * MAP_W)
+   110→   110→    const fy = Math.floor(Math.random() * MAP_H)
+   111→   111→    if (map[fy][fx] === TILE.GRASS) map[fy][fx] = TILE.FLOWER
+   112→   112→  }
+   113→   113→
+   114→   114→  // Paths
+   115→   115→  let px = Math.floor(MAP_W / 2), py = 0
+   116→   116→  while (py < MAP_H) {
+   117→   117→    if (map[py] && map[py][px] !== TILE.WATER) map[py][px] = TILE.PATH
+   118→   118→    py++
+   119→   119→    px += Math.floor(Math.random() * 3) - 1
+   120→   120→    px = Math.max(1, Math.min(MAP_W - 2, px))
+   121→   121→  }
+   122→   122→
+   123→   123→  return map
+   124→   124→}
+   125→   125→
+   126→   126→// ─── Mob Types ───────────────────────────────────────────────────────────────
+   127→   127→type Mob = {
+   128→   128→  x: number; y: number; type: 'zombie' | 'creeper' | 'skeleton'
+   129→   129→  hp: number; maxHp: number; hit: number; facing: number
+   130→   130→  attackCd: number; phase: number; knockX: number; knockY: number
+   131→   131→}
+   132→   132→
+   133→   133→type Particle = {
+   134→   134→  x: number; y: number; vx: number; vy: number
+   135→   135→  life: number; maxLife: number; color: string; size: number
+   136→   136→}
+   137→   137→
+   138→   138→type DmgText = {
+   139→   139→  x: number; y: number; text: string; color: string; life: number
+   140→   140→}
+   141→   141→
+   142→   142→// ═══════════════════════════════════════════════════════════════════════════════
+   143→   143→//  START SCREEN — Animated Character + Weapon Preview
+   144→   144→// ═══════════════════════════════════════════════════════════════════════════════
+   145→   145→
+   146→   146→function StartScreen({
+   147→   147→  activeGunSkin,
+   148→   148→  activeCharSkin,
+   149→   149→  onStart,
+   150→   150→}: {
+   151→   151→  activeGunSkin: Asset | null
+   152→   152→  activeCharSkin: Asset | null
+   153→   153→  onStart: () => void
+   154→   154→}) {
+   155→   155→  const previewRef = useRef<HTMLCanvasElement>(null)
+   156→   156→
+   157→   157→  useEffect(() => {
+   158→   158→    const cvs = previewRef.current; if (!cvs) return
+   159→   159→    const ctx = cvs.getContext('2d'); if (!ctx) return
+   160→   160→
+   161→   161→    const W = 320, H = 400
+   162→   162→    cvs.width = W; cvs.height = H
+   163→   163→
+   164→   164→    const charSkin = getSkinPalette(activeCharSkin)
+   165→   165→    const gunSkin = getSkinPalette(activeGunSkin)
+   166→   166→
+   167→   167→    let frame = 0
+   168→   168→    let animId: number
+   169→   169→
+   170→   170→    const draw = () => {
+   171→   171→      frame++
+   172→   172→      ctx.clearRect(0, 0, W, H)
+   173→   173→
+   174→   174→      // Background gradient
+   175→   175→      const bgGrad = ctx.createRadialGradient(W / 2, H / 2, 20, W / 2, H / 2, 200)
+   176→   176→      bgGrad.addColorStop(0, 'rgba(10,20,14,0.95)')
+   177→   177→      bgGrad.addColorStop(0.5, 'rgba(7,12,10,0.98)')
+   178→   178→      bgGrad.addColorStop(1, 'rgba(5,8,7,1)')
+   179→   179→      ctx.fillStyle = bgGrad
+   180→   180→      ctx.fillRect(0, 0, W, H)
+   181→   181→
+   182→   182→      // Ground platform
+   183→   183→      const platY = H * 0.72
+   184→   184→      ctx.fillStyle = '#2a5a1a'
+   185→   185→      ctx.fillRect(W * 0.2, platY, W * 0.6, 8)
+   186→   186→      ctx.fillStyle = '#1e4a12'
+   187→   187→      ctx.fillRect(W * 0.2, platY + 8, W * 0.6, 60)
+   188→   188→      // Grass blades on platform
+   189→   189→      ctx.fillStyle = '#3a8a28'
+   190→   190→      for (let i = 0; i < 20; i++) {
+   191→   191→        const gx = W * 0.22 + i * (W * 0.56 / 20)
+   192→   192→        ctx.fillRect(gx, platY - 3, 2, 4)
+   193→   193→      }
+   194→   194→
+   195→   195→      // Draw character (centered, larger — 3x scale)
+   196→   196→      const cx = W / 2
+   197→   197→      const cy = platY - 4
+   198→   198→      const scale = 3
+   199→   199→      const idle = Math.sin(frame * 0.03) * 2 // Idle breathing bob
+   200→   200→      const swordIdle = Math.sin(frame * 0.04) * 0.1 // Gentle sword sway
+   201→   201→
+   202→   202→      ctx.save()
+   203→   203→      ctx.translate(cx, cy + idle)
+   204→   204→      ctx.scale(scale, scale)
+   205→   205→
+   206→   206→      // Character shadow
+   207→   207→      ctx.fillStyle = 'rgba(0,0,0,0.35)'
+   208→   208→      ctx.beginPath()
+   209→   209→      ctx.ellipse(0, 12, 10, 4, 0, 0, Math.PI * 2)
+   210→   210→      ctx.fill()
+   211→   211→
+   212→   212→      // Aura glow (rarity based)
+   213→   213→      if (activeCharSkin) {
+   214→   214→        const auraP = Math.sin(frame * 0.04) * 3
+   215→   215→        ctx.fillStyle = charSkin.aura
+   216→   216→        ctx.beginPath()
+   217→   217→        ctx.ellipse(0, 0, 22 + auraP, 22 + auraP, 0, 0, Math.PI * 2)
+   218→   218→        ctx.fill()
+   219→   219→
+   220→   220→        // Outer glow ring
+   221→   221→        ctx.strokeStyle = charSkin.particleColor
+   222→   222→        ctx.globalAlpha = 0.15 + Math.sin(frame * 0.03) * 0.1
+   223→   223→        ctx.lineWidth = 1
+   224→   224→        ctx.beginPath()
+   225→   225→        ctx.ellipse(0, 0, 26 + auraP, 26 + auraP, 0, 0, Math.PI * 2)
+   226→   226→        ctx.stroke()
+   227→   227→        ctx.globalAlpha = 1
+   228→   228→      }
+   229→   229→
+   230→   230→      // Legs
+   231→   231→      ctx.fillStyle = charSkin.legs
+   232→   232→      ctx.fillRect(-6, 4, 5, 10)
+   233→   233→      ctx.fillRect(1, 4, 5, 10)
+   234→   234→      ctx.fillStyle = charSkin.legsDark
+   235→   235→      ctx.fillRect(-6, 12, 5, 2)
+   236→   236→      ctx.fillRect(1, 12, 5, 2)
+   237→   237→
+   238→   238→      // Body (torso armor)
+   239→   239→      ctx.fillStyle = charSkin.body
+   240→   240→      ctx.fillRect(-7, -8, 14, 14)
+   241→   241→      ctx.fillStyle = charSkin.bodyLight
+   242→   242→      ctx.fillRect(-7, -8, 14, 4)
+   243→   243→      ctx.fillStyle = charSkin.bodyDark
+   244→   244→      ctx.fillRect(-1, -6, 2, 10)
+   245→   245→
+   246→   246→      // Arms
+   247→   247→      ctx.fillStyle = charSkin.body
+   248→   248→      ctx.fillRect(-11, -6, 4, 10)
+   249→   249→      ctx.fillRect(7, -6, 4, 10)
+   250→   250→
+   251→   251→      // Head
+   252→   252→      ctx.fillStyle = charSkin.helmet
+   253→   253→      ctx.fillRect(-6, -20, 12, 12)
+   254→   254→      ctx.fillStyle = charSkin.helmetLight
+   255→   255→      ctx.fillRect(-6, -20, 12, 3)
+   256→   256→      ctx.fillRect(-6, -20, 3, 6)
+   257→   257→
+   258→   258→      // Eyes
+   259→   259→      ctx.fillStyle = charSkin.visor
+   260→   260→      ctx.fillRect(-4, -16, 3, 3)
+   261→   261→      ctx.fillRect(1, -16, 3, 3)
+   262→   262→      ctx.fillStyle = '#fff'
+   263→   263→      ctx.fillRect(-3, -16, 1, 1)
+   264→   264→      ctx.fillRect(2, -16, 1, 1)
+   265→   265→      // Mouth
+   266→   266→      ctx.fillStyle = charSkin.visor
+   267→   267→      ctx.fillRect(-2, -12, 4, 1)
+   268→   268→
+   269→   269→      // ── Weapon (Sword) with idle sway ──
+   270→   270→      ctx.save()
+   271→   271→      ctx.translate(10, -2)
+   272→   272→      ctx.rotate(swordIdle - 0.3)
+   273→   273→
+   274→   274→      // Sword glow
+   275→   275→      ctx.shadowColor = gunSkin.swordGlow
+   276→   276→      ctx.shadowBlur = 8
+   277→   277→
+   278→   278→      // Sword blade
+   279→   279→      ctx.fillStyle = gunSkin.sword
+   280→   280→      ctx.fillRect(-2, -30, 4, 22)
+   281→   281→      ctx.fillStyle = gunSkin.swordLight
+   282→   282→      ctx.fillRect(-1, -28, 2, 18)
+   283→   283→      // Tip
+   284→   284→      ctx.beginPath()
+   285→   285→      ctx.moveTo(-2, -30); ctx.lineTo(2, -30); ctx.lineTo(0, -35)
+   286→   286→      ctx.fillStyle = gunSkin.sword; ctx.fill()
+   287→   287→      // Guard
+   288→   288→      ctx.fillStyle = '#5c3310'
+   289→   289→      ctx.fillRect(-5, -8, 10, 3)
+   290→   290→      // Handle
+   291→   291→      ctx.fillStyle = '#3a2008'
+   292→   292→      ctx.fillRect(-1, -5, 3, 8)
+   293→   293→      ctx.shadowBlur = 0
+   294→   294→
+   295→   295→      // Shimmer on epic/legendary
+   296→   296→      const gRarity = normalizeRarity(activeGunSkin?.rarity ?? 'common')
+   297→   297→      if (gRarity === 'legendary' || gRarity === 'epic') {
+   298→   298→        ctx.globalAlpha = 0.5 + Math.sin(frame * 0.12) * 0.3
+   299→   299→        ctx.fillStyle = gunSkin.swordLight
+   300→   300→        const shimY = (frame * 2) % 22
+   301→   301→        ctx.fillRect(-1, -28 + shimY, 2, 4)
+   302→   302→        ctx.globalAlpha = 1
+   303→   303→      }
+   304→   304→
+   305→   305→      ctx.restore() // sword
+   306→   306→
+   307→   307→      ctx.restore() // character
+   308→   308→
+   309→   309→      // Floating rarity particles
+   310→   310→      if (frame % 8 === 0 && activeCharSkin) {
+   311→   311→        // Create a simple particle effect on canvas
+   312→   312→        const px = cx + (Math.random() - 0.5) * 60
+   313→   313→        const py = cy + (Math.random() - 0.5) * 60 - 20
+   314→   314→        ctx.fillStyle = charSkin.particleColor
+   315→   315→        ctx.globalAlpha = 0.6
+   316→   316→        ctx.fillRect(px, py, 3, 3)
+   317→   317→        ctx.globalAlpha = 1
+   318→   318→      }
+   319→   319→
+   320→   320→      // Skin name labels
+   321→   321→      ctx.textAlign = 'center'
+   322→   322→      ctx.font = 'bold 13px "JetBrains Mono"'
+   323→   323→
+   324→   324→      // Character skin label
+   325→   325→      ctx.fillStyle = '#000'
+   326→   326→      ctx.fillText(`🧑 ${activeCharSkin?.name || 'Steve'}`, cx + 1, H * 0.82 + 1)
+   327→   327→      ctx.fillStyle = charSkin.helmetLight
+   328→   328→      ctx.fillText(`🧑 ${activeCharSkin?.name || 'Steve'}`, cx, H * 0.82)
+   329→   329→
+   330→   330→      // Weapon skin label
+   331→   331→      ctx.fillStyle = '#000'
+   332→   332→      ctx.fillText(`⚔ ${activeGunSkin?.name || 'Stone Sword'}`, cx + 1, H * 0.82 + 21)
+   333→   333→      ctx.fillStyle = gunSkin.sword
+   334→   334→      ctx.fillText(`⚔ ${activeGunSkin?.name || 'Stone Sword'}`, cx, H * 0.82 + 20)
+   335→   335→
+   336→   336→      // Rarity badges
+   337→   337→      const charRarity = normalizeRarity(activeCharSkin?.rarity ?? 'common').toUpperCase()
+   338→   338→      const gunRarity = normalizeRarity(activeGunSkin?.rarity ?? 'common').toUpperCase()
+   339→   339→      ctx.font = '9px "JetBrains Mono"'
+   340→   340→      ctx.fillStyle = charSkin.particleColor
+   341→   341→      ctx.globalAlpha = 0.7
+   342→   342→      ctx.fillText(`[${charRarity}]`, cx, H * 0.82 + 14)
+   343→   343→      ctx.fillStyle = gunSkin.particleColor
+   344→   344→      ctx.fillText(`[${gunRarity}]`, cx, H * 0.82 + 34)
+   345→   345→      ctx.globalAlpha = 1
+   346→   346→
+   347→   347→      animId = requestAnimationFrame(draw)
+   348→   348→    }
+   349→   349→
+   350→   350→    draw()
+   351→   351→    return () => cancelAnimationFrame(animId)
+   352→   352→  }, [activeGunSkin, activeCharSkin])
+   353→   353→
+   354→   354→  const charRarity = normalizeRarity(activeCharSkin?.rarity ?? 'common')
+   355→   355→  const gunRarity = normalizeRarity(activeGunSkin?.rarity ?? 'common')
+   356→   356→  const charColors = SKIN_PALETTE[charRarity] || SKIN_PALETTE.common
+   357→   357→  const gunColors = SKIN_PALETTE[gunRarity] || SKIN_PALETTE.common
+   358→   358→
+   359→   359→  return (
+   360→   360→    <div style={{
+   361→   361→      position: 'absolute', inset: 0, zIndex: 10,
+   362→   362→      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+   363→   363→      background: 'radial-gradient(ellipse at 50% 40%, rgba(34,197,94,0.06) 0%, rgba(7,10,13,0.98) 70%)',
+   364→   364→    }}>
+   365→   365→      {/* Title */}
+   366→   366→      <div style={{
+   367→   367→        fontFamily: '"JetBrains Mono", monospace',
+   368→   368→        fontSize: '11px',
+   369→   369→        fontWeight: 700,
+   370→   370→        letterSpacing: '0.2em',
+   371→   371→        color: 'rgba(34,197,94,0.4)',
+   372→   372→        marginBottom: '8px',
+   373→   373→        textTransform: 'uppercase',
+   374→   374→      }}>
+   375→   375→        ◆ nexus arena
+   376→   376→      </div>
+   377→   377→
+   378→   378→      {/* Character Preview Canvas */}
+   379→   379→      <canvas
+   380→   380→        ref={previewRef}
+   381→   381→        style={{
+   382→   382→          width: '240px',
+   383→   383→          height: '300px',
+   384→   384→          imageRendering: 'pixelated',
+   385→   385→          borderRadius: '12px',
+   386→   386→          border: '1px solid rgba(34,197,94,0.15)',
+   387→   387→          boxShadow: '0 0 40px rgba(34,197,94,0.08)',
+   388→   388→        }}
+   389→   389→      />
+   390→   390→
+   391→   391→      {/* Equipped Skins Info */}
+   392→   392→      <div style={{
+   393→   393→        display: 'flex',
+   394→   394→        gap: '16px',
+   395→   395→        margin: '16px 0',
+   396→   396→        fontFamily: '"JetBrains Mono", monospace',
+   397→   397→        fontSize: '10px',
+   398→   398→        letterSpacing: '0.06em',
+   399→   399→      }}>
+   400→   400→        <div style={{
+   401→   401→          padding: '6px 12px',
+   402→   402→          background: 'rgba(0,0,0,0.4)',
+   403→   403→          border: `1px solid ${charColors.body}40`,
+   404→   404→          borderRadius: '6px',
+   405→   405→          color: charColors.helmetLight,
+   406→   406→          textAlign: 'center',
+   407→   407→        }}>
+   408→   408→          <div style={{ fontSize: '8px', color: 'rgba(34,197,94,0.4)', marginBottom: '2px' }}>CHARACTER</div>
+   409→   409→          {activeCharSkin?.name || 'Steve'}
+   410→   410→        </div>
+   411→   411→        <div style={{
+   412→   412→          padding: '6px 12px',
+   413→   413→          background: 'rgba(0,0,0,0.4)',
+   414→   414→          border: `1px solid ${gunColors.sword}40`,
+   415→   415→          borderRadius: '6px',
+   416→   416→          color: gunColors.swordLight,
+   417→   417→          textAlign: 'center',
+   418→   418→        }}>
+   419→   419→          <div style={{ fontSize: '8px', color: 'rgba(34,197,94,0.4)', marginBottom: '2px' }}>WEAPON</div>
+   420→   420→          {activeGunSkin?.name || 'Stone Sword'}
+   421→   421→        </div>
+   422→   422→      </div>
+   423→   423→
+   424→   424→      {/* START Button */}
+   425→   425→      <button
+   426→   426→        onClick={onStart}
+   427→   427→        style={{
+   428→   428→          marginTop: '4px',
+   429→   429→          padding: '14px 48px',
+   430→   430→          background: 'rgba(34,197,94,0.12)',
+   431→   431→          border: '2px solid rgba(34,197,94,0.5)',
+   432→   432→          borderRadius: '10px',
+   433→   433→          color: '#73ffa7',
+   434→   434→          fontFamily: '"JetBrains Mono", monospace',
+   435→   435→          fontSize: '16px',
+   436→   436→          fontWeight: 700,
+   437→   437→          letterSpacing: '0.15em',
+   438→   438→          cursor: 'pointer',
+   439→   439→          transition: 'all 0.3s ease',
+   440→   440→          boxShadow: '0 0 25px rgba(34,197,94,0.15)',
+   441→   441→          animation: 'start-pulse 2s ease-in-out infinite',
+   442→   442→        }}
+   443→   443→        onMouseEnter={(e) => {
+   444→   444→          e.currentTarget.style.background = 'rgba(34,197,94,0.25)'
+   445→   445→          e.currentTarget.style.boxShadow = '0 0 40px rgba(34,197,94,0.3)'
+   446→   446→          e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)'
+   447→   447→        }}
+   448→   448→        onMouseLeave={(e) => {
+   449→   449→          e.currentTarget.style.background = 'rgba(34,197,94,0.12)'
+   450→   450→          e.currentTarget.style.boxShadow = '0 0 25px rgba(34,197,94,0.15)'
+   451→   451→          e.currentTarget.style.transform = 'translateY(0) scale(1)'
+   452→   452→        }}
+   453→   453→      >
+   454→   454→        ▶ START GAME
+   455→   455→      </button>
+   456→   456→
+   457→   457→      {/* Controls hint */}
+   458→   458→      <div style={{
+   459→   459→        marginTop: '16px',
+   460→   460→        fontFamily: '"JetBrains Mono", monospace',
+   461→   461→        fontSize: '9px',
+   462→   462→        color: 'rgba(34,197,94,0.25)',
+   463→   463→        letterSpacing: '0.08em',
+   464→   464→      }}>
+   465→   465→        WASD = Move &nbsp;|&nbsp; Click / Space = Attack
+   466→   466→      </div>
+   467→   467→    </div>
+   468→   468→  )
+   469→   469→}
+   470→   470→
+   471→   471→// ═══════════════════════════════════════════════════════════════════════════════
+   472→   472→//  GAME ARENA — Main Component
+   473→   473→// ═══════════════════════════════════════════════════════════════════════════════
+   474→   474→
+   475→   475→export default function GameArena({ activeGunSkin, activeCharSkin }: GameArenaProps) {
+   476→   476→  const canvasRef = useRef<HTMLCanvasElement>(null)
+   477→   477→  const [gameStarted, setGameStarted] = useState(false)
+   478→   478→  const stateRef = useRef({
+   479→   479→    px: 20, py: 15, facing: 0, // 0=down,1=left,2=up,3=right
+   480→   480→    swingT: -1, swingDir: 0,
+   481→   481→    hp: 20, maxHp: 20, invT: 0,
+   482→   482→    score: 0, combo: 0, xp: 0, level: 1,
+   483→   483→    mobs: [] as Mob[], particles: [] as Particle[], texts: [] as DmgText[],
+   484→   484→    map: null as null | number[][],
+   485→   485→    frame: 0, moveT: 0,
+   486→   486→    camX: 0, camY: 0,
+   487→   487→  })
+   488→   488→  const keysRef = useRef<Set<string>>(new Set())
+   489→   489→
+   490→   490→  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+   491→   491→    if (!gameStarted) return
+   492→   492→    keysRef.current.add(e.key.toLowerCase())
+   493→   493→    if (e.key === ' ' || e.key === 'Enter') {
+   494→   494→      e.preventDefault()
+   495→   495→      if (stateRef.current.swingT < 0) stateRef.current.swingT = 0
+   496→   496→    }
+   497→   497→  }, [gameStarted])
+   498→   498→  const handleKeyUp = useCallback((e: KeyboardEvent) => {
+   499→   499→    keysRef.current.delete(e.key.toLowerCase())
+   500→   500→  }, [])
+   501→   501→
+   502→   502→  useEffect(() => {
+   503→   503→    window.addEventListener('keydown', handleKeyDown)
+   504→   504→    window.addEventListener('keyup', handleKeyUp)
+   505→   505→    return () => { window.removeEventListener('keydown', handleKeyDown); window.removeEventListener('keyup', handleKeyUp) }
+   506→   506→  }, [handleKeyDown, handleKeyUp])
+   507→   507→
+   508→   508→  // Click to attack
+   509→   509→  useEffect(() => {
+   510→   510→    if (!gameStarted) return
+   511→   511→    const cvs = canvasRef.current; if (!cvs) return
+   512→   512→    const onClick = () => {
+   513→   513→      if (stateRef.current.swingT < 0) stateRef.current.swingT = 0
+   514→   514→    }
+   515→   515→    cvs.addEventListener('click', onClick)
+   516→   516→    return () => cvs.removeEventListener('click', onClick)
+   517→   517→  }, [gameStarted])
+   518→   518→
+   519→   519→  useEffect(() => {
+   520→   520→    if (!gameStarted) return
+   521→   521→    const canvas = canvasRef.current; if (!canvas) return
+   522→   522→    const ctx = canvas.getContext('2d'); if (!ctx) return
+   523→   523→
+   524→   524→    const W = canvas.offsetWidth, H = canvas.offsetHeight
+   525→   525→    canvas.width = W; canvas.height = H
+   526→   526→
+   527→   527→    const st = stateRef.current
+   528→   528→    if (!st.map) {
+   529→   529→      st.map = generateMap()
+   530→   530→      // Spawn mobs
+   531→   531→      for (let i = 0; i < 10; i++) {
+   532→   532→        const mx = 3 + Math.random() * (MAP_W - 6)
+   533→   533→        const my = 3 + Math.random() * (MAP_H - 6)
+   534→   534→        const types: Mob['type'][] = ['zombie', 'creeper', 'skeleton']
+   535→   535→        const t = types[Math.floor(Math.random() * 3)]
+   536→   536→        st.mobs.push({
+   537→   537→          x: mx, y: my, type: t,
+   538→   538→          hp: t === 'creeper' ? 12 : t === 'skeleton' ? 8 : 10,
+   539→   539→          maxHp: t === 'creeper' ? 12 : t === 'skeleton' ? 8 : 10,
+   540→   540→          hit: 0, facing: Math.floor(Math.random() * 4),
+   541→   541→          attackCd: 0, phase: Math.random() * 100,
+   542→   542→          knockX: 0, knockY: 0,
+   543→   543→        })
+   544→   544→      }
+   545→   545→    }
+   546→   546→    const map = st.map!
+   547→   547→    const charSkin = getSkinPalette(activeCharSkin)
+   548→   548→    const gunSkin = getSkinPalette(activeGunSkin)
+   549→   549→
+   550→   550→    const isSolid = (tx: number, ty: number) => {
+   551→   551→      const t = map[Math.floor(ty)]?.[Math.floor(tx)]
+   552→   552→      return t === TILE.WATER || t === TILE.WOOD || t === TILE.LEAVES || t === undefined
+   553→   553→    }
+   554→   554→
+   555→   555→    let animId: number
+   556→   556→
+   557→   557→    const loop = () => {
+   558→   558→      st.frame++
+   559→   559→      const keys = keysRef.current
+   560→   560→      const spd = 0.06
+   561→   561→
+   562→   562→      // ── Player Movement ─────────────────────────────────────────────
+   563→   563→      let dx = 0, dy = 0
+   564→   564→      if (keys.has('w') || keys.has('arrowup'))    { dy = -spd; st.facing = 2 }
+   565→   565→      if (keys.has('s') || keys.has('arrowdown'))  { dy = spd;  st.facing = 0 }
+   566→   566→      if (keys.has('a') || keys.has('arrowleft'))  { dx = -spd; st.facing = 1 }
+   567→   567→      if (keys.has('d') || keys.has('arrowright')) { dx = spd;  st.facing = 3 }
+   568→   568→      if (dx && dy) { dx *= 0.707; dy *= 0.707 }
+   569→   569→
+   570→   570→      const newX = st.px + dx
+   571→   571→      const newY = st.py + dy
+   572→   572→      if (!isSolid(newX, st.py)) st.px = newX
+   573→   573→      if (!isSolid(st.px, newY)) st.py = newY
+   574→   574→      st.px = Math.max(0.5, Math.min(MAP_W - 0.5, st.px))
+   575→   575→      st.py = Math.max(0.5, Math.min(MAP_H - 0.5, st.py))
+   576→   576→
+   577→   577→      if (dx !== 0 || dy !== 0) st.moveT += 0.15
+   578→   578→
+   579→   579→      // Camera follows player
+   580→   580→      st.camX = st.px * TILE_S - W / 2
+   581→   581→      st.camY = st.py * TILE_S - H / 2
+   582→   582→
+   583→   583→      if (st.invT > 0) st.invT--
+   584→   584→
+   585→   585→      // ── Swing Logic ─────────────────────────────────────────────────
+   586→   586→      if (st.swingT >= 0) {
+   587→   587→        st.swingT += 0.08
+   588→   588→        st.swingDir = st.facing
+   589→   589→
+   590→   590→        // Hit detection at peak
+   591→   591→        if (st.swingT > 0.3 && st.swingT < 0.5) {
+   592→   592→          const reach = 1.5
+   593→   593→          const dirs = [[0, 1], [-1, 0], [0, -1], [1, 0]][st.swingDir]
+   594→   594→          const hx = st.px + dirs[0] * reach
+   595→   595→          const hy = st.py + dirs[1] * reach
+   596→   596→
+   597→   597→          st.mobs.forEach(m => {
+   598→   598→            const mdx = m.x - hx, mdy = m.y - hy
+   599→   599→            const dist = Math.sqrt(mdx * mdx + mdy * mdy)
+   600→   600→            if (dist < 1.2) {
+   601→   601→              const dmg = Math.ceil(3 * gunSkin.dmgMulti)
+   602→   602→              m.hp -= dmg
+   603→   603→              m.hit = 10
+   604→   604→              // Knockback
+   605→   605→              const kf = 0.4
+   606→   606→              m.knockX = dirs[0] * kf
+   607→   607→              m.knockY = dirs[1] * kf
+   608→   608→              st.combo++
+   609→   609→              st.texts.push({ x: m.x * TILE_S, y: m.y * TILE_S - 20, text: `${dmg}`, color: '#ef4444', life: 30 })
+   610→   610→              // Hit particles
+   611→   611→              for (let p = 0; p < 6; p++) {
+   612→   612→                st.particles.push({
+   613→   613→                  x: m.x * TILE_S, y: m.y * TILE_S,
+   614→   614→                  vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.5) * 3 - 1,
+   615→   615→                  life: 20, maxLife: 20, color: gunSkin.particleColor, size: 3
+   616→   616→                })
+   617→   617→              }
+   618→   618→            }
+   619→   619→          })
+   620→   620→        }
+   621→   621→        if (st.swingT > 1) { st.swingT = -1; st.combo = 0 }
+   622→   622→      }
+   623→   623→
+   624→   624→      // ── Kill dead mobs ──────────────────────────────────────────────
+   625→   625→      for (let i = st.mobs.length - 1; i >= 0; i--) {
+   626→   626→        if (st.mobs[i].hp <= 0) {
+   627→   627→          const m = st.mobs[i]
+   628→   628→          const pts = m.type === 'creeper' ? 30 : m.type === 'skeleton' ? 20 : 15
+   629→   629→          st.score += pts
+   630→   630→          st.xp += pts
+   631→   631→          if (st.xp >= st.level * 50) { st.xp -= st.level * 50; st.level++ }
+   632→   632→          st.texts.push({ x: m.x * TILE_S, y: m.y * TILE_S - 30, text: `+${pts}`, color: '#22c55e', life: 40 })
+   633→   633→          for (let p = 0; p < 15; p++) {
+   634→   634→            const c = m.type === 'creeper' ? '#22c55e' : m.type === 'skeleton' ? '#e5e5e5' : '#5a7a5a'
+   635→   635→            st.particles.push({
+   636→   636→              x: m.x * TILE_S, y: m.y * TILE_S,
+   637→   637→              vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5 - 2,
+   638→   638→              life: 30, maxLife: 30, color: c, size: 4
+   639→   639→            })
+   640→   640→          }
+   641→   641→          st.mobs.splice(i, 1)
+   642→   642→        }
+   643→   643→      }
+   644→   644→
+   645→   645→      // Respawn
+   646→   646→      if (st.mobs.length < 8 && st.frame % 180 === 0) {
+   647→   647→        const ang = Math.random() * Math.PI * 2
+   648→   648→        const dist = 10 + Math.random() * 5
+   649→   649→        const mx = Math.max(1, Math.min(MAP_W - 2, st.px + Math.cos(ang) * dist))
+   650→   650→        const my = Math.max(1, Math.min(MAP_H - 2, st.py + Math.sin(ang) * dist))
+   651→   651→        if (!isSolid(mx, my)) {
+   652→   652→          const types: Mob['type'][] = ['zombie', 'creeper', 'skeleton']
+   653→   653→          const t = types[Math.floor(Math.random() * 3)]
+   654→   654→          st.mobs.push({
+   655→   655→            x: mx, y: my, type: t,
+   656→   656→            hp: t === 'creeper' ? 12 : t === 'skeleton' ? 8 : 10,
+   657→   657→            maxHp: t === 'creeper' ? 12 : t === 'skeleton' ? 8 : 10,
+   658→   658→            hit: 0, facing: 0, attackCd: 0, phase: Math.random() * 100,
+   659→   659→            knockX: 0, knockY: 0,
+   660→   660→          })
+   661→   661→        }
+   662→   662→      }
+   663→   663→
+   664→   664→      // ── Mob AI ──────────────────────────────────────────────────────
+   665→   665→      st.mobs.forEach(m => {
+   666→   666→        m.phase += 0.06
+   667→   667→        // Knockback decay
+   668→   668→        m.x += m.knockX; m.y += m.knockY
+   669→   669→        m.knockX *= 0.85; m.knockY *= 0.85
+   670→   670→        m.x = Math.max(0.5, Math.min(MAP_W - 0.5, m.x))
+   671→   671→        m.y = Math.max(0.5, Math.min(MAP_H - 0.5, m.y))
+   672→   672→
+   673→   673→        if (m.hit > 0) m.hit--
+   674→   674→        if (m.attackCd > 0) m.attackCd--
+   675→   675→
+   676→   676→        const mdx = st.px - m.x, mdy = st.py - m.y
+   677→   677→        const dist = Math.sqrt(mdx * mdx + mdy * mdy)
+   678→   678→
+   679→   679→        if (dist < 12) {
+   680→   680→          // Face player
+   681→   681→          if (Math.abs(mdx) > Math.abs(mdy)) m.facing = mdx > 0 ? 3 : 1
+   682→   682→          else m.facing = mdy > 0 ? 0 : 2
+   683→   683→
+   684→   684→          if (dist > 1) {
+   685→   685→            const ms = 0.02
+   686→   686→            const nmx = m.x + (mdx / dist) * ms
+   687→   687→            const nmy = m.y + (mdy / dist) * ms
+   688→   688→            if (!isSolid(nmx, m.y)) m.x = nmx
+   689→   689→            if (!isSolid(m.x, nmy)) m.y = nmy
+   690→   690→          }
+   691→   691→
+   692→   692→          // Contact damage
+   693→   693→          if (dist < 0.8 && m.attackCd <= 0 && st.invT <= 0) {
+   694→   694→            const dmg = m.type === 'creeper' ? 4 : 2
+   695→   695→            st.hp = Math.max(0, st.hp - dmg)
+   696→   696→            st.invT = 30
+   697→   697→            m.attackCd = 60
+   698→   698→            st.texts.push({ x: st.px * TILE_S, y: st.py * TILE_S - 30, text: `-${dmg}`, color: '#ef4444', life: 25 })
+   699→   699→            if (st.hp <= 0) {
+   700→   700→              st.hp = st.maxHp
+   701→   701→              st.score = Math.max(0, st.score - 30)
+   702→   702→              st.texts.push({ x: st.px * TILE_S, y: st.py * TILE_S - 50, text: 'RESPAWN!', color: '#ef4444', life: 50 })
+   703→   703→            }
+   704→   704→          }
+   705→   705→        }
+   706→   706→      })
+   707→   707→
+   708→   708→      // ── RENDER ──────────────────────────────────────────────────────
+   709→   709→      ctx.clearRect(0, 0, W, H)
+   710→   710→      ctx.imageSmoothingEnabled = false
+   711→   711→
+   712→   712→      // Visible tile range
+   713→   713→      const startTX = Math.max(0, Math.floor(st.camX / TILE_S) - 1)
+   714→   714→      const startTY = Math.max(0, Math.floor(st.camY / TILE_S) - 1)
+   715→   715→      const endTX = Math.min(MAP_W, Math.ceil((st.camX + W) / TILE_S) + 1)
+   716→   716→      const endTY = Math.min(MAP_H, Math.ceil((st.camY + H) / TILE_S) + 1)
+   717→   717→
+   718→   718→      // Draw tiles
+   719→   719→      for (let ty = startTY; ty < endTY; ty++) {
+   720→   720→        for (let tx = startTX; tx < endTX; tx++) {
+   721→   721→          const tile = map[ty]?.[tx] ?? TILE.GRASS
+   722→   722→          const tc = TILE_COLORS[tile] || TILE_COLORS[TILE.GRASS]
+   723→   723→          const sx = tx * TILE_S - st.camX
+   724→   724→          const sy = ty * TILE_S - st.camY
+   725→   725→
+   726→   726→          // Base fill
+   727→   727→          ctx.fillStyle = tc.base
+   728→   728→          ctx.fillRect(sx, sy, TILE_S, TILE_S)
+   729→   729→
+   730→   730→          // Checker pattern for texture (pixelated)
+   731→   731→          ctx.fillStyle = tc.shade
+   732→   732→          for (let py = 0; py < TILE_S; py += 8) {
+   733→   733→            for (let px = 0; px < TILE_S; px += 8) {
+   734→   734→              if ((Math.floor(px / 8) + Math.floor(py / 8) + tx + ty) % 3 === 0) {
+   735→   735→                ctx.fillRect(sx + px, sy + py, 8, 8)
+   736→   736→              }
+   737→   737→            }
+   738→   738→          }
+   739→   739→
+   740→   740→          // Details
+   741→   741→          if (tc.detail && tile === TILE.GRASS) {
+   742→   742→            // Grass blades
+   743→   743→            ctx.fillStyle = tc.detail
+   744→   744→            const seed = tx * 127 + ty * 311
+   745→   745→            ctx.fillRect(sx + (seed % 12) + 4, sy + (seed % 8) + 4, 2, 4)
+   746→   746→            ctx.fillRect(sx + ((seed * 7) % 20) + 2, sy + ((seed * 3) % 16) + 8, 2, 3)
+   747→   747→          }
+   748→   748→          if (tile === TILE.FLOWER) {
+   749→   749→            // Flower on grass
+   750→   750→            const fc = ['#ef4444', '#fbbf24', '#7C3AED', '#ec4899'][(tx * 7 + ty * 3) % 4]
+   751→   751→            ctx.fillStyle = fc
+   752→   752→            ctx.fillRect(sx + 12, sy + 10, 6, 6)
+   753→   753→            ctx.fillStyle = '#fef08a'
+   754→   754→            ctx.fillRect(sx + 14, sy + 12, 2, 2)
+   755→   755→            ctx.fillStyle = '#15803d'
+   756→   756→            ctx.fillRect(sx + 14, sy + 16, 2, 6)
+   757→   757→          }
+   758→   758→          if (tile === TILE.WATER) {
+   759→   759→            // Animated water shine
+   760→   760→            const waveOff = Math.sin(st.frame * 0.05 + tx + ty * 0.7) * 4
+   761→   761→            ctx.fillStyle = tc.detail!
+   762→   762→            ctx.globalAlpha = 0.3
+   763→   763→            ctx.fillRect(sx + 4 + waveOff, sy + 8, 12, 3)
+   764→   764→            ctx.fillRect(sx + 14 - waveOff, sy + 20, 10, 2)
+   765→   765→            ctx.globalAlpha = 1
+   766→   766→          }
+   767→   767→          if (tile === TILE.WOOD) {
+   768→   768→            // Trunk rings
+   769→   769→            ctx.fillStyle = tc.detail!
+   770→   770→            ctx.fillRect(sx + 10, sy + 6, 12, 4)
+   771→   771→            ctx.fillRect(sx + 10, sy + 14, 12, 4)
+   772→   772→            ctx.fillRect(sx + 10, sy + 22, 12, 4)
+   773→   773→          }
+   774→   774→
+   775→   775→          // Tile border (subtle)
+   776→   776→          ctx.strokeStyle = 'rgba(0,0,0,0.08)'
+   777→   777→          ctx.strokeRect(sx, sy, TILE_S, TILE_S)
+   778→   778→        }
+   779→   779→      }
+   780→   780→
+   781→   781→      // ── Collect all drawables for y-sort ────────────────────────────
+   782→   782→      type Drawable = { y: number; draw: () => void }
+   783→   783→      const drawables: Drawable[] = []
+   784→   784→
+   785→   785→      // Mobs
+   786→   786→      st.mobs.forEach(m => {
+   787→   787→        drawables.push({ y: m.y, draw: () => drawMob(ctx, m, st.camX, st.camY, st.frame) })
+   788→   788→      })
+   789→   789→
+   790→   790→      // Player
+   791→   791→      drawables.push({ y: st.py, draw: () => {
+   792→   792→        const sx = st.px * TILE_S - st.camX
+   793→   793→        const sy = st.py * TILE_S - st.camY
+   794→   794→        const bob = (dx !== 0 || dy !== 0) ? Math.sin(st.moveT) * 2 : 0
+   795→   795→        const isInv = st.invT > 0 && st.frame % 4 < 2
+   796→   796→
+   797→   797→        ctx.save()
+   798→   798→        ctx.translate(sx, sy + bob)
+   799→   799→        if (isInv) ctx.globalAlpha = 0.5
+   800→   800→
+   801→   801→        // Character shadow
+   802→   802→        ctx.fillStyle = 'rgba(0,0,0,0.2)'
+   803→   803→        ctx.beginPath()
+   804→   804→        ctx.ellipse(0, 12, 10, 4, 0, 0, Math.PI * 2)
+   805→   805→        ctx.fill()
+   806→   806→
+   807→   807→        // Aura (rarity glow)
+   808→   808→        if (activeCharSkin) {
+   809→   809→          const auraP = Math.sin(st.frame * 0.04) * 2
+   810→   810→          ctx.fillStyle = charSkin.aura
+   811→   811→          ctx.beginPath()
+   812→   812→          ctx.ellipse(0, 0, 18 + auraP, 18 + auraP, 0, 0, Math.PI * 2)
+   813→   813→          ctx.fill()
+   814→   814→        }
+   815→   815→
+   816→   816→        // ── Draw Avatar Based on Facing ──────────────────────────────
+   817→   817→        const f = st.facing // 0=down,1=left,2=up,3=right
+   818→   818→        const legSwing = (dx !== 0 || dy !== 0) ? Math.sin(st.moveT) * 3 : 0
+   819→   819→
+   820→   820→        // Legs
+   821→   821→        ctx.fillStyle = charSkin.legs
+   822→   822→        if (f === 0 || f === 2) {
+   823→   823→          ctx.fillRect(-6 + legSwing, 4, 5, 10)
+   824→   824→          ctx.fillRect(1 - legSwing, 4, 5, 10)
+   825→   825→          ctx.fillStyle = charSkin.legsDark
+   826→   826→          ctx.fillRect(-6 + legSwing, 12, 5, 2)
+   827→   827→          ctx.fillRect(1 - legSwing, 12, 5, 2)
+   828→   828→        } else {
+   829→   829→          ctx.fillRect(-3, 4 + legSwing, 6, 10)
+   830→   830→          ctx.fillStyle = charSkin.legsDark
+   831→   831→          ctx.fillRect(-3, 12 + legSwing, 6, 2)
+   832→   832→        }
+   833→   833→
+   834→   834→        // Body (torso armor)
+   835→   835→        ctx.fillStyle = charSkin.body
+   836→   836→        ctx.fillRect(-7, -8, 14, 14)
+   837→   837→        // Body gradient overlay
+   838→   838→        ctx.fillStyle = charSkin.bodyLight
+   839→   839→        ctx.fillRect(-7, -8, 14, 4)
+   840→   840→        // Center stripe
+   841→   841→        ctx.fillStyle = charSkin.bodyDark
+   842→   842→        ctx.fillRect(-1, -6, 2, 10)
+   843→   843→
+   844→   844→        // Arms
+   845→   845→        ctx.fillStyle = charSkin.body
+   846→   846→        if (f === 1) {
+   847→   847→          // Left-facing: back arm visible
+   848→   848→          ctx.fillRect(-11, -6 - legSwing * 0.5, 4, 10)
+   849→   849→        } else if (f === 3) {
+   850→   850→          ctx.fillRect(7, -6 - legSwing * 0.5, 4, 10)
+   851→   851→        } else {
+   852→   852→          // Front/back: both arms
+   853→   853→          ctx.fillRect(-11, -6 + legSwing * 0.5, 4, 10)
+   854→   854→          ctx.fillRect(7, -6 - legSwing * 0.5, 4, 10)
+   855→   855→        }
+   856→   856→
+   857→   857→        // Head
+   858→   858→        ctx.fillStyle = charSkin.helmet
+   859→   859→        ctx.fillRect(-6, -20, 12, 12)
+   860→   860→        // Helmet highlight
+   861→   861→        ctx.fillStyle = charSkin.helmetLight
+   862→   862→        ctx.fillRect(-6, -20, 12, 3)
+   863→   863→        ctx.fillRect(-6, -20, 3, 6)
+   864→   864→
+   865→   865→        // Face
+   866→   866→        if (f !== 2) { // Not facing away
+   867→   867→          // Eyes
+   868→   868→          ctx.fillStyle = charSkin.visor
+   869→   869→          ctx.fillRect(-4, -16, 3, 3)
+   870→   870→          ctx.fillRect(1, -16, 3, 3)
+   871→   871→          // Eye shine
+   872→   872→          ctx.fillStyle = '#fff'
+   873→   873→          ctx.fillRect(-3, -16, 1, 1)
+   874→   874→          ctx.fillRect(2, -16, 1, 1)
+   875→   875→          // Mouth
+   876→   876→          ctx.fillStyle = charSkin.visor
+   877→   877→          ctx.fillRect(-2, -12, 4, 1)
+   878→   878→        } else {
+   879→   879→          // Back of head
+   880→   880→          ctx.fillStyle = charSkin.helmetLight
+   881→   881→          ctx.fillRect(-4, -18, 8, 2)
+   882→   882→        }
+   883→   883→
+   884→   884→        // ── Weapon (Sword) ────────────────────────────────────────────
+   885→   885→        const swingProgress = st.swingT >= 0 ? Math.sin(st.swingT * Math.PI) : 0
+   886→   886→
+   887→   887→        ctx.save()
+   888→   888→        // Position sword based on facing
+   889→   889→        const swordOffsets = [[5, 2], [-14, -2], [5, -8], [10, -2]][f]
+   890→   890→        ctx.translate(swordOffsets[0], swordOffsets[1])
+   891→   891→
+   892→   892→        // Swing animation rotation
+   893→   893→        const swingRot = [
+   894→   894→          [0, -1.5],    // down: swing left-right
+   895→   895→          [1.5, 0],     // left: swing up-down
+   896→   896→          [0, 1.5],     // up: swing left-right
+   897→   897→          [-1.5, 0],    // right: swing up-down
+   898→   898→        ][f]
+   899→   899→        ctx.rotate(swingProgress * swingRot[0] + (f === 0 ? -0.3 : f === 2 ? 0.3 : 0))
+   900→   900→
+   901→   901→        // Sword trail
+   902→   902→        if (swingProgress > 0.1) {
+   903→   903→          ctx.fillStyle = gunSkin.swordTrail
+   904→   904→          ctx.beginPath()
+   905→   905→          ctx.arc(0, -12, 20, -Math.PI * 0.3, Math.PI * 0.3 * swingProgress)
+   906→   906→          ctx.fill()
+   907→   907→        }
+   908→   908→
+   909→   909→        // Sword blade
+   910→   910→        ctx.shadowColor = gunSkin.swordGlow
+   911→   911→        ctx.shadowBlur = swingProgress > 0 ? 12 : 4
+   912→   912→        ctx.fillStyle = gunSkin.sword
+   913→   913→        ctx.fillRect(-2, -30, 4, 22)
+   914→   914→        // Edge highlight
+   915→   915→        ctx.fillStyle = gunSkin.swordLight
+   916→   916→        ctx.fillRect(-1, -28, 2, 18)
+   917→   917→        // Tip
+   918→   918→        ctx.beginPath()
+   919→   919→        ctx.moveTo(-2, -30); ctx.lineTo(2, -30); ctx.lineTo(0, -35)
+   920→   920→        ctx.fillStyle = gunSkin.sword; ctx.fill()
+   921→   921→        // Guard
+   922→   922→        ctx.fillStyle = '#5c3310'
+   923→   923→        ctx.fillRect(-5, -8, 10, 3)
+   924→   924→        // Handle
+   925→   925→        ctx.fillStyle = '#3a2008'
+   926→   926→        ctx.fillRect(-1, -5, 3, 8)
+   927→   927→        ctx.shadowBlur = 0
+   928→   928→
+   929→   929→        const gRarity = normalizeRarity(activeGunSkin?.rarity ?? 'common')
+   930→   930→        if (activeGunSkin && (gRarity === 'legendary' || gRarity === 'epic')) {
+   931→   931→          ctx.globalAlpha = 0.5 + Math.sin(st.frame * 0.12) * 0.3
+   932→   932→          ctx.fillStyle = gunSkin.swordLight
+   933→   933→          const shimY = (st.frame * 3) % 22
+   934→   934→          ctx.fillRect(-1, -28 + shimY, 2, 4)
+   935→   935→          ctx.globalAlpha = 1
+   936→   936→        }
+   937→   937→
+   938→   938→        ctx.restore() // sword
+   939→   939→
+   940→   940→        // Rarity particles
+   941→   941→        if (activeCharSkin && st.frame % 15 === 0) {
+   942→   942→          st.particles.push({
+   943→   943→            x: sx + (Math.random() - 0.5) * 20,
+   944→   944→            y: sy + (Math.random() - 0.5) * 20 - 5,
+   945→   945→            vx: (Math.random() - 0.5) * 0.5, vy: -Math.random() * 1.5 - 0.5,
+   946→   946→            life: 25, maxLife: 25, color: charSkin.particleColor, size: 2
+   947→   947→          })
+   948→   948→        }
+   949→   949→
+   950→   950→        ctx.globalAlpha = 1
+   951→   951→        ctx.restore() // player
+   952→   952→      }})
+   953→   953→
+   954→   954→      // Y-sort render
+   955→   955→      drawables.sort((a, b) => a.y - b.y).forEach(d => d.draw())
+   956→   956→
+   957→   957→      // ── Particles ──────────────────────────────────────────────────
+   958→   958→      for (let i = st.particles.length - 1; i >= 0; i--) {
+   959→   959→        const p = st.particles[i]
+   960→   960→        p.x += p.vx; p.y += p.vy; p.vy += 0.05; p.life--
+   961→   961→        if (p.life <= 0) { st.particles.splice(i, 1); continue }
+   962→   962→        ctx.fillStyle = p.color
+   963→   963→        ctx.globalAlpha = p.life / p.maxLife
+   964→   964→        ctx.fillRect(p.x - st.camX - p.size / 2, p.y - st.camY - p.size / 2, p.size, p.size)
+   965→   965→        ctx.globalAlpha = 1
+   966→   966→      }
+   967→   967→
+   968→   968→      // ── Floating Texts ─────────────────────────────────────────────
+   969→   969→      for (let i = st.texts.length - 1; i >= 0; i--) {
+   970→   970→        const t = st.texts[i]; t.y -= 0.8; t.life--
+   971→   971→        if (t.life <= 0) { st.texts.splice(i, 1); continue }
+   972→   972→        ctx.font = 'bold 14px "JetBrains Mono"'
+   973→   973→        ctx.textAlign = 'center'
+   974→   974→        ctx.fillStyle = t.color
+   975→   975→        ctx.globalAlpha = Math.min(1, t.life / 15)
+   976→   976→        // Pixel-art text shadow
+   977→   977→        ctx.fillStyle = '#000'
+   978→   978→        ctx.fillText(t.text, t.x - st.camX + 1, t.y - st.camY + 1)
+   979→   979→        ctx.fillStyle = t.color
+   980→   980→        ctx.fillText(t.text, t.x - st.camX, t.y - st.camY)
+   981→   981→        ctx.globalAlpha = 1
+   982→   982→      }
+   983→   983→
+   984→   984→      // ── HUD ─────────────────────────────────────────────────────────
+   985→   985→      // Health hearts
+   986→   986→      for (let i = 0; i < 10; i++) {
+   987→   987→        const hx = 16 + i * 16
+   988→   988→        const hy = H - 42
+   989→   989→        if (st.hp >= (i + 1) * 2) drawPixelHeart(ctx, hx, hy, '#e53e3e')
+   990→   990→        else if (st.hp >= i * 2 + 1) drawPixelHeart(ctx, hx, hy, '#e53e3e', true)
+   991→   991→        else drawPixelHeart(ctx, hx, hy, '#333')
+   992→   992→      }
+   993→   993→
+   994→   994→      // XP bar
+   995→   995→      ctx.fillStyle = 'rgba(0,0,0,0.4)'
+   996→   996→      ctx.fillRect(16, H - 22, 170, 8)
+   997→   997→      ctx.fillStyle = '#22c55e'
+   998→   998→      ctx.fillRect(16, H - 22, 170 * (st.xp / (st.level * 50)), 8)
+   999→   999→      ctx.font = '9px "JetBrains Mono"'
+  1000→  1000→      ctx.fillStyle = '#fff'
+  1001→  1001→      ctx.textAlign = 'center'
+  1002→  1002→      ctx.fillText(`LVL ${st.level}`, 100, H - 15)
+  1003→  1003→
+  1004→  1004→      // Score
+  1005→  1005→      ctx.font = 'bold 13px "JetBrains Mono"'
+  1006→  1006→      ctx.textAlign = 'left'
+  1007→  1007→      ctx.fillStyle = '#000'; ctx.fillText(`SCORE: ${st.score}`, 17, 21)
+  1008→  1008→      ctx.fillStyle = '#22c55e'; ctx.fillText(`SCORE: ${st.score}`, 16, 20)
+  1009→  1009→
+  1010→  1010→      // Skin labels (top-right)
+  1011→  1011→      ctx.textAlign = 'right'
+  1012→  1012→      ctx.font = 'bold 11px "JetBrains Mono"'
+  1013→  1013→      ctx.fillStyle = '#000'
+  1014→  1014→      ctx.fillText(`⚔ ${activeGunSkin?.name || 'Stone Sword'}`, W - 11, 21)
+  1015→  1015→      ctx.fillStyle = gunSkin.sword
+  1016→  1016→      ctx.fillText(`⚔ ${activeGunSkin?.name || 'Stone Sword'}`, W - 12, 20)
+  1017→  1017→
+  1018→  1018→      ctx.fillStyle = '#000'
+  1019→  1019→      ctx.fillText(`🧑 ${activeCharSkin?.name || 'Steve'}`, W - 11, 37)
+  1020→  1020→      ctx.fillStyle = charSkin.helmetLight
+  1021→  1021→      ctx.fillText(`🧑 ${activeCharSkin?.name || 'Steve'}`, W - 12, 36)
+  1022→  1022→
+  1023→  1023→      // Controls hint (bottom-right)
+  1024→  1024→      ctx.textAlign = 'right'
+  1025→  1025→      ctx.font = '10px "JetBrains Mono"'
+  1026→  1026→      ctx.fillStyle = 'rgba(255,255,255,0.3)'
+  1027→  1027→      ctx.fillText('WASD = Move | Click/Space = Attack', W - 12, H - 10)
+  1028→  1028→
+  1029→  1029→      animId = requestAnimationFrame(loop)
+  1030→  1030→    }
+  1031→  1031→
+  1032→  1032→    loop()
+  1033→  1033→    return () => cancelAnimationFrame(animId)
+  1034→  1034→  }, [gameStarted, activeGunSkin, activeCharSkin])
+  1035→  1035→
+  1036→  1036→  return (
+  1037→  1037→    <div style={{ width: '100%', height: '100%', background: '#0a0f0d', overflow: 'hidden', position: 'relative' }}>
+  1038→  1038→      {!gameStarted && (
+  1039→  1039→        <StartScreen
+  1040→  1040→          activeGunSkin={activeGunSkin}
+  1041→  1041→          activeCharSkin={activeCharSkin}
+  1042→  1042→          onStart={() => setGameStarted(true)}
+  1043→  1043→        />
+  1044→  1044→      )}
+  1045→  1045→      {gameStarted && (
+  1046→  1046→        <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', imageRendering: 'pixelated' }} />
+  1047→  1047→      )}
+  1048→  1048→    </div>
+  1049→  1049→  )
+  1050→  1050→}
+  1051→  1051→
+  1052→  1052→// ─── Draw a Mob Sprite ───────────────────────────────────────────────────────
+  1053→  1053→function drawMob(ctx: CanvasRenderingContext2D, m: Mob, camX: number, camY: number, frame: number) {
+  1054→  1054→  const sx = m.x * TILE_S - camX
+  1055→  1055→  const sy = m.y * TILE_S - camY
+  1056→  1056→  const shake = m.hit > 0 ? (Math.random() - 0.5) * 3 : 0
+  1057→  1057→  const bob = Math.sin(m.phase) * 1.5
+  1058→  1058→  const legSwing = Math.sin(m.phase) * 3
+  1059→  1059→
+  1060→  1060→  ctx.save()
+  1061→  1061→  ctx.translate(sx + shake, sy + bob)
+  1062→  1062→
+  1063→  1063→  // Shadow
+  1064→  1064→  ctx.fillStyle = 'rgba(0,0,0,0.2)'
+  1065→  1065→  ctx.beginPath()
+  1066→  1066→  ctx.ellipse(0, 12, 8, 3, 0, 0, Math.PI * 2)
+  1067→  1067→  ctx.fill()
+  1068→  1068→
+  1069→  1069→  if (m.hit > 0) {
+  1070→  1070→    ctx.globalAlpha = m.hit % 2 === 0 ? 0.6 : 1
+  1071→  1071→  }
+  1072→  1072→
+  1073→  1073→  if (m.type === 'zombie') {
+  1074→  1074→    // Legs
+  1075→  1075→    ctx.fillStyle = '#303870'
+  1076→  1076→    ctx.fillRect(-5 + legSwing, 4, 4, 9)
+  1077→  1077→    ctx.fillRect(1 - legSwing, 4, 4, 9)
+  1078→  1078→    // Body
+  1079→  1079→    ctx.fillStyle = '#3a6a4a'
+  1080→  1080→    ctx.fillRect(-6, -7, 12, 13)
+  1081→  1081→    ctx.fillStyle = '#2e5a78'
+  1082→  1082→    ctx.fillRect(-6, -7, 12, 5)
+  1083→  1083→    // Arms (stretched forward like Minecraft zombie)
+  1084→  1084→    ctx.fillStyle = '#5a8a5a'
+  1085→  1085→    ctx.fillRect(-10, -6, 4, 12)
+  1086→  1086→    ctx.fillRect(6, -6, 4, 12)
+  1087→  1087→    // Head
+  1088→  1088→    ctx.fillStyle = '#5a8a5a'
+  1089→  1089→    ctx.fillRect(-5, -19, 10, 12)
+  1090→  1090→    ctx.fillStyle = '#6aa06a'
+  1091→  1091→    ctx.fillRect(-5, -19, 10, 3)
+  1092→  1092→    // Eyes
+  1093→  1093→    ctx.fillStyle = '#111'
+  1094→  1094→    ctx.fillRect(-3, -15, 2, 2)
+  1095→  1095→    ctx.fillRect(1, -15, 2, 2)
+  1096→  1096→    // Mouth
+  1097→  1097→    ctx.fillStyle = '#2a4a2a'
+  1098→  1098→    ctx.fillRect(-2, -11, 4, 2)
+  1099→  1099→  } else if (m.type === 'creeper') {
+  1100→  1100→    // Legs (4 short legs)
+  1101→  1101→    ctx.fillStyle = '#15803d'
+  1102→  1102→    ctx.fillRect(-6, 4, 4, 6)
+  1103→  1103→    ctx.fillRect(2, 4, 4, 6)
+  1104→  1104→    // Body
+  1105→  1105→    ctx.fillStyle = '#22c55e'
+  1106→  1106→    ctx.fillRect(-5, -6, 10, 12)
+  1107→  1107→    ctx.fillStyle = '#1aaa4a'
+  1108→  1108→    ctx.fillRect(-5, -6, 10, 4)
+  1109→  1109→    // Head (bigger)
+  1110→  1110→    ctx.fillStyle = '#22c55e'
+  1111→  1111→    ctx.fillRect(-6, -20, 12, 14)
+  1112→  1112→    ctx.fillStyle = '#2edb5e'
+  1113→  1113→    ctx.fillRect(-6, -20, 12, 3)
+  1114→  1114→    // Creeper face!
+  1115→  1115→    ctx.fillStyle = '#111'
+  1116→  1116→    // Eyes
+  1117→  1117→    ctx.fillRect(-4, -17, 3, 3)
+  1118→  1118→    ctx.fillRect(1, -17, 3, 3)
+  1119→  1119→    // Nose bridge
+  1120→  1120→    ctx.fillRect(-1, -13, 2, 2)
+  1121→  1121→    // Mouth (sad frown)
+  1122→  1122→    ctx.fillRect(-3, -11, 6, 2)
+  1123→  1123→    ctx.fillRect(-2, -9, 1, 2)
+  1124→  1124→    ctx.fillRect(1, -9, 1, 2)
+  1125→  1125→  } else {
+  1126→  1126→    // Skeleton
+  1127→  1127→    // Legs (thin)
+  1128→  1128→    ctx.fillStyle = '#d4d4d4'
+  1129→  1129→    ctx.fillRect(-3 + legSwing, 4, 2, 9)
+  1130→  1130→    ctx.fillRect(1 - legSwing, 4, 2, 9)
+  1131→  1131→    // Ribcage body (thin)
+  1132→  1132→    ctx.fillStyle = '#e5e5e5'
+  1133→  1133→    ctx.fillRect(-1, -6, 2, 12)
+  1134→  1134→    ctx.fillStyle = '#ccc'
+  1135→  1135→    ctx.fillRect(-4, -5, 8, 1)
+  1136→  1136→    ctx.fillRect(-4, -2, 8, 1)
+  1137→  1137→    ctx.fillRect(-4, 1, 8, 1)
+  1138→  1138→    // Arms holding bow
+  1139→  1139→    ctx.fillStyle = '#d4d4d4'
+  1140→  1140→    ctx.fillRect(-8, -5, 3, 10)
+  1141→  1141→    ctx.fillRect(5, -5, 3, 10)
+  1142→  1142→    // Head
+  1143→  1143→    ctx.fillStyle = '#e5e5e5'
+  1144→  1144→    ctx.fillRect(-5, -18, 10, 12)
+  1145→  1145→    ctx.fillStyle = '#f5f5f5'
+  1146→  1146→    ctx.fillRect(-5, -18, 10, 3)
+  1147→  1147→    // Eyes
+  1148→  1148→    ctx.fillStyle = '#111'
+  1149→  1149→    ctx.fillRect(-3, -15, 2, 2)
+  1150→  1150→    ctx.fillRect(1, -15, 2, 2)
+  1151→  1151→    // Nose
+  1152→  1152→    ctx.fillStyle = '#bbb'
+  1153→  1153→    ctx.fillRect(-1, -12, 2, 1)
+  1154→  1154→    // Mouth
+  1155→  1155→    ctx.fillStyle = '#111'
+  1156→  1156→    ctx.fillRect(-3, -10, 6, 1)
+  1157→  1157→    // Bow
+  1158→  1158→    ctx.strokeStyle = '#8b4513'
+  1159→  1159→    ctx.lineWidth = 2
+  1160→  1160→    ctx.beginPath()
+  1161→  1161→    ctx.arc(9, -2, 8, -0.8, 0.8)
+  1162→  1162→    ctx.stroke()
+  1163→  1163→    ctx.strokeStyle = '#aaa'
+  1164→  1164→    ctx.lineWidth = 1
+  1165→  1165→    ctx.beginPath()
+  1166→  1166→    ctx.moveTo(9, -9)
+  1167→  1167→    ctx.lineTo(9, 5)
+  1168→  1168→    ctx.stroke()
+  1169→  1169→  }
+  1170→  1170→
+  1171→  1171→  // HP bar
+  1172→  1172→  if (m.hp < m.maxHp) {
+  1173→  1173→    ctx.globalAlpha = 1
+  1174→  1174→    ctx.fillStyle = 'rgba(0,0,0,0.6)'
+  1175→  1175→    ctx.fillRect(-10, -25, 20, 3)
+  1176→  1176→    const pct = m.hp / m.maxHp
+  1177→  1177→    ctx.fillStyle = pct > 0.5 ? '#22c55e' : pct > 0.25 ? '#eab308' : '#ef4444'
+  1178→  1178→    ctx.fillRect(-10, -25, 20 * pct, 3)
+  1179→  1179→  }
+  1180→  1180→
+  1181→  1181→  ctx.globalAlpha = 1
+  1182→  1182→  ctx.restore()
+  1183→  1183→}
+  1184→  1184→
+  1185→  1185→// ─── Draw Pixel Heart ────────────────────────────────────────────────────────
+  1186→  1186→function drawPixelHeart(ctx: CanvasRenderingContext2D, x: number, y: number, color: string, half = false) {
+  1187→  1187→  ctx.fillStyle = '#111'
+  1188→  1188→  ctx.fillRect(x, y, 14, 12)
+  1189→  1189→  ctx.fillStyle = color
+  1190→  1190→
+  1191→  1191→  // Heart pixel pattern
+  1192→  1192→  ctx.fillRect(x + 1, y + 2, 4, 4)
+  1193→  1193→  ctx.fillRect(x + 3, y + 1, 3, 2)
+  1194→  1194→  if (!half) {
+  1195→  1195→    ctx.fillRect(x + 7, y + 1, 3, 2)
+  1196→  1196→    ctx.fillRect(x + 8, y + 2, 4, 4)
+  1197→  1197→  }
+  1198→  1198→  ctx.fillRect(x + 1, y + 5, half ? 6 : 12, 3)
+  1199→  1199→  ctx.fillRect(x + 2, y + 8, half ? 4 : 10, 2)
+  1200→  1200→  ctx.fillRect(x + 4, y + 10, half ? 2 : 6, 1)
+  1201→  1201→  ctx.fillRect(x + 6, y + 11, half ? 0 : 2, 1)
+  1202→  1202→}
+  1203→  1203→

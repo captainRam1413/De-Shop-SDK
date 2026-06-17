@@ -1,0 +1,2002 @@
+     1→     1→@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+     2→     2→
+     3→     3→/* ═══════════════════════════════════════════════════════════════════════════════
+     4→     4→   DE-SHOP SDK — NEXUS FORGE THEME
+     5→     5→   ◆ Plasma Violet • Electric Lime • Solar Amber on Graphite
+     6→     6→   ═══════════════════════════════════════════════════════════════════════════════ */
+     7→     7→
+     8→     8→/* ─── CSS CUSTOM PROPERTY ANIMATION ──────────────────────────────────────────── */
+     9→     9→@property --border-angle {
+    10→    10→  syntax: '<angle>';
+    11→    11→  initial-value: 0deg;
+    12→    12→  inherits: false;
+    13→    13→}
+    14→    14→
+    15→    15→/* ─── NEXUS FORGE CUSTOM PROPERTIES ─────────────────────────────────────────── */
+    16→    16→:root {
+    17→    17→  /* ── Nexus Forge Gaming Palette ── */
+    18→    18→  --mc-dirt:            #27272A;
+    19→    19→  --mc-dirt-dark:       #1F1F23;
+    20→    20→  --mc-dirt-light:      #3F3F46;
+    21→    21→  --mc-grass:           #3F3F46;
+    22→    22→  --mc-grass-bright:    #52525B;
+    23→    23→  --mc-grass-dark:      #27272A;
+    24→    24→  --mc-stone:           #52525B;
+    25→    25→  --mc-stone-light:     #71717A;
+    26→    26→  --mc-stone-dark:      #3F3F46;
+    27→    27→  --mc-cobblestone:     #52525B;
+    28→    28→  --mc-oak:             #71717A;
+    29→    29→  --mc-oak-dark:        #52525B;
+    30→    30→  --mc-oak-light:       #A1A1AA;
+    31→    31→  --mc-spruce:          #3F3F46;
+    32→    32→  --mc-obsidian:        #18181B;
+    33→    33→  --mc-ender:           #2A2A35;
+    34→    34→  --mc-diamond:         #2DD4BF;
+    35→    35→  --mc-diamond-dark:    #14B8A6;
+    36→    36→  --mc-diamond-glow:    rgba(45,212,191,0.25);
+    37→    37→  --mc-emerald:         #C026D3;
+    38→    38→  --mc-emerald-dark:    #A21CAF;
+    39→    39→  --mc-emerald-glow:    rgba(192,38,211,0.25);
+    40→    40→  --mc-gold:            #FBBF24;
+    41→    41→  --mc-gold-dark:       #F59E0B;
+    42→    42→  --mc-gold-glow:       rgba(251,191,36,0.25);
+    43→    43→  --mc-redstone:        #F43F5E;
+    44→    44→  --mc-redstone-dark:   #E11D48;
+    45→    45→  --mc-redstone-glow:   rgba(244,63,94,0.25);
+    46→    46→  --mc-lapis:           #7C3AED;
+    47→    47→  --mc-lapis-bright:    #8B5CF6;
+    48→    48→  --mc-netherite:       #2A2A35;
+    49→    49→  --mc-netherite-light: #3F3F46;
+    50→    50→  --mc-iron:            #E4E4E7;
+    51→    51→  --mc-iron-dark:       #A1A1AA;
+    52→    52→  --mc-experience:      #A3E635;
+    53→    53→  --mc-night:           #0E0E12;
+    54→    54→  --mc-night-deep:      #08080C;
+    55→    55→  --mc-ui-dark:         #16161D;
+    56→    56→  --mc-ui-panel:        #121217;
+    57→    57→  --mc-ui-slot:         #71717A;
+    58→    58→  --mc-ui-slot-dark:    #3F3F46;
+    59→    59→  --mc-ui-slot-inner:   #18181B;
+    60→    60→  --mc-text:            #E8E8E8;
+    61→    61→  --mc-text-dim:        #A1A1AA;
+    62→    62→  --mc-tooltip-bg:      #121217;
+    63→    63→  --mc-tooltip-border:  #C026D3;
+    64→    64→
+    65→    65→  /* ── Retain legacy vars for compatibility ── */
+    66→    66→  --space-void:          #08080C;
+    67→    67→  --space-abyss:         #0C0C10;
+    68→    68→  --space-deep:          #0E0E12;
+    69→    69→  --space-midnight:      #121217;
+    70→    70→  --space-dim:           #16161D;
+    71→    71→  --space-muted:         #1F1F23;
+    72→    72→  --space-steel:         #27272A;
+    73→    73→  --space-fog:           #3F3F46;
+    74→    74→
+    75→    75→  --green:               #C026D3;
+    76→    76→  --green-bright:        #D946EF;
+    77→    77→  --green-dim:           #86198F;
+    78→    78→  --green-glow:          rgba(192,38,211,0.25);
+    79→    79→  --green-deep:          #A21CAF;
+    80→    80→  --green-neon:          #C026D3;
+    81→    81→  --green-matrix:        #A3E635;
+    82→    82→  --green-phantom:       rgba(192,38,211,0.06);
+    83→    83→  --green-subtle:        rgba(192,38,211,0.04);
+    84→    84→
+    85→    85→  --cyan:                #2DD4BF;
+    86→    86→  --cyan-bright:         #2DD4BF;
+    87→    87→  --cyan-deep:           #14B8A6;
+    88→    88→  --cyan-neon:           #2DD4BF;
+    89→    89→  --cyan-glow:           rgba(45,212,191,0.25);
+    90→    90→  --cyan-subtle:         rgba(45,212,191,0.06);
+    91→    91→
+    92→    92→  --purple:              #7C3AED;
+    93→    93→  --purple-bright:       #8B5CF6;
+    94→    94→  --purple-deep:         #6D28D9;
+    95→    95→  --purple-neon:         #A78BFA;
+    96→    96→  --purple-glow:         rgba(124,58,237,0.25);
+    97→    97→  --purple-subtle:       rgba(124,58,237,0.06);
+    98→    98→
+    99→    99→  --gold:                #FBBF24;
+   100→   100→  --gold-bright:         #FBBF24;
+   101→   101→  --gold-deep:           #F59E0B;
+   102→   102→  --gold-neon:           #FBBF24;
+   103→   103→  --gold-glow:           rgba(251,191,36,0.25);
+   104→   104→  --gold-subtle:         rgba(251,191,36,0.06);
+   105→   105→
+   106→   106→  --red:                 #F43F5E;
+   107→   107→  --red-bright:          #FB7185;
+   108→   108→  --red-deep:            #E11D48;
+   109→   109→
+   110→   110→  /* ── Typography ── */
+   111→   111→  --font-pixel: 'Orbitron', system-ui, sans-serif;
+   112→   112→  --font-body:  system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+   113→   113→}
+   114→   114→
+   115→   115→/* ─── KEYFRAME ANIMATIONS ────────────────────────────────────────────────────── */
+   116→   116→@keyframes border-rotate {
+   117→   117→  to { --border-angle: 360deg; }
+   118→   118→}
+   119→   119→
+   120→   120→@keyframes float {
+   121→   121→  0%, 100% { transform: translateY(0); }
+   122→   122→  50% { transform: translateY(-6px); }
+   123→   123→}
+   124→   124→
+   125→   125→@keyframes shimmer {
+   126→   126→  0% { transform: translateX(-100%); }
+   127→   127→  100% { transform: translateX(200%); }
+   128→   128→}
+   129→   129→
+   130→   130→@keyframes mc-place {
+   131→   131→  0% { transform: scale(0.85); opacity: 0; }
+   132→   132→  60% { transform: scale(1.02); }
+   133→   133→  100% { transform: scale(1); opacity: 1; }
+   134→   134→}
+   135→   135→
+   136→   136→@keyframes mc-flash {
+   137→   137→  0%, 100% { opacity: 1; }
+   138→   138→  50% { opacity: 0.5; }
+   139→   139→}
+   140→   140→
+   141→   141→@keyframes mc-glow-pulse {
+   142→   142→  0%, 100% { box-shadow: 0 0 4px currentColor; }
+   143→   143→  50% { box-shadow: 0 0 12px currentColor, 0 0 24px currentColor; }
+   144→   144→}
+   145→   145→
+   146→   146→@keyframes xp-fill {
+   147→   147→  from { width: 0; }
+   148→   148→}
+   149→   149→
+   150→   150→@keyframes slot-hover {
+   151→   151→  0%, 100% { background-color: rgba(255,255,255,0.04); }
+   152→   152→  50% { background-color: rgba(255,255,255,0.08); }
+   153→   153→}
+   154→   154→
+   155→   155→/* ═══════════════════════════════════════════════════════════════════════════════
+   156→   156→   GLOBAL RESETS & BASE
+   157→   157→   ═══════════════════════════════════════════════════════════════════════════════ */
+   158→   158→*, *::before, *::after {
+   159→   159→  border-radius: 0 !important;
+   160→   160→}
+   161→   161→
+   162→   162→html, body {
+   163→   163→  margin: 0;
+   164→   164→  padding: 0;
+   165→   165→  background: var(--mc-night-deep);
+   166→   166→  color: var(--mc-text);
+   167→   167→  font-family: var(--font-body);
+   168→   168→  font-size: 18px;
+   169→   169→  line-height: 1.4;
+   170→   170→  -webkit-font-smoothing: none;
+   171→   171→  -moz-osx-font-smoothing: unset;
+   172→   172→}
+   173→   173→
+   174→   174→#root {
+   175→   175→  min-height: 100vh;
+   176→   176→}
+   177→   177→
+   178→   178→h1, h2, h3, h4, h5, h6 {
+   179→   179→  font-family: var(--font-pixel);
+   180→   180→  letter-spacing: 0.02em;
+   181→   181→}
+   182→   182→
+   183→   183→a { color: var(--mc-diamond); text-decoration: none; }
+   184→   184→a:hover { color: var(--mc-emerald); }
+   185→   185→
+   186→   186→::selection {
+   187→   187→  background: var(--mc-emerald);
+   188→   188→  color: var(--mc-night-deep);
+   189→   189→}
+   190→   190→
+   191→   191→/* ─── Custom Scrollbar ───────────────────────────────────────────────────────── */
+   192→   192→::-webkit-scrollbar { width: 8px; height: 8px; }
+   193→   193→::-webkit-scrollbar-track { background: var(--mc-night); }
+   194→   194→::-webkit-scrollbar-thumb {
+   195→   195→  background: var(--mc-stone-dark);
+   196→   196→  border: 1px solid var(--mc-stone);
+   197→   197→}
+   198→   198→::-webkit-scrollbar-thumb:hover { background: var(--mc-stone); }
+   199→   199→
+   200→   200→/* ═══════════════════════════════════════════════════════════════════════════════
+   201→   201→   LAYOUT — APP SHELL
+   202→   202→   ═══════════════════════════════════════════════════════════════════════════════ */
+   203→   203→.premium-app, .mc-app {
+   204→   204→  display: flex;
+   205→   205→  height: 100vh;
+   206→   206→  overflow: hidden;
+   207→   207→  background: var(--mc-night-deep);
+   208→   208→  position: relative;
+   209→   209→}
+   210→   210→
+   211→   211→.premium-main, .mc-main {
+   212→   212→  flex: 1;
+   213→   213→  display: flex;
+   214→   214→  flex-direction: column;
+   215→   215→  overflow: hidden;
+   216→   216→  min-width: 0;
+   217→   217→}
+   218→   218→
+   219→   219→.premium-content, .mc-content {
+   220→   220→  flex: 1;
+   221→   221→  overflow-y: auto;
+   222→   222→  overflow-x: hidden;
+   223→   223→  padding: 16px;
+   224→   224→  position: relative;
+   225→   225→  z-index: 1;
+   226→   226→}
+   227→   227→
+   228→   228→/* ═══════════════════════════════════════════════════════════════════════════════
+   229→   229→   SIDEBAR — NEXUS FORGE PANEL STYLE
+   230→   230→   ═══════════════════════════════════════════════════════════════════════════════ */
+   231→   231→.premium-sidebar, .mc-sidebar {
+   232→   232→  display: flex;
+   233→   233→  flex-direction: column;
+   234→   234→  background: linear-gradient(180deg, #3B2A1A 0%, #2A1D12 50%, #1E140C 100%);
+   235→   235→  border-right: 3px solid var(--mc-oak-dark);
+   236→   236→  box-shadow: inset -2px 0 0 rgba(0,0,0,0.3), inset 2px 0 0 var(--mc-oak-light);
+   237→   237→  overflow: hidden;
+   238→   238→  position: relative;
+   239→   239→  z-index: 10;
+   240→   240→}
+   241→   241→
+   242→   242→/* Oak plank texture pattern */
+   243→   243→.premium-sidebar::before, .mc-sidebar::before {
+   244→   244→  content: '';
+   245→   245→  position: absolute;
+   246→   246→  inset: 0;
+   247→   247→  background:
+   248→   248→    repeating-linear-gradient(
+   249→   249→      0deg,
+   250→   250→      transparent,
+   251→   251→      transparent 20px,
+   252→   252→      rgba(0,0,0,0.05) 20px,
+   253→   253→      rgba(0,0,0,0.05) 21px
+   254→   254→    ),
+   255→   255→    repeating-linear-gradient(
+   256→   256→      90deg,
+   257→   257→      transparent,
+   258→   258→      transparent 40px,
+   259→   259→      rgba(0,0,0,0.03) 40px,
+   260→   260→      rgba(0,0,0,0.03) 41px
+   261→   261→    );
+   262→   262→  pointer-events: none;
+   263→   263→  z-index: 0;
+   264→   264→}
+   265→   265→
+   266→   266→.premium-sidebar__brand, .mc-sidebar__brand {
+   267→   267→  display: flex;
+   268→   268→  align-items: center;
+   269→   269→  gap: 10px;
+   270→   270→  padding: 14px 12px;
+   271→   271→  border-bottom: 3px solid var(--mc-oak-dark);
+   272→   272→  position: relative;
+   273→   273→  z-index: 1;
+   274→   274→}
+   275→   275→
+   276→   276→.premium-sidebar__brand img {
+   277→   277→  image-rendering: pixelated;
+   278→   278→  flex-shrink: 0;
+   279→   279→}
+   280→   280→
+   281→   281→.premium-sidebar__title, .mc-sidebar__title {
+   282→   282→  font-family: var(--font-pixel);
+   283→   283→  font-size: 11px;
+   284→   284→  color: var(--mc-gold);
+   285→   285→  text-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+   286→   286→  letter-spacing: 0.04em;
+   287→   287→}
+   288→   288→
+   289→   289→.premium-sidebar__subtitle, .mc-sidebar__subtitle {
+   290→   290→  font-family: var(--font-pixel);
+   291→   291→  font-size: 7px;
+   292→   292→  color: var(--mc-emerald);
+   293→   293→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+   294→   294→  letter-spacing: 0.04em;
+   295→   295→  margin-top: 2px;
+   296→   296→}
+   297→   297→
+   298→   298→.premium-sidebar__brand-text {
+   299→   299→  display: flex;
+   300→   300→  flex-direction: column;
+   301→   301→}
+   302→   302→
+   303→   303→/* ─── Sidebar Nav Items ─────────────────────────────────────────────────────── */
+   304→   304→.premium-sidebar__nav, .mc-sidebar__nav {
+   305→   305→  flex: 1;
+   306→   306→  display: flex;
+   307→   307→  flex-direction: column;
+   308→   308→  gap: 2px;
+   309→   309→  padding: 8px 6px;
+   310→   310→  overflow-y: auto;
+   311→   311→  position: relative;
+   312→   312→  z-index: 1;
+   313→   313→}
+   314→   314→
+   315→   315→.premium-sidebar__item, .mc-sidebar__item {
+   316→   316→  display: flex;
+   317→   317→  align-items: center;
+   318→   318→  gap: 8px;
+   319→   319→  padding: 8px 10px;
+   320→   320→  font-family: var(--font-pixel);
+   321→   321→  font-size: 8px;
+   322→   322→  color: var(--mc-text-dim);
+   323→   323→  background: transparent;
+   324→   324→  border: 2px solid transparent;
+   325→   325→  cursor: pointer;
+   326→   326→  transition: none;
+   327→   327→  position: relative;
+   328→   328→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+   329→   329→  width: 100%;
+   330→   330→  text-align: left;
+   331→   331→  overflow: hidden;
+   332→   332→}
+   333→   333→
+   334→   334→.premium-sidebar__item:hover, .mc-sidebar__item:hover {
+   335→   335→  background: rgba(255,255,255,0.06);
+   336→   336→  color: var(--mc-text);
+   337→   337→  border-color: rgba(255,255,255,0.1);
+   338→   338→}
+   339→   339→
+   340→   340→.premium-sidebar__item--active, .mc-sidebar__item--active {
+   341→   341→  background: rgba(255,255,255,0.1);
+   342→   342→  color: var(--mc-text);
+   343→   343→  border-color: rgba(255,255,255,0.15);
+   344→   344→  box-shadow: inset 0 0 8px rgba(255,255,255,0.03);
+   345→   345→}
+   346→   346→
+   347→   347→.premium-sidebar__active-bar, .mc-sidebar__active-bar {
+   348→   348→  position: absolute;
+   349→   349→  left: 0;
+   350→   350→  top: 4px;
+   351→   351→  bottom: 4px;
+   352→   352→  width: 3px;
+   353→   353→  border-radius: 0;
+   354→   354→}
+   355→   355→
+   356→   356→.premium-sidebar__item-label {
+   357→   357→  font-size: 8px;
+   358→   358→  white-space: nowrap;
+   359→   359→  overflow: hidden;
+   360→   360→  text-overflow: ellipsis;
+   361→   361→  min-width: 0;
+   362→   362→}
+   363→   363→
+   364→   364→/* ─── Sidebar Footer ────────────────────────────────────────────────────────── */
+   365→   365→.premium-sidebar__footer, .mc-sidebar__footer {
+   366→   366→  padding: 10px 10px 12px;
+   367→   367→  border-top: 3px solid var(--mc-oak-dark);
+   368→   368→  display: flex;
+   369→   369→  flex-direction: column;
+   370→   370→  gap: 8px;
+   371→   371→  position: relative;
+   372→   372→  z-index: 1;
+   373→   373→}
+   374→   374→
+   375→   375→.premium-sidebar__status, .mc-sidebar__status {
+   376→   376→  display: flex;
+   377→   377→  align-items: center;
+   378→   378→  gap: 8px;
+   379→   379→}
+   380→   380→
+   381→   381→.premium-sidebar__status-text, .mc-sidebar__status-text {
+   382→   382→  font-family: var(--font-pixel);
+   383→   383→  font-size: 7px;
+   384→   384→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+   385→   385→}
+   386→   386→
+   387→   387→.status-dot, .mc-status-dot {
+   388→   388→  width: 8px;
+   389→   389→  height: 8px;
+   390→   390→  border-radius: 0;
+   391→   391→  background: var(--mc-redstone);
+   392→   392→  display: inline-block;
+   393→   393→  box-shadow: 0 0 4px var(--mc-redstone-dark);
+   394→   394→}
+   395→   395→
+   396→   396→.status-dot.connected, .mc-status-dot.mc-connected {
+   397→   397→  background: var(--mc-emerald);
+   398→   398→  box-shadow: 0 0 6px var(--mc-emerald-glow);
+   399→   399→}
+   400→   400→
+   401→   401→.premium-sidebar__collapse, .mc-sidebar__collapse {
+   402→   402→  display: flex;
+   403→   403→  align-items: center;
+   404→   404→  justify-content: center;
+   405→   405→  padding: 6px;
+   406→   406→  background: var(--mc-stone-dark);
+   407→   407→  border: 2px solid;
+   408→   408→  border-color: var(--mc-stone-light) var(--mc-stone-dark) var(--mc-stone-dark) var(--mc-stone-light);
+   409→   409→  color: var(--mc-text);
+   410→   410→  cursor: pointer;
+   411→   411→  font-family: var(--font-pixel);
+   412→   412→  font-size: 8px;
+   413→   413→  transition: none;
+   414→   414→}
+   415→   415→
+   416→   416→.premium-sidebar__collapse:hover, .mc-sidebar__collapse:hover {
+   417→   417→  background: var(--mc-stone);
+   418→   418→}
+   419→   419→
+   420→   420→.premium-sidebar__collapse:active, .mc-sidebar__collapse:active {
+   421→   421→  border-color: var(--mc-stone-dark) var(--mc-stone-light) var(--mc-stone-light) var(--mc-stone-dark);
+   422→   422→}
+   423→   423→
+   424→   424→/* ═══════════════════════════════════════════════════════════════════════════════
+   425→   425→   HEADER — STONE BAR
+   426→   426→   ═══════════════════════════════════════════════════════════════════════════════ */
+   427→   427→.premium-header, .mc-header {
+   428→   428→  display: flex;
+   429→   429→  align-items: center;
+   430→   430→  justify-content: space-between;
+   431→   431→  padding: 6px 12px;
+   432→   432→  background: linear-gradient(180deg, #4A4A4A 0%, #3A3A3A 50%, #2A2A2A 100%);
+   433→   433→  border-bottom: 3px solid var(--mc-stone-dark);
+   434→   434→  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+   435→   435→  min-height: 40px;
+   436→   436→  position: relative;
+   437→   437→  z-index: 5;
+   438→   438→  flex-wrap: wrap;
+   439→   439→  gap: 4px;
+   440→   440→}
+   441→   441→
+   442→   442→.premium-header__left, .mc-header__left {
+   443→   443→  display: flex;
+   444→   444→  align-items: center;
+   445→   445→  gap: 8px;
+   446→   446→  min-width: 0;
+   447→   447→  overflow: hidden;
+   448→   448→}
+   449→   449→
+   450→   450→.premium-header__right, .mc-header__right {
+   451→   451→  display: flex;
+   452→   452→  align-items: center;
+   453→   453→  gap: 6px;
+   454→   454→  flex-shrink: 0;
+   455→   455→}
+   456→   456→
+   457→   457→.premium-header__net-badge, .mc-header__net-badge {
+   458→   458→  display: flex;
+   459→   459→  align-items: center;
+   460→   460→  gap: 6px;
+   461→   461→  font-family: var(--font-pixel);
+   462→   462→  font-size: 8px;
+   463→   463→  color: var(--mc-emerald);
+   464→   464→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+   465→   465→  padding: 4px 8px;
+   466→   466→  background: rgba(0,0,0,0.3);
+   467→   467→  border: 2px solid var(--mc-emerald-dark);
+   468→   468→}
+   469→   469→
+   470→   470→.premium-header__status {
+   471→   471→  font-family: var(--font-pixel);
+   472→   472→  font-size: 8px;
+   473→   473→  padding: 4px 8px;
+   474→   474→  background: rgba(0,0,0,0.3);
+   475→   475→  border: 1px solid var(--mc-stone-dark);
+   476→   476→  color: var(--mc-text-dim);
+   477→   477→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+   478→   478→}
+   479→   479→
+   480→   480→.premium-header__status--success {
+   481→   481→  color: var(--mc-emerald);
+   482→   482→  border-color: var(--mc-emerald-dark);
+   483→   483→}
+   484→   484→
+   485→   485→.premium-header__status--error {
+   486→   486→  color: var(--mc-redstone);
+   487→   487→  border-color: var(--mc-redstone-dark);
+   488→   488→}
+   489→   489→
+   490→   490→.premium-header__steam, .mc-header__player {
+   491→   491→  display: flex;
+   492→   492→  align-items: center;
+   493→   493→  gap: 6px;
+   494→   494→  padding: 3px 8px;
+   495→   495→  background: rgba(0,0,0,0.3);
+   496→   496→  border: 2px solid var(--mc-gold-dark);
+   497→   497→}
+   498→   498→
+   499→   499→.premium-header__steam img, .mc-header__player img {
+   500→   500→  image-rendering: pixelated;
+   501→   501→}
+   502→   502→
+   503→   503→.premium-header__wallet-info, .mc-header__wallet-info {
+   504→   504→  display: flex;
+   505→   505→  align-items: center;
+   506→   506→  gap: 6px;
+   507→   507→  padding: 4px 8px;
+   508→   508→  background: rgba(0,0,0,0.3);
+   509→   509→  border: 2px solid var(--mc-diamond-dark);
+   510→   510→}
+   511→   511→
+   512→   512→.premium-header__addr {
+   513→   513→  font-family: var(--font-pixel);
+   514→   514→  font-size: 8px;
+   515→   515→  color: var(--mc-diamond);
+   516→   516→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+   517→   517→}
+   518→   518→
+   519→   519→.premium-header__disconnect, .mc-header__disconnect {
+   520→   520→  font-family: var(--font-pixel);
+   521→   521→  font-size: 7px;
+   522→   522→  color: var(--mc-redstone);
+   523→   523→  background: transparent;
+   524→   524→  border: 1px solid var(--mc-redstone-dark);
+   525→   525→  padding: 2px 6px;
+   526→   526→  cursor: pointer;
+   527→   527→}
+   528→   528→
+   529→   529→.premium-header__disconnect:hover, .mc-header__disconnect:hover {
+   530→   530→  background: rgba(244, 63, 94,0.1);
+   531→   531→}
+   532→   532→
+   533→   533→/* ═══════════════════════════════════════════════════════════════════════════════
+   534→   534→   NEXUS FORGE BUTTONS — 3D RAISED STYLE
+   535→   535→   ═══════════════════════════════════════════════════════════════════════════════ */
+   536→   536→.premium-btn {
+   537→   537→  display: inline-flex;
+   538→   538→  align-items: center;
+   539→   539→  gap: 5px;
+   540→   540→  font-family: var(--font-pixel);
+   541→   541→  font-size: 8px;
+   542→   542→  padding: 5px 10px;
+   543→   543→  background: var(--mc-stone);
+   544→   544→  border: 2px solid;
+   545→   545→  border-color: var(--mc-stone-light) var(--mc-stone-dark) var(--mc-stone-dark) var(--mc-stone-light);
+   546→   546→  color: var(--mc-text);
+   547→   547→  cursor: pointer;
+   548→   548→  text-shadow: 1px 1px 0px rgba(0,0,0,0.6);
+   549→   549→  transition: none;
+   550→   550→  white-space: nowrap;
+   551→   551→  position: relative;
+   552→   552→  overflow: hidden;
+   553→   553→  text-overflow: ellipsis;
+   554→   554→  max-width: 100%;
+   555→   555→}
+   556→   556→
+   557→   557→.premium-btn:hover {
+   558→   558→  background: var(--mc-stone-light);
+   559→   559→  color: #fff;
+   560→   560→}
+   561→   561→
+   562→   562→.premium-btn:active {
+   563→   563→  border-color: var(--mc-stone-dark) var(--mc-stone-light) var(--mc-stone-light) var(--mc-stone-dark);
+   564→   564→  padding: 6px 9px 4px 11px;
+   565→   565→}
+   566→   566→
+   567→   567→.premium-btn:disabled {
+   568→   568→  opacity: 0.4;
+   569→   569→  cursor: not-allowed;
+   570→   570→}
+   571→   571→
+   572→   572→.premium-btn--sm {
+   573→   573→  font-size: 7px;
+   574→   574→  padding: 4px 8px;
+   575→   575→  gap: 4px;
+   576→   576→}
+   577→   577→
+   578→   578→.premium-btn--xs {
+   579→   579→  font-size: 6px;
+   580→   580→  padding: 2px 5px;
+   581→   581→  gap: 3px;
+   582→   582→}
+   583→   583→
+   584→   584→.premium-btn--active {
+   585→   585→  background: var(--mc-emerald-dark);
+   586→   586→  border-color: var(--mc-emerald) var(--mc-emerald-dark) var(--mc-emerald-dark) var(--mc-emerald);
+   587→   587→}
+   588→   588→
+   589→   589→/* Button color variants */
+   590→   590→.premium-btn--green {
+   591→   591→  background: var(--mc-emerald-dark);
+   592→   592→  border-color: var(--mc-emerald) var(--mc-emerald-dark) var(--mc-emerald-dark) var(--mc-emerald);
+   593→   593→  color: #fff;
+   594→   594→}
+   595→   595→
+   596→   596→.premium-btn--green:hover {
+   597→   597→  background: var(--mc-emerald);
+   598→   598→}
+   599→   599→
+   600→   600→.premium-btn--cyan, .premium-btn--diamond {
+   601→   601→  background: var(--mc-diamond-dark);
+   602→   602→  border-color: var(--mc-diamond) var(--mc-diamond-dark) var(--mc-diamond-dark) var(--mc-diamond);
+   603→   603→  color: #fff;
+   604→   604→}
+   605→   605→
+   606→   606→.premium-btn--cyan:hover, .premium-btn--diamond:hover {
+   607→   607→  background: var(--mc-diamond);
+   608→   608→}
+   609→   609→
+   610→   610→.premium-btn--purple, .premium-btn--netherite {
+   611→   611→  background: #4C1D95;
+   612→   612→  border-color: #7C3AED #4C1D95 #4C1D95 #7C3AED;
+   613→   613→  color: #fff;
+   614→   614→}
+   615→   615→
+   616→   616→.premium-btn--purple:hover, .premium-btn--netherite:hover {
+   617→   617→  background: #6D28D9;
+   618→   618→}
+   619→   619→
+   620→   620→.premium-btn--gold {
+   621→   621→  background: var(--mc-gold-dark);
+   622→   622→  border-color: var(--mc-gold) var(--mc-gold-dark) var(--mc-gold-dark) var(--mc-gold);
+   623→   623→  color: #000;
+   624→   624→  text-shadow: 1px 1px 0px rgba(255,255,255,0.3);
+   625→   625→}
+   626→   626→
+   627→   627→.premium-btn--gold:hover {
+   628→   628→  background: var(--mc-gold);
+   629→   629→}
+   630→   630→
+   631→   631→/* Wallet connect button */
+   632→   632→.mc-btn-wallet {
+   633→   633→  background: var(--mc-emerald-dark);
+   634→   634→  border-color: var(--mc-emerald) var(--mc-emerald-dark) var(--mc-emerald-dark) var(--mc-emerald);
+   635→   635→  color: #fff;
+   636→   636→}
+   637→   637→
+   638→   638→.mc-btn-wallet:hover {
+   639→   639→  background: var(--mc-emerald);
+   640→   640→}
+   641→   641→
+   642→   642→/* ═══════════════════════════════════════════════════════════════════════════════
+   643→   643→   CARDS — NEXUS FORGE INVENTORY PANEL STYLE
+   644→   644→   ═══════════════════════════════════════════════════════════════════════════════ */
+   645→   645→.premium-card, .mc-card {
+   646→   646→  background: var(--mc-ui-panel);
+   647→   647→  border: 3px solid;
+   648→   648→  border-color: #555 #222 #222 #555;
+   649→   649→  box-shadow: inset 1px 1px 0 rgba(255,255,255,0.05), inset -1px -1px 0 rgba(0,0,0,0.3);
+   650→   650→  padding: 12px;
+   651→   651→  position: relative;
+   652→   652→  overflow: hidden;
+   653→   653→}
+   654→   654→
+   655→   655→/* Inner slot pattern */
+   656→   656→.premium-card::after, .mc-card::after {
+   657→   657→  content: '';
+   658→   658→  position: absolute;
+   659→   659→  inset: 0;
+   660→   660→  background:
+   661→   661→    repeating-linear-gradient(
+   662→   662→      0deg,
+   663→   663→      transparent,
+   664→   664→      transparent 2px,
+   665→   665→      rgba(255,255,255,0.01) 2px,
+   666→   666→      rgba(255,255,255,0.01) 3px
+   667→   667→    );
+   668→   668→  pointer-events: none;
+   669→   669→}
+   670→   670→
+   671→   671→/* ═══════════════════════════════════════════════════════════════════════════════
+   672→   672→   INPUTS & SELECTS — NEXUS FORGE STYLE
+   673→   673→   ═══════════════════════════════════════════════════════════════════════════════ */
+   674→   674→.premium-input {
+   675→   675→  font-family: var(--font-body);
+   676→   676→  font-size: 16px;
+   677→   677→  padding: 6px 10px;
+   678→   678→  background: #000;
+   679→   679→  border: 2px solid;
+   680→   680→  border-color: #444 #111 #111 #444;
+   681→   681→  color: var(--mc-text);
+   682→   682→  outline: none;
+   683→   683→}
+   684→   684→
+   685→   685→.premium-input:focus {
+   686→   686→  border-color: var(--mc-diamond);
+   687→   687→  box-shadow: 0 0 6px var(--mc-diamond-glow);
+   688→   688→}
+   689→   689→
+   690→   690→.premium-input::placeholder {
+   691→   691→  color: var(--mc-text-dim);
+   692→   692→  opacity: 0.6;
+   693→   693→}
+   694→   694→
+   695→   695→.premium-select {
+   696→   696→  font-family: var(--font-body);
+   697→   697→  font-size: 16px;
+   698→   698→  padding: 6px 10px;
+   699→   699→  background: #000;
+   700→   700→  border: 2px solid;
+   701→   701→  border-color: #444 #111 #111 #444;
+   702→   702→  color: var(--mc-text);
+   703→   703→  outline: none;
+   704→   704→  cursor: pointer;
+   705→   705→  appearance: auto;
+   706→   706→}
+   707→   707→
+   708→   708→.premium-select:focus {
+   709→   709→  border-color: var(--mc-diamond);
+   710→   710→}
+   711→   711→
+   712→   712→/* ═══════════════════════════════════════════════════════════════════════════════
+   713→   713→   BADGES & CHIPS
+   714→   714→   ═══════════════════════════════════════════════════════════════════════════════ */
+   715→   715→.premium-badge {
+   716→   716→  font-family: var(--font-pixel);
+   717→   717→  font-size: 7px;
+   718→   718→  padding: 2px 6px;
+   719→   719→  border: 1px solid;
+   720→   720→  display: inline-flex;
+   721→   721→  align-items: center;
+   722→   722→  gap: 4px;
+   723→   723→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+   724→   724→  letter-spacing: 0.06em;
+   725→   725→}
+   726→   726→
+   727→   727→.premium-badge--rarity {
+   728→   728→  font-weight: 700;
+   729→   729→}
+   730→   730→
+   731→   731→.premium-chip {
+   732→   732→  font-family: var(--font-pixel);
+   733→   733→  font-size: 7px;
+   734→   734→  padding: 2px 6px;
+   735→   735→  background: rgba(255,255,255,0.06);
+   736→   736→  border: 1px solid rgba(255,255,255,0.1);
+   737→   737→  color: var(--mc-text-dim);
+   738→   738→}
+   739→   739→
+   740→   740→/* Rarity badge colors */
+   741→   741→.badge-common, .premium-badge--common {
+   742→   742→  background: rgba(212,212,212,0.1);
+   743→   743→  border-color: var(--mc-iron-dark);
+   744→   744→  color: var(--mc-iron);
+   745→   745→}
+   746→   746→
+   747→   747→.badge-rare, .premium-badge--rare {
+   748→   748→  background: rgba(45, 212, 191,0.1);
+   749→   749→  border-color: var(--mc-diamond-dark);
+   750→   750→  color: var(--mc-diamond);
+   751→   751→}
+   752→   752→
+   753→   753→.badge-epic, .premium-badge--epic {
+   754→   754→  background: rgba(124, 58, 237,0.1);
+   755→   755→  border-color: #7c3aed;
+   756→   756→  color: #A78BFA;
+   757→   757→}
+   758→   758→
+   759→   759→.badge-legendary, .premium-badge--legendary {
+   760→   760→  background: rgba(251, 191, 36,0.1);
+   761→   761→  border-color: var(--mc-gold-dark);
+   762→   762→  color: var(--mc-gold);
+   763→   763→  animation: mc-glow-pulse 2s ease-in-out infinite;
+   764→   764→}
+   765→   765→
+   766→   766→/* ═══════════════════════════════════════════════════════════════════════════════
+   767→   767→   THEME TOGGLE
+   768→   768→   ═══════════════════════════════════════════════════════════════════════════════ */
+   769→   769→.theme-toggle {
+   770→   770→  display: flex;
+   771→   771→  align-items: center;
+   772→   772→  justify-content: center;
+   773→   773→  width: 30px;
+   774→   774→  height: 30px;
+   775→   775→  background: var(--mc-stone-dark);
+   776→   776→  border: 2px solid;
+   777→   777→  border-color: var(--mc-stone-light) var(--mc-stone-dark) var(--mc-stone-dark) var(--mc-stone-light);
+   778→   778→  color: var(--mc-gold);
+   779→   779→  cursor: pointer;
+   780→   780→}
+   781→   781→
+   782→   782→.theme-toggle:hover {
+   783→   783→  background: var(--mc-stone);
+   784→   784→}
+   785→   785→
+   786→   786→.theme-toggle:active {
+   787→   787→  border-color: var(--mc-stone-dark) var(--mc-stone-light) var(--mc-stone-light) var(--mc-stone-dark);
+   788→   788→}
+   789→   789→
+   790→   790→/* ═══════════════════════════════════════════════════════════════════════════════
+   791→   791→   MODAL — NEXUS FORGE INVENTORY POPUP
+   792→   792→   ═══════════════════════════════════════════════════════════════════════════════ */
+   793→   793→.premium-modal-overlay {
+   794→   794→  position: fixed;
+   795→   795→  inset: 0;
+   796→   796→  background: rgba(0,0,0,0.75);
+   797→   797→  display: flex;
+   798→   798→  align-items: center;
+   799→   799→  justify-content: center;
+   800→   800→  z-index: 100;
+   801→   801→}
+   802→   802→
+   803→   803→.premium-modal {
+   804→   804→  background: var(--mc-ui-panel);
+   805→   805→  border: 4px solid;
+   806→   806→  border-color: #555 #222 #222 #555;
+   807→   807→  box-shadow: inset 1px 1px 0 rgba(255,255,255,0.05);
+   808→   808→  padding: 24px;
+   809→   809→  min-width: 340px;
+   810→   810→  max-width: 90vw;
+   811→   811→  position: relative;
+   812→   812→}
+   813→   813→
+   814→   814→/* ═══════════════════════════════════════════════════════════════════════════════
+   815→   815→   TOAST NOTIFICATIONS — ACTION BAR STYLE
+   816→   816→   ═══════════════════════════════════════════════════════════════════════════════ */
+   817→   817→.premium-notifications, .mc-notifications {
+   818→   818→  position: fixed;
+   819→   819→  top: 12px;
+   820→   820→  right: 12px;
+   821→   821→  z-index: 200;
+   822→   822→  display: flex;
+   823→   823→  flex-direction: column;
+   824→   824→  gap: 6px;
+   825→   825→  pointer-events: none;
+   826→   826→}
+   827→   827→
+   828→   828→.premium-toast, .mc-toast {
+   829→   829→  display: flex;
+   830→   830→  align-items: center;
+   831→   831→  gap: 8px;
+   832→   832→  padding: 8px 14px;
+   833→   833→  font-family: var(--font-pixel);
+   834→   834→  font-size: 8px;
+   835→   835→  cursor: pointer;
+   836→   836→  pointer-events: auto;
+   837→   837→  background: var(--mc-ui-panel);
+   838→   838→  border: 2px solid;
+   839→   839→  border-color: #555 #222 #222 #555;
+   840→   840→  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+   841→   841→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+   842→   842→  max-width: 320px;
+   843→   843→}
+   844→   844→
+   845→   845→.premium-toast__icon {
+   846→   846→  font-size: 12px;
+   847→   847→  flex-shrink: 0;
+   848→   848→}
+   849→   849→
+   850→   850→.premium-toast--success {
+   851→   851→  border-color: var(--mc-emerald) var(--mc-emerald-dark) var(--mc-emerald-dark) var(--mc-emerald);
+   852→   852→}
+   853→   853→
+   854→   854→.premium-toast--success .premium-toast__icon { color: var(--mc-emerald); }
+   855→   855→
+   856→   856→.premium-toast--error {
+   857→   857→  border-color: var(--mc-redstone) var(--mc-redstone-dark) var(--mc-redstone-dark) var(--mc-redstone);
+   858→   858→}
+   859→   859→
+   860→   860→.premium-toast--error .premium-toast__icon { color: var(--mc-redstone); }
+   861→   861→
+   862→   862→.premium-toast--warning {
+   863→   863→  border-color: var(--mc-gold) var(--mc-gold-dark) var(--mc-gold-dark) var(--mc-gold);
+   864→   864→}
+   865→   865→
+   866→   866→.premium-toast--warning .premium-toast__icon { color: var(--mc-gold); }
+   867→   867→
+   868→   868→.premium-toast--info {
+   869→   869→  border-color: var(--mc-diamond) var(--mc-diamond-dark) var(--mc-diamond-dark) var(--mc-diamond);
+   870→   870→}
+   871→   871→
+   872→   872→.premium-toast--info .premium-toast__icon { color: var(--mc-diamond); }
+   873→   873→
+   874→   874→.premium-toast__msg {
+   875→   875→  color: var(--mc-text);
+   876→   876→  font-family: var(--font-body);
+   877→   877→  font-size: 14px;
+   878→   878→}
+   879→   879→
+   880→   880→/* ═══════════════════════════════════════════════════════════════════════════════
+   881→   881→   EMPTY STATE
+   882→   882→   ═══════════════════════════════════════════════════════════════════════════════ */
+   883→   883→.premium-empty-state {
+   884→   884→  display: flex;
+   885→   885→  flex-direction: column;
+   886→   886→  align-items: center;
+   887→   887→  justify-content: center;
+   888→   888→  padding: 32px 16px;
+   889→   889→  text-align: center;
+   890→   890→  grid-column: 1 / -1;
+   891→   891→}
+   892→   892→
+   893→   893→.premium-empty-state__icon {
+   894→   894→  font-size: 40px;
+   895→   895→  margin-bottom: 12px;
+   896→   896→}
+   897→   897→
+   898→   898→.premium-empty-state__title {
+   899→   899→  font-family: var(--font-pixel);
+   900→   900→  font-size: 10px;
+   901→   901→  color: var(--mc-text);
+   902→   902→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+   903→   903→  margin-bottom: 6px;
+   904→   904→}
+   905→   905→
+   906→   906→.premium-empty-state__desc {
+   907→   907→  font-family: var(--font-body);
+   908→   908→  font-size: 16px;
+   909→   909→  color: var(--mc-text-dim);
+   910→   910→}
+   911→   911→
+   912→   912→/* ═══════════════════════════════════════════════════════════════════════════════
+   913→   913→   SKIN CARD — INVENTORY SLOT STYLE
+   914→   914→   ═══════════════════════════════════════════════════════════════════════════════ */
+   915→   915→.skin-card {
+   916→   916→  display: flex;
+   917→   917→  align-items: center;
+   918→   918→  gap: 10px;
+   919→   919→  padding: 10px;
+   920→   920→  background: #1A1A1A;
+   921→   921→  border: 2px solid;
+   922→   922→  border-color: #555 #222 #222 #555;
+   923→   923→  position: relative;
+   924→   924→  transition: none;
+   925→   925→}
+   926→   926→
+   927→   927→.skin-card:hover {
+   928→   928→  background: #222;
+   929→   929→}
+   930→   930→
+   931→   931→.skin-card--active {
+   932→   932→  background: rgba(192, 38, 211,0.08);
+   933→   933→  border-color: var(--mc-emerald) var(--mc-emerald-dark) var(--mc-emerald-dark) var(--mc-emerald);
+   934→   934→}
+   935→   935→
+   936→   936→.skin-card__shimmer {
+   937→   937→  position: absolute;
+   938→   938→  top: 0;
+   939→   939→  left: 0;
+   940→   940→  right: 0;
+   941→   941→  height: 1px;
+   942→   942→  overflow: hidden;
+   943→   943→}
+   944→   944→
+   945→   945→.skin-card__icon {
+   946→   946→  width: 36px;
+   947→   947→  height: 36px;
+   948→   948→  display: flex;
+   949→   949→  align-items: center;
+   950→   950→  justify-content: center;
+   951→   951→  background: #000;
+   952→   952→  border: 2px solid;
+   953→   953→  border-color: #444 #111 #111 #444;
+   954→   954→  flex-shrink: 0;
+   955→   955→}
+   956→   956→
+   957→   957→.skin-card__info {
+   958→   958→  flex: 1;
+   959→   959→  min-width: 0;
+   960→   960→}
+   961→   961→
+   962→   962→.skin-card__name {
+   963→   963→  font-family: var(--font-pixel);
+   964→   964→  font-size: 8px;
+   965→   965→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+   966→   966→  margin-bottom: 4px;
+   967→   967→  white-space: nowrap;
+   968→   968→  overflow: hidden;
+   969→   969→  text-overflow: ellipsis;
+   970→   970→}
+   971→   971→
+   972→   972→.skin-card__meta {
+   973→   973→  display: flex;
+   974→   974→  align-items: center;
+   975→   975→  gap: 6px;
+   976→   976→  flex-wrap: wrap;
+   977→   977→}
+   978→   978→
+   979→   979→.skin-card__asa {
+   980→   980→  font-family: var(--font-pixel);
+   981→   981→  font-size: 7px;
+   982→   982→  color: var(--mc-text-dim);
+   983→   983→}
+   984→   984→
+   985→   985→.skin-card__actions {
+   986→   986→  display: flex;
+   987→   987→  gap: 4px;
+   988→   988→  flex-shrink: 0;
+   989→   989→}
+   990→   990→
+   991→   991→.skin-card__image {
+   992→   992→  image-rendering: pixelated;
+   993→   993→}
+   994→   994→
+   995→   995→/* ═══════════════════════════════════════════════════════════════════════════════
+   996→   996→   GAME SHOWCASE
+   997→   997→   ═══════════════════════════════════════════════════════════════════════════════ */
+   998→   998→.showcase {
+   999→   999→  height: 100%;
+  1000→  1000→  display: flex;
+  1001→  1001→  flex-direction: column;
+  1002→  1002→}
+  1003→  1003→
+  1004→  1004→.showcase__main {
+  1005→  1005→  display: flex;
+  1006→  1006→  gap: 12px;
+  1007→  1007→  flex: 1;
+  1008→  1008→  min-height: 0;
+  1009→  1009→}
+  1010→  1010→
+  1011→  1011→.showcase__arena-col {
+  1012→  1012→  flex: 1;
+  1013→  1013→  display: flex;
+  1014→  1014→  flex-direction: column;
+  1015→  1015→  gap: 8px;
+  1016→  1016→  min-width: 0;
+  1017→  1017→}
+  1018→  1018→
+  1019→  1019→.showcase__arena-header {
+  1020→  1020→  display: flex;
+  1021→  1021→  align-items: center;
+  1022→  1022→  justify-content: space-between;
+  1023→  1023→  padding: 8px 12px;
+  1024→  1024→  background: var(--mc-ui-panel);
+  1025→  1025→  border: 2px solid;
+  1026→  1026→  border-color: #555 #222 #222 #555;
+  1027→  1027→  font-family: var(--font-pixel);
+  1028→  1028→  font-size: 9px;
+  1029→  1029→  color: var(--mc-emerald);
+  1030→  1030→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1031→  1031→}
+  1032→  1032→
+  1033→  1033→.showcase__arena-hint {
+  1034→  1034→  font-size: 7px;
+  1035→  1035→  color: var(--mc-text-dim);
+  1036→  1036→}
+  1037→  1037→
+  1038→  1038→.showcase__arena-wrap {
+  1039→  1039→  flex: 1;
+  1040→  1040→  background: #000;
+  1041→  1041→  border: 3px solid;
+  1042→  1042→  border-color: #555 #222 #222 #555;
+  1043→  1043→  min-height: 250px;
+  1044→  1044→  overflow: hidden;
+  1045→  1045→}
+  1046→  1046→
+  1047→  1047→.showcase__arena-wrap canvas {
+  1048→  1048→  display: block;
+  1049→  1049→  width: 100% !important;
+  1050→  1050→  height: 100% !important;
+  1051→  1051→  image-rendering: pixelated;
+  1052→  1052→}
+  1053→  1053→
+  1054→  1054→.showcase__panel-col {
+  1055→  1055→  width: 320px;
+  1056→  1056→  display: flex;
+  1057→  1057→  flex-direction: column;
+  1058→  1058→  gap: 8px;
+  1059→  1059→  min-width: 0;
+  1060→  1060→  flex-shrink: 0;
+  1061→  1061→}
+  1062→  1062→
+  1063→  1063→.showcase__tabs {
+  1064→  1064→  display: flex;
+  1065→  1065→  gap: 2px;
+  1066→  1066→  background: var(--mc-ui-panel);
+  1067→  1067→  padding: 4px;
+  1068→  1068→  border: 2px solid;
+  1069→  1069→  border-color: #555 #222 #222 #555;
+  1070→  1070→}
+  1071→  1071→
+  1072→  1072→.showcase__tab {
+  1073→  1073→  flex: 1;
+  1074→  1074→  font-family: var(--font-pixel);
+  1075→  1075→  font-size: 7px;
+  1076→  1076→  padding: 6px 8px;
+  1077→  1077→  background: #1A1A1A;
+  1078→  1078→  border: 2px solid;
+  1079→  1079→  border-color: #444 #111 #111 #444;
+  1080→  1080→  color: var(--mc-text-dim);
+  1081→  1081→  cursor: pointer;
+  1082→  1082→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1083→  1083→  transition: none;
+  1084→  1084→}
+  1085→  1085→
+  1086→  1086→.showcase__tab:hover {
+  1087→  1087→  background: #2A2A2A;
+  1088→  1088→  color: var(--mc-text);
+  1089→  1089→}
+  1090→  1090→
+  1091→  1091→.showcase__tab.active {
+  1092→  1092→  background: #3A3A3A;
+  1093→  1093→  border-color: #666 #333 #333 #666;
+  1094→  1094→  color: var(--mc-emerald);
+  1095→  1095→}
+  1096→  1096→
+  1097→  1097→.showcase__mint-bar {
+  1098→  1098→  display: flex;
+  1099→  1099→  align-items: center;
+  1100→  1100→  gap: 4px;
+  1101→  1101→  padding: 6px;
+  1102→  1102→  background: var(--mc-ui-panel);
+  1103→  1103→  border: 2px solid;
+  1104→  1104→  border-color: #555 #222 #222 #555;
+  1105→  1105→  flex-wrap: wrap;
+  1106→  1106→}
+  1107→  1107→
+  1108→  1108→.showcase__cards {
+  1109→  1109→  flex: 1;
+  1110→  1110→  overflow-y: auto;
+  1111→  1111→  display: grid;
+  1112→  1112→  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  1113→  1113→  gap: 4px;
+  1114→  1114→  padding: 4px;
+  1115→  1115→  align-content: start;
+  1116→  1116→}
+  1117→  1117→
+  1118→  1118→/* Analysis panel */
+  1119→  1119→.showcase__analysis {
+  1120→  1120→  background: var(--mc-ui-panel);
+  1121→  1121→  border: 3px solid;
+  1122→  1122→  border-color: #555 #222 #222 #555;
+  1123→  1123→  overflow: hidden;
+  1124→  1124→}
+  1125→  1125→
+  1126→  1126→.showcase__analysis-header {
+  1127→  1127→  display: flex;
+  1128→  1128→  align-items: center;
+  1129→  1129→  justify-content: space-between;
+  1130→  1130→  padding: 8px 12px;
+  1131→  1131→  background: rgba(124, 58, 237,0.1);
+  1132→  1132→  border-bottom: 2px solid #333;
+  1133→  1133→  font-family: var(--font-pixel);
+  1134→  1134→  font-size: 8px;
+  1135→  1135→  color: #A78BFA;
+  1136→  1136→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1137→  1137→}
+  1138→  1138→
+  1139→  1139→.showcase__analysis-close {
+  1140→  1140→  background: transparent;
+  1141→  1141→  border: 1px solid var(--mc-redstone-dark);
+  1142→  1142→  color: var(--mc-redstone);
+  1143→  1143→  cursor: pointer;
+  1144→  1144→  font-size: 14px;
+  1145→  1145→  padding: 0 4px;
+  1146→  1146→  font-family: var(--font-body);
+  1147→  1147→}
+  1148→  1148→
+  1149→  1149→.showcase__analysis-body {
+  1150→  1150→  padding: 8px;
+  1151→  1151→}
+  1152→  1152→
+  1153→  1153→.showcase__analysis-grid {
+  1154→  1154→  display: grid;
+  1155→  1155→  grid-template-columns: repeat(3, 1fr);
+  1156→  1156→  gap: 4px;
+  1157→  1157→  margin-bottom: 6px;
+  1158→  1158→}
+  1159→  1159→
+  1160→  1160→.sia-item {
+  1161→  1161→  padding: 4px 6px;
+  1162→  1162→  background: #111;
+  1163→  1163→  border: 1px solid #333;
+  1164→  1164→}
+  1165→  1165→
+  1166→  1166→.sia-label {
+  1167→  1167→  font-family: var(--font-pixel);
+  1168→  1168→  font-size: 6px;
+  1169→  1169→  color: var(--mc-text-dim);
+  1170→  1170→  margin-bottom: 2px;
+  1171→  1171→}
+  1172→  1172→
+  1173→  1173→.sia-value {
+  1174→  1174→  font-family: var(--font-body);
+  1175→  1175→  font-size: 13px;
+  1176→  1176→  color: var(--mc-text);
+  1177→  1177→}
+  1178→  1178→
+  1179→  1179→.sia-type { color: var(--mc-diamond); }
+  1180→  1180→.sia-price { color: var(--mc-emerald); }
+  1181→  1181→.sia-score-bar { font-family: monospace; }
+  1182→  1182→.sia-score-num { margin-left: 4px; font-family: var(--font-pixel); font-size: 7px; }
+  1183→  1183→
+  1184→  1184→.sia-tags {
+  1185→  1185→  display: flex;
+  1186→  1186→  gap: 4px;
+  1187→  1187→  flex-wrap: wrap;
+  1188→  1188→}
+  1189→  1189→
+  1190→  1190→/* Weapon preview */
+  1191→  1191→.showcase__weapon-wrap {
+  1192→  1192→  background: #000;
+  1193→  1193→  border: 2px solid;
+  1194→  1194→  border-color: #555 #222 #222 #555;
+  1195→  1195→  overflow: hidden;
+  1196→  1196→}
+  1197→  1197→
+  1198→  1198→/* ═══════════════════════════════════════════════════════════════════════════════
+  1199→  1199→   DASHBOARD
+  1200→  1200→   ═══════════════════════════════════════════════════════════════════════════════ */
+  1201→  1201→.dash-stats {
+  1202→  1202→  display: grid;
+  1203→  1203→  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  1204→  1204→  gap: 8px;
+  1205→  1205→  margin-bottom: 12px;
+  1206→  1206→}
+  1207→  1207→
+  1208→  1208→.dash-stat-card {
+  1209→  1209→  background: var(--mc-ui-panel);
+  1210→  1210→  border: 3px solid;
+  1211→  1211→  border-color: #555 #222 #222 #555;
+  1212→  1212→  padding: 14px;
+  1213→  1213→  display: flex;
+  1214→  1214→  flex-direction: column;
+  1215→  1215→  gap: 6px;
+  1216→  1216→  position: relative;
+  1217→  1217→  overflow: hidden;
+  1218→  1218→}
+  1219→  1219→
+  1220→  1220→.dash-stat-card__icon {
+  1221→  1221→  width: 32px;
+  1222→  1222→  height: 32px;
+  1223→  1223→  display: flex;
+  1224→  1224→  align-items: center;
+  1225→  1225→  justify-content: center;
+  1226→  1226→  background: #000;
+  1227→  1227→  border: 2px solid;
+  1228→  1228→  border-color: #444 #111 #111 #444;
+  1229→  1229→  font-size: 16px;
+  1230→  1230→}
+  1231→  1231→
+  1232→  1232→.dash-stat-card__label {
+  1233→  1233→  font-family: var(--font-pixel);
+  1234→  1234→  font-size: 7px;
+  1235→  1235→  color: var(--mc-text-dim);
+  1236→  1236→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1237→  1237→  text-transform: uppercase;
+  1238→  1238→  letter-spacing: 0.06em;
+  1239→  1239→}
+  1240→  1240→
+  1241→  1241→.dash-stat-card__value {
+  1242→  1242→  font-family: var(--font-pixel);
+  1243→  1243→  font-size: 14px;
+  1244→  1244→  color: var(--mc-text);
+  1245→  1245→  text-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+  1246→  1246→}
+  1247→  1247→
+  1248→  1248→.dash-stat-card__change {
+  1249→  1249→  font-family: var(--font-body);
+  1250→  1250→  font-size: 14px;
+  1251→  1251→  display: flex;
+  1252→  1252→  align-items: center;
+  1253→  1253→  gap: 4px;
+  1254→  1254→}
+  1255→  1255→
+  1256→  1256→.dash-stat-card__change.positive { color: var(--mc-emerald); }
+  1257→  1257→.dash-stat-card__change.negative { color: var(--mc-redstone); }
+  1258→  1258→
+  1259→  1259→/* XP bar style progress */
+  1260→  1260→.dash-stat-card__xp-bar {
+  1261→  1261→  height: 4px;
+  1262→  1262→  background: #111;
+  1263→  1263→  border: 1px solid #333;
+  1264→  1264→  overflow: hidden;
+  1265→  1265→  margin-top: 2px;
+  1266→  1266→}
+  1267→  1267→
+  1268→  1268→.dash-stat-card__xp-fill {
+  1269→  1269→  height: 100%;
+  1270→  1270→  background: var(--mc-experience);
+  1271→  1271→  animation: xp-fill 1s ease-out;
+  1272→  1272→}
+  1273→  1273→
+  1274→  1274→.dash-chart {
+  1275→  1275→  background: var(--mc-ui-panel);
+  1276→  1276→  border: 3px solid;
+  1277→  1277→  border-color: #555 #222 #222 #555;
+  1278→  1278→  padding: 14px;
+  1279→  1279→  margin-bottom: 12px;
+  1280→  1280→}
+  1281→  1281→
+  1282→  1282→.dash-chart__title {
+  1283→  1283→  font-family: var(--font-pixel);
+  1284→  1284→  font-size: 9px;
+  1285→  1285→  color: var(--mc-emerald);
+  1286→  1286→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1287→  1287→  margin-bottom: 12px;
+  1288→  1288→  display: flex;
+  1289→  1289→  align-items: center;
+  1290→  1290→  gap: 8px;
+  1291→  1291→}
+  1292→  1292→
+  1293→  1293→.dash-activity {
+  1294→  1294→  background: var(--mc-ui-panel);
+  1295→  1295→  border: 3px solid;
+  1296→  1296→  border-color: #555 #222 #222 #555;
+  1297→  1297→  padding: 14px;
+  1298→  1298→  max-height: 380px;
+  1299→  1299→  overflow-y: auto;
+  1300→  1300→}
+  1301→  1301→
+  1302→  1302→.dash-activity__title {
+  1303→  1303→  font-family: var(--font-pixel);
+  1304→  1304→  font-size: 9px;
+  1305→  1305→  color: var(--mc-gold);
+  1306→  1306→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1307→  1307→  margin-bottom: 10px;
+  1308→  1308→  display: flex;
+  1309→  1309→  align-items: center;
+  1310→  1310→  gap: 8px;
+  1311→  1311→}
+  1312→  1312→
+  1313→  1313→.dash-activity__item {
+  1314→  1314→  display: flex;
+  1315→  1315→  align-items: center;
+  1316→  1316→  gap: 8px;
+  1317→  1317→  padding: 8px;
+  1318→  1318→  border-bottom: 1px solid #222;
+  1319→  1319→  font-size: 14px;
+  1320→  1320→}
+  1321→  1321→
+  1322→  1322→.dash-activity__item:last-child { border-bottom: none; }
+  1323→  1323→
+  1324→  1324→.dash-activity__type {
+  1325→  1325→  font-family: var(--font-pixel);
+  1326→  1326→  font-size: 7px;
+  1327→  1327→  padding: 2px 6px;
+  1328→  1328→  border: 1px solid;
+  1329→  1329→  min-width: 50px;
+  1330→  1330→  text-align: center;
+  1331→  1331→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1332→  1332→}
+  1333→  1333→
+  1334→  1334→.dash-activity__type--mint { background: rgba(192, 38, 211,0.1); border-color: var(--mc-emerald-dark); color: var(--mc-emerald); }
+  1335→  1335→.dash-activity__type--buy { background: rgba(45, 212, 191,0.1); border-color: var(--mc-diamond-dark); color: var(--mc-diamond); }
+  1336→  1336→.dash-activity__type--list { background: rgba(251, 191, 36,0.1); border-color: var(--mc-gold-dark); color: var(--mc-gold); }
+  1337→  1337→.dash-activity__type--cancel { background: rgba(244, 63, 94,0.1); border-color: var(--mc-redstone-dark); color: var(--mc-redstone); }
+  1338→  1338→
+  1339→  1339→.dash-activity__item-name {
+  1340→  1340→  flex: 1;
+  1341→  1341→  font-family: var(--font-body);
+  1342→  1342→  color: var(--mc-text);
+  1343→  1343→  min-width: 0;
+  1344→  1344→  overflow: hidden;
+  1345→  1345→  text-overflow: ellipsis;
+  1346→  1346→  white-space: nowrap;
+  1347→  1347→}
+  1348→  1348→
+  1349→  1349→.dash-activity__price {
+  1350→  1350→  font-family: var(--font-pixel);
+  1351→  1351→  font-size: 7px;
+  1352→  1352→  color: var(--mc-emerald);
+  1353→  1353→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1354→  1354→}
+  1355→  1355→
+  1356→  1356→.dash-activity__time {
+  1357→  1357→  font-family: var(--font-body);
+  1358→  1358→  font-size: 12px;
+  1359→  1359→  color: var(--mc-text-dim);
+  1360→  1360→  flex-shrink: 0;
+  1361→  1361→}
+  1362→  1362→
+  1363→  1363→/* Quick actions */
+  1364→  1364→.dash-actions {
+  1365→  1365→  display: flex;
+  1366→  1366→  gap: 6px;
+  1367→  1367→  flex-wrap: wrap;
+  1368→  1368→}
+  1369→  1369→
+  1370→  1370→/* ─── Dashboard Grids ─────────────────────────────────────────────────────── */
+  1371→  1371→.dashboard-main-grid {
+  1372→  1372→  display: grid;
+  1373→  1373→  grid-template-columns: 1fr 320px;
+  1374→  1374→  gap: 12px;
+  1375→  1375→  min-height: 0;
+  1376→  1376→}
+  1377→  1377→
+  1378→  1378→.dashboard-bottom-grid {
+  1379→  1379→  display: grid;
+  1380→  1380→  grid-template-columns: 1fr 280px;
+  1381→  1381→  gap: 12px;
+  1382→  1382→}
+  1383→  1383→
+  1384→  1384→/* ─── Profile Connected Accounts Grid ─────────────────────────────────────── */
+  1385→  1385→.connected-accounts-grid {
+  1386→  1386→  display: grid;
+  1387→  1387→  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  1388→  1388→  gap: 8px;
+  1389→  1389→}
+  1390→  1390→
+  1391→  1391→/* ─── MC Title ─────────────────────────────────────────────────────────────── */
+  1392→  1392→.mc-title {
+  1393→  1393→  font-family: var(--font-pixel);
+  1394→  1394→}
+  1395→  1395→
+  1396→  1396→/* ═══════════════════════════════════════════════════════════════════════════════
+  1397→  1397→   MARKETPLACE V2
+  1398→  1398→   ═══════════════════════════════════════════════════════════════════════════════ */
+  1399→  1399→.market-header {
+  1400→  1400→  display: flex;
+  1401→  1401→  align-items: center;
+  1402→  1402→  justify-content: space-between;
+  1403→  1403→  gap: 12px;
+  1404→  1404→  margin-bottom: 12px;
+  1405→  1405→  flex-wrap: wrap;
+  1406→  1406→}
+  1407→  1407→
+  1408→  1408→.market-header__title {
+  1409→  1409→  font-family: var(--font-pixel);
+  1410→  1410→  font-size: 14px;
+  1411→  1411→  color: var(--mc-gold);
+  1412→  1412→  text-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+  1413→  1413→  display: flex;
+  1414→  1414→  align-items: center;
+  1415→  1415→  gap: 10px;
+  1416→  1416→}
+  1417→  1417→
+  1418→  1418→.market-header__search {
+  1419→  1419→  display: flex;
+  1420→  1420→  align-items: center;
+  1421→  1421→  gap: 6px;
+  1422→  1422→  flex: 1;
+  1423→  1423→  max-width: 360px;
+  1424→  1424→}
+  1425→  1425→
+  1426→  1426→.market-filters {
+  1427→  1427→  display: flex;
+  1428→  1428→  align-items: center;
+  1429→  1429→  gap: 8px;
+  1430→  1430→  margin-bottom: 12px;
+  1431→  1431→  flex-wrap: wrap;
+  1432→  1432→}
+  1433→  1433→
+  1434→  1434→.market-grid {
+  1435→  1435→  display: grid;
+  1436→  1436→  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  1437→  1437→  gap: 6px;
+  1438→  1438→}
+  1439→  1439→
+  1440→  1440→.market-item {
+  1441→  1441→  background: #1A1A1A;
+  1442→  1442→  border: 2px solid;
+  1443→  1443→  border-color: #555 #222 #222 #555;
+  1444→  1444→  padding: 0;
+  1445→  1445→  cursor: pointer;
+  1446→  1446→  transition: none;
+  1447→  1447→  position: relative;
+  1448→  1448→  overflow: hidden;
+  1449→  1449→}
+  1450→  1450→
+  1451→  1451→.market-item:hover {
+  1452→  1452→  border-color: var(--mc-diamond) var(--mc-diamond-dark) var(--mc-diamond-dark) var(--mc-diamond);
+  1453→  1453→  background: #222;
+  1454→  1454→}
+  1455→  1455→
+  1456→  1456→.market-item__icon {
+  1457→  1457→  width: 100%;
+  1458→  1458→  aspect-ratio: 1;
+  1459→  1459→  display: flex;
+  1460→  1460→  align-items: center;
+  1461→  1461→  justify-content: center;
+  1462→  1462→  background: #111;
+  1463→  1463→  border-bottom: 2px solid #333;
+  1464→  1464→  font-size: 36px;
+  1465→  1465→}
+  1466→  1466→
+  1467→  1467→.market-item__info {
+  1468→  1468→  padding: 8px;
+  1469→  1469→}
+  1470→  1470→
+  1471→  1471→.market-item__name {
+  1472→  1472→  font-family: var(--font-pixel);
+  1473→  1473→  font-size: 8px;
+  1474→  1474→  color: var(--mc-text);
+  1475→  1475→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1476→  1476→  margin-bottom: 4px;
+  1477→  1477→  white-space: nowrap;
+  1478→  1478→  overflow: hidden;
+  1479→  1479→  text-overflow: ellipsis;
+  1480→  1480→}
+  1481→  1481→
+  1482→  1482→.market-item__meta {
+  1483→  1483→  display: flex;
+  1484→  1484→  align-items: center;
+  1485→  1485→  justify-content: space-between;
+  1486→  1486→  gap: 4px;
+  1487→  1487→}
+  1488→  1488→
+  1489→  1489→.market-item__price {
+  1490→  1490→  font-family: var(--font-pixel);
+  1491→  1491→  font-size: 8px;
+  1492→  1492→  color: var(--mc-emerald);
+  1493→  1493→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1494→  1494→}
+  1495→  1495→
+  1496→  1496→/* Market list view */
+  1497→  1497→.market-list-item {
+  1498→  1498→  display: flex;
+  1499→  1499→  align-items: center;
+  1500→  1500→  gap: 10px;
+  1501→  1501→  padding: 8px 12px;
+  1502→  1502→  background: #1A1A1A;
+  1503→  1503→  border: 2px solid;
+  1504→  1504→  border-color: #555 #222 #222 #555;
+  1505→  1505→  margin-bottom: 2px;
+  1506→  1506→  cursor: pointer;
+  1507→  1507→}
+  1508→  1508→
+  1509→  1509→.market-list-item:hover {
+  1510→  1510→  background: #222;
+  1511→  1511→  border-color: var(--mc-diamond) var(--mc-diamond-dark) var(--mc-diamond-dark) var(--mc-diamond);
+  1512→  1512→}
+  1513→  1513→
+  1514→  1514→.market-list-item__icon {
+  1515→  1515→  width: 36px;
+  1516→  1516→  height: 36px;
+  1517→  1517→  display: flex;
+  1518→  1518→  align-items: center;
+  1519→  1519→  justify-content: center;
+  1520→  1520→  background: #000;
+  1521→  1521→  border: 2px solid;
+  1522→  1522→  border-color: #444 #111 #111 #444;
+  1523→  1523→  font-size: 18px;
+  1524→  1524→  flex-shrink: 0;
+  1525→  1525→}
+  1526→  1526→
+  1527→  1527→.market-list-item__name {
+  1528→  1528→  font-family: var(--font-pixel);
+  1529→  1529→  font-size: 8px;
+  1530→  1530→  color: var(--mc-text);
+  1531→  1531→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1532→  1532→  flex: 1;
+  1533→  1533→  min-width: 0;
+  1534→  1534→  overflow: hidden;
+  1535→  1535→  text-overflow: ellipsis;
+  1536→  1536→  white-space: nowrap;
+  1537→  1537→}
+  1538→  1538→
+  1539→  1539→.market-list-item__seller {
+  1540→  1540→  font-family: var(--font-body);
+  1541→  1541→  font-size: 13px;
+  1542→  1542→  color: var(--mc-text-dim);
+  1543→  1543→  flex-shrink: 0;
+  1544→  1544→}
+  1545→  1545→
+  1546→  1546→.market-list-item__price {
+  1547→  1547→  font-family: var(--font-pixel);
+  1548→  1548→  font-size: 8px;
+  1549→  1549→  color: var(--mc-emerald);
+  1550→  1550→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1551→  1551→  flex-shrink: 0;
+  1552→  1552→}
+  1553→  1553→
+  1554→  1554→/* Market detail modal */
+  1555→  1555→.market-detail-overlay {
+  1556→  1556→  position: fixed;
+  1557→  1557→  inset: 0;
+  1558→  1558→  background: rgba(0,0,0,0.8);
+  1559→  1559→  display: flex;
+  1560→  1560→  align-items: center;
+  1561→  1561→  justify-content: center;
+  1562→  1562→  z-index: 100;
+  1563→  1563→}
+  1564→  1564→
+  1565→  1565→.market-detail {
+  1566→  1566→  background: rgba(26,10,46,0.95);
+  1567→  1567→  border: 3px solid var(--mc-tooltip-border);
+  1568→  1568→  padding: 20px;
+  1569→  1569→  max-width: 560px;
+  1570→  1570→  width: 90vw;
+  1571→  1571→  max-height: 90vh;
+  1572→  1572→  overflow-y: auto;
+  1573→  1573→}
+  1574→  1574→
+  1575→  1575→.market-detail__header {
+  1576→  1576→  display: flex;
+  1577→  1577→  align-items: center;
+  1578→  1578→  gap: 12px;
+  1579→  1579→  margin-bottom: 16px;
+  1580→  1580→  padding-bottom: 12px;
+  1581→  1581→  border-bottom: 2px solid #333;
+  1582→  1582→}
+  1583→  1583→
+  1584→  1584→.market-detail__icon {
+  1585→  1585→  width: 56px;
+  1586→  1586→  height: 56px;
+  1587→  1587→  display: flex;
+  1588→  1588→  align-items: center;
+  1589→  1589→  justify-content: center;
+  1590→  1590→  background: #000;
+  1591→  1591→  border: 2px solid;
+  1592→  1592→  border-color: #444 #111 #111 #444;
+  1593→  1593→  font-size: 32px;
+  1594→  1594→}
+  1595→  1595→
+  1596→  1596→.market-detail__title {
+  1597→  1597→  font-family: var(--font-pixel);
+  1598→  1598→  font-size: 12px;
+  1599→  1599→  color: var(--mc-gold);
+  1600→  1600→  text-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+  1601→  1601→}
+  1602→  1602→
+  1603→  1603→.market-detail__seller {
+  1604→  1604→  font-family: var(--font-body);
+  1605→  1605→  font-size: 14px;
+  1606→  1606→  color: var(--mc-text-dim);
+  1607→  1607→  margin-top: 4px;
+  1608→  1608→}
+  1609→  1609→
+  1610→  1610→.market-detail__close {
+  1611→  1611→  margin-left: auto;
+  1612→  1612→  background: transparent;
+  1613→  1613→  border: 1px solid var(--mc-redstone-dark);
+  1614→  1614→  color: var(--mc-redstone);
+  1615→  1615→  cursor: pointer;
+  1616→  1616→  font-size: 16px;
+  1617→  1617→  padding: 2px 6px;
+  1618→  1618→}
+  1619→  1619→
+  1620→  1620→.market-detail__section {
+  1621→  1621→  margin-bottom: 14px;
+  1622→  1622→}
+  1623→  1623→
+  1624→  1624→.market-detail__section-title {
+  1625→  1625→  font-family: var(--font-pixel);
+  1626→  1626→  font-size: 8px;
+  1627→  1627→  color: var(--mc-diamond);
+  1628→  1628→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1629→  1629→  margin-bottom: 8px;
+  1630→  1630→  text-transform: uppercase;
+  1631→  1631→}
+  1632→  1632→
+  1633→  1633→.market-detail__stats {
+  1634→  1634→  display: grid;
+  1635→  1635→  grid-template-columns: repeat(2, 1fr);
+  1636→  1636→  gap: 6px;
+  1637→  1637→}
+  1638→  1638→
+  1639→  1639→.market-detail__stat {
+  1640→  1640→  padding: 8px;
+  1641→  1641→  background: rgba(0,0,0,0.4);
+  1642→  1642→  border: 1px solid #333;
+  1643→  1643→}
+  1644→  1644→
+  1645→  1645→.market-detail__stat-label {
+  1646→  1646→  font-family: var(--font-pixel);
+  1647→  1647→  font-size: 6px;
+  1648→  1648→  color: var(--mc-text-dim);
+  1649→  1649→  margin-bottom: 2px;
+  1650→  1650→}
+  1651→  1651→
+  1652→  1652→.market-detail__stat-value {
+  1653→  1653→  font-family: var(--font-body);
+  1654→  1654→  font-size: 16px;
+  1655→  1655→  color: var(--mc-text);
+  1656→  1656→}
+  1657→  1657→
+  1658→  1658→.market-detail__actions {
+  1659→  1659→  display: flex;
+  1660→  1660→  gap: 8px;
+  1661→  1661→  margin-top: 16px;
+  1662→  1662→}
+  1663→  1663→
+  1664→  1664→/* ═══════════════════════════════════════════════════════════════════════════════
+  1665→  1665→   PROFILE PAGE
+  1666→  1666→   ═══════════════════════════════════════════════════════════════════════════════ */
+  1667→  1667→.profile-header {
+  1668→  1668→  background: var(--mc-ui-panel);
+  1669→  1669→  border: 3px solid;
+  1670→  1670→  border-color: #555 #222 #222 #555;
+  1671→  1671→  padding: 20px;
+  1672→  1672→  margin-bottom: 12px;
+  1673→  1673→  display: flex;
+  1674→  1674→  align-items: center;
+  1675→  1675→  gap: 16px;
+  1676→  1676→}
+  1677→  1677→
+  1678→  1678→.profile-avatar {
+  1679→  1679→  width: 64px;
+  1680→  1680→  height: 64px;
+  1681→  1681→  background: #000;
+  1682→  1682→  border: 3px solid;
+  1683→  1683→  border-color: #555 #222 #222 #555;
+  1684→  1684→  overflow: hidden;
+  1685→  1685→  flex-shrink: 0;
+  1686→  1686→  image-rendering: pixelated;
+  1687→  1687→}
+  1688→  1688→
+  1689→  1689→.profile-avatar img {
+  1690→  1690→  width: 100%;
+  1691→  1691→  height: 100%;
+  1692→  1692→  object-fit: cover;
+  1693→  1693→  image-rendering: pixelated;
+  1694→  1694→}
+  1695→  1695→
+  1696→  1696→.profile-info {
+  1697→  1697→  flex: 1;
+  1698→  1698→  min-width: 0;
+  1699→  1699→}
+  1700→  1700→
+  1701→  1701→.profile-name {
+  1702→  1702→  font-family: var(--font-pixel);
+  1703→  1703→  font-size: 12px;
+  1704→  1704→  color: var(--mc-gold);
+  1705→  1705→  text-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+  1706→  1706→}
+  1707→  1707→
+  1708→  1708→.profile-address {
+  1709→  1709→  font-family: var(--font-body);
+  1710→  1710→  font-size: 14px;
+  1711→  1711→  color: var(--mc-text-dim);
+  1712→  1712→  display: flex;
+  1713→  1713→  align-items: center;
+  1714→  1714→  gap: 6px;
+  1715→  1715→  margin-top: 4px;
+  1716→  1716→}
+  1717→  1717→
+  1718→  1718→.profile-address button {
+  1719→  1719→  background: transparent;
+  1720→  1720→  border: 1px solid #333;
+  1721→  1721→  color: var(--mc-diamond);
+  1722→  1722→  cursor: pointer;
+  1723→  1723→  padding: 1px 4px;
+  1724→  1724→  font-size: 12px;
+  1725→  1725→}
+  1726→  1726→
+  1727→  1727→.profile-stats {
+  1728→  1728→  display: grid;
+  1729→  1729→  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  1730→  1730→  gap: 6px;
+  1731→  1731→  margin-bottom: 12px;
+  1732→  1732→}
+  1733→  1733→
+  1734→  1734→.profile-stat {
+  1735→  1735→  background: var(--mc-ui-panel);
+  1736→  1736→  border: 2px solid;
+  1737→  1737→  border-color: #555 #222 #222 #555;
+  1738→  1738→  padding: 12px;
+  1739→  1739→  text-align: center;
+  1740→  1740→}
+  1741→  1741→
+  1742→  1742→.profile-stat__icon {
+  1743→  1743→  font-size: 20px;
+  1744→  1744→  margin-bottom: 4px;
+  1745→  1745→}
+  1746→  1746→
+  1747→  1747→.profile-stat__value {
+  1748→  1748→  font-family: var(--font-pixel);
+  1749→  1749→  font-size: 11px;
+  1750→  1750→  color: var(--mc-emerald);
+  1751→  1751→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1752→  1752→}
+  1753→  1753→
+  1754→  1754→.profile-stat__label {
+  1755→  1755→  font-family: var(--font-pixel);
+  1756→  1756→  font-size: 6px;
+  1757→  1757→  color: var(--mc-text-dim);
+  1758→  1758→  margin-top: 2px;
+  1759→  1759→}
+  1760→  1760→
+  1761→  1761→/* Achievements / Advancements */
+  1762→  1762→.profile-achievements {
+  1763→  1763→  background: var(--mc-ui-panel);
+  1764→  1764→  border: 3px solid;
+  1765→  1765→  border-color: #555 #222 #222 #555;
+  1766→  1766→  padding: 14px;
+  1767→  1767→  margin-bottom: 12px;
+  1768→  1768→}
+  1769→  1769→
+  1770→  1770→.profile-achievements__title {
+  1771→  1771→  font-family: var(--font-pixel);
+  1772→  1772→  font-size: 10px;
+  1773→  1773→  color: var(--mc-gold);
+  1774→  1774→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1775→  1775→  margin-bottom: 10px;
+  1776→  1776→  display: flex;
+  1777→  1777→  align-items: center;
+  1778→  1778→  gap: 8px;
+  1779→  1779→}
+  1780→  1780→
+  1781→  1781→.profile-achievements__grid {
+  1782→  1782→  display: grid;
+  1783→  1783→  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  1784→  1784→  gap: 6px;
+  1785→  1785→}
+  1786→  1786→
+  1787→  1787→.profile-achievement {
+  1788→  1788→  display: flex;
+  1789→  1789→  align-items: center;
+  1790→  1790→  gap: 10px;
+  1791→  1791→  padding: 10px;
+  1792→  1792→  background: #111;
+  1793→  1793→  border: 2px solid #333;
+  1794→  1794→}
+  1795→  1795→
+  1796→  1796→.profile-achievement--earned {
+  1797→  1797→  border-color: var(--mc-emerald-dark);
+  1798→  1798→  background: rgba(192, 38, 211,0.05);
+  1799→  1799→}
+  1800→  1800→
+  1801→  1801→.profile-achievement--locked {
+  1802→  1802→  opacity: 0.4;
+  1803→  1803→  filter: grayscale(1);
+  1804→  1804→}
+  1805→  1805→
+  1806→  1806→.profile-achievement__icon {
+  1807→  1807→  width: 32px;
+  1808→  1808→  height: 32px;
+  1809→  1809→  display: flex;
+  1810→  1810→  align-items: center;
+  1811→  1811→  justify-content: center;
+  1812→  1812→  background: #000;
+  1813→  1813→  border: 2px solid;
+  1814→  1814→  border-color: #444 #111 #111 #444;
+  1815→  1815→  font-size: 16px;
+  1816→  1816→  flex-shrink: 0;
+  1817→  1817→}
+  1818→  1818→
+  1819→  1819→.profile-achievement__info {
+  1820→  1820→  flex: 1;
+  1821→  1821→  min-width: 0;
+  1822→  1822→}
+  1823→  1823→
+  1824→  1824→.profile-achievement__name {
+  1825→  1825→  font-family: var(--font-pixel);
+  1826→  1826→  font-size: 7px;
+  1827→  1827→  color: var(--mc-text);
+  1828→  1828→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1829→  1829→}
+  1830→  1830→
+  1831→  1831→.profile-achievement__desc {
+  1832→  1832→  font-family: var(--font-body);
+  1833→  1833→  font-size: 13px;
+  1834→  1834→  color: var(--mc-text-dim);
+  1835→  1835→}
+  1836→  1836→
+  1837→  1837→.profile-achievement__date {
+  1838→  1838→  font-family: var(--font-pixel);
+  1839→  1839→  font-size: 6px;
+  1840→  1840→  color: var(--mc-emerald);
+  1841→  1841→  margin-top: 2px;
+  1842→  1842→}
+  1843→  1843→
+  1844→  1844→/* Transaction History / Nexus Ledger */
+  1845→  1845→.profile-tx {
+  1846→  1846→  background: var(--mc-ui-panel);
+  1847→  1847→  border: 3px solid;
+  1848→  1848→  border-color: #555 #222 #222 #555;
+  1849→  1849→  padding: 14px;
+  1850→  1850→  margin-bottom: 12px;
+  1851→  1851→  max-height: 350px;
+  1852→  1852→  overflow-y: auto;
+  1853→  1853→}
+  1854→  1854→
+  1855→  1855→.profile-tx__title {
+  1856→  1856→  font-family: var(--font-pixel);
+  1857→  1857→  font-size: 10px;
+  1858→  1858→  color: var(--mc-diamond);
+  1859→  1859→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1860→  1860→  margin-bottom: 10px;
+  1861→  1861→  display: flex;
+  1862→  1862→  align-items: center;
+  1863→  1863→  gap: 8px;
+  1864→  1864→}
+  1865→  1865→
+  1866→  1866→.profile-tx__item {
+  1867→  1867→  display: flex;
+  1868→  1868→  align-items: center;
+  1869→  1869→  gap: 8px;
+  1870→  1870→  padding: 8px;
+  1871→  1871→  border-bottom: 1px solid #222;
+  1872→  1872→  font-size: 14px;
+  1873→  1873→}
+  1874→  1874→
+  1875→  1875→.profile-tx__item:last-child { border-bottom: none; }
+  1876→  1876→
+  1877→  1877→.profile-tx__type {
+  1878→  1878→  font-family: var(--font-pixel);
+  1879→  1879→  font-size: 7px;
+  1880→  1880→  padding: 2px 6px;
+  1881→  1881→  border: 1px solid;
+  1882→  1882→  min-width: 50px;
+  1883→  1883→  text-align: center;
+  1884→  1884→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1885→  1885→}
+  1886→  1886→
+  1887→  1887→/* Portfolio / Ender Chest */
+  1888→  1888→.profile-portfolio {
+  1889→  1889→  background: var(--mc-ui-panel);
+  1890→  1890→  border: 3px solid;
+  1891→  1891→  border-color: #555 #222 #222 #555;
+  1892→  1892→  padding: 14px;
+  1893→  1893→  margin-bottom: 12px;
+  1894→  1894→}
+  1895→  1895→
+  1896→  1896→.profile-portfolio__title {
+  1897→  1897→  font-family: var(--font-pixel);
+  1898→  1898→  font-size: 10px;
+  1899→  1899→  color: #A78BFA;
+  1900→  1900→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1901→  1901→  margin-bottom: 10px;
+  1902→  1902→  display: flex;
+  1903→  1903→  align-items: center;
+  1904→  1904→  gap: 8px;
+  1905→  1905→}
+  1906→  1906→
+  1907→  1907→/* Connected Accounts / Portal Links */
+  1908→  1908→.profile-connections {
+  1909→  1909→  background: var(--mc-ui-panel);
+  1910→  1910→  border: 3px solid;
+  1911→  1911→  border-color: #555 #222 #222 #555;
+  1912→  1912→  padding: 14px;
+  1913→  1913→}
+  1914→  1914→
+  1915→  1915→.profile-connections__title {
+  1916→  1916→  font-family: var(--font-pixel);
+  1917→  1917→  font-size: 10px;
+  1918→  1918→  color: var(--mc-emerald);
+  1919→  1919→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1920→  1920→  margin-bottom: 10px;
+  1921→  1921→  display: flex;
+  1922→  1922→  align-items: center;
+  1923→  1923→  gap: 8px;
+  1924→  1924→}
+  1925→  1925→
+  1926→  1926→.profile-connection {
+  1927→  1927→  display: flex;
+  1928→  1928→  align-items: center;
+  1929→  1929→  gap: 10px;
+  1930→  1930→  padding: 10px;
+  1931→  1931→  background: #111;
+  1932→  1932→  border: 2px solid #333;
+  1933→  1933→  margin-bottom: 6px;
+  1934→  1934→}
+  1935→  1935→
+  1936→  1936→.profile-connection__icon {
+  1937→  1937→  width: 36px;
+  1938→  1938→  height: 36px;
+  1939→  1939→  display: flex;
+  1940→  1940→  align-items: center;
+  1941→  1941→  justify-content: center;
+  1942→  1942→  background: #000;
+  1943→  1943→  border: 2px solid;
+  1944→  1944→  border-color: #444 #111 #111 #444;
+  1945→  1945→  font-size: 18px;
+  1946→  1946→  flex-shrink: 0;
+  1947→  1947→}
+  1948→  1948→
+  1949→  1949→.profile-connection__info {
+  1950→  1950→  flex: 1;
+  1951→  1951→}
+  1952→  1952→
+  1953→  1953→.profile-connection__name {
+  1954→  1954→  font-family: var(--font-pixel);
+  1955→  1955→  font-size: 8px;
+  1956→  1956→  color: var(--mc-text);
+  1957→  1957→  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  1958→  1958→}
+  1959→  1959→
+  1960→  1960→.profile-connection__status {
+  1961→  1961→  font-family: var(--font-body);
+  1962→  1962→  font-size: 13px;
+  1963→  1963→  color: var(--mc-text-dim);
+  1964→  1964→}
+  1965→  1965→
+  1966→  1966→/* ═══════════════════════════════════════════════════════════════════════════════
+  1967→  1967→   WALLET BUTTON
+  1968→  1968→   ═══════════════════════════════════════════════════════════════════════════════ */
+  1969→  1969→.wallet-btn {
+  1970→  1970→  display: flex;
+  1971→  1971→  align-items: center;
+  1972→  1972→  gap: 12px;
+  1973→  1973→  padding: 10px 14px;
+  1974→  1974→  background: #1A1A1A;
+  1975→  1975→  border: 2px solid;
+  1976→  1976→  border-color: #555 #222 #222 #555;
+  1977→  1977→  color: var(--mc-text);
+  1978→  1978→  cursor: pointer;
+  1979→  1979→  font-family: var(--font-body);
+  1980→  1980→  transition: none;
+  1981→  1981→  width: 100%;
+  1982→  1982→  text-align: left;
+  1983→  1983→}
+  1984→  1984→
+  1985→  1985→.wallet-btn:hover {
+  1986→  1986→  background: #2A2A2A;
+  1987→  1987→  border-color: var(--mc-emerald) var(--mc-emerald-dark) var(--mc-emerald-dark) var(--mc-emerald);
+  1988→  1988→}
+  1989→  1989→
+  1990→  1990→.wallet-btn img {
+  1991→  1991→  image-rendering: pixelated;
+  1992→  1992→}
+  1993→  1993→
+  1994→  1994→/* ═══════════════════════════════════════════════════════════════════════════════
+  1995→  1995→   GAME PANEL
+  1996→  1996→   ═══════════════════════════════════════════════════════════════════════════════ */
+  1997→  1997→.game-panel {
+  1998→  1998→  background: var(--mc-ui-panel);
+  1999→  1999→  border: 2px solid;
+  2000→  2000→  border-color: #555 #222 #222 #555;
+
+[showing lines 1-2000 of 2002; use offset=2001 with limit to continue reading]

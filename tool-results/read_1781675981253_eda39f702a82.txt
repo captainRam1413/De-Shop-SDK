@@ -1,0 +1,851 @@
+     1→/**
+     2→ * De-Shop SDK — Dashboard / Analytics Page (Nexus Forge Web3 Gaming Theme)
+     3→ * ────────────────────────────────────────────
+     4→ * Nexus Ledger: Live marketplace stats, charts, marketplace activity feed.
+     5→ * Enhanced with web3 metrics, glow effects, and professional polish.
+     6→ */
+     7→
+     8→import { useState, useEffect } from 'react'
+     9→import { motion } from 'framer-motion'
+    10→import {
+    11→  ArrowUpRight,
+    12→  ArrowDownRight,
+    13→  Clock,
+    14→  Gem,
+    15→  Sun,
+    16→  Package,
+    17→  Users,
+    18→  Sparkles,
+    19→  Zap,
+    20→  Tag,
+    21→  Flame,
+    22→  Wallet,
+    23→  Globe,
+    24→  Fuel,
+    25→  Link2,
+    26→  FileText,
+    27→  BookOpen,
+    28→  ExternalLink,
+    29→} from 'lucide-react'
+    30→import {
+    31→  XAxis,
+    32→  YAxis,
+    33→  Tooltip,
+    34→  CartesianGrid,
+    35→  ResponsiveContainer,
+    36→  BarChart,
+    37→  Bar,
+    38→  Cell,
+    39→  Area,
+    40→  AreaChart,
+    41→} from 'recharts'
+    42→import { useDeShopStore } from '../store/useDeShopStore'
+    43→
+    44→// ─── Mock Data ────────────────────────────────────────────────────────────────
+    45→
+    46→const priceData = Array.from({ length: 7 }, (_, i) => {
+    47→  const day = new Date()
+    48→  day.setDate(day.getDate() - (6 - i))
+    49→  const base = 42 + i * 1.8
+    50→  const noise = (Math.sin(i * 2.3) * 3) + (Math.random() * 2 - 1)
+    51→  return {
+    52→    day: day.toLocaleDateString('en', { weekday: 'short' }),
+    53→    price: +(base + noise).toFixed(2),
+    54→    volume: Math.floor(1200 + Math.random() * 800 + i * 150),
+    55→  }
+    56→})
+    57→
+    58→type ActivityType = 'mint' | 'buy' | 'list' | 'cancel'
+    59→
+    60→interface ActivityItem {
+    61→  id: string
+    62→  type: ActivityType
+    63→  item: string
+    64→  price: number
+    65→  timeAgo: string
+    66→  rarity: string
+    67→  txHash: string
+    68→}
+    69→
+    70→const activityItems: ActivityItem[] = [
+    71→  { id: '1', type: 'mint', item: 'Diamond Sword', price: 0, timeAgo: '2m ago', rarity: 'legendary', txHash: '0x7f3a...b2c1' },
+    72→  { id: '2', type: 'buy', item: 'Netherite Pickaxe', price: 58.4, timeAgo: '5m ago', rarity: 'epic', txHash: '0x2d8e...f4a7' },
+    73→  { id: '3', type: 'list', item: 'Ender Pearl', price: 34.2, timeAgo: '8m ago', rarity: 'rare', txHash: '0x9c1f...d3e8' },
+    74→  { id: '4', type: 'buy', item: 'Blaze Rod', price: 112.0, timeAgo: '12m ago', rarity: 'legendary', txHash: '0x4b5a...c6d2' },
+    75→  { id: '5', type: 'mint', item: 'Phantom Membrane', price: 0, timeAgo: '15m ago', rarity: 'epic', txHash: '0x1e7d...a8f3' },
+    76→  { id: '6', type: 'list', item: 'Glowstone', price: 22.8, timeAgo: '20m ago', rarity: 'rare', txHash: '0x6f2c...e1b4' },
+    77→  { id: '7', type: 'cancel', item: 'Elytra Wings', price: 89.5, timeAgo: '25m ago', rarity: 'epic', txHash: '0x3a8b...d5c9' },
+    78→  { id: '8', type: 'buy', item: 'Iron Golem Core', price: 45.0, timeAgo: '32m ago', rarity: 'rare', txHash: '0xc4d7...a2f1' },
+    79→  { id: '9', type: 'mint', item: 'Cobblestone Shield', price: 0, timeAgo: '38m ago', rarity: 'common', txHash: '0x8e1f...b7d3' },
+    80→  { id: '10', type: 'buy', item: 'Diamond Sword', price: 76.3, timeAgo: '45m ago', rarity: 'legendary', txHash: '0x5b9c...e4a6' },
+    81→  { id: '11', type: 'list', item: 'Torch Bundle', price: 19.9, timeAgo: '52m ago', rarity: 'common', txHash: '0xd2a8...f1c5' },
+    82→  { id: '12', type: 'buy', item: 'Netherite Pickaxe', price: 64.7, timeAgo: '1h ago', rarity: 'epic', txHash: '0xf6c3...b9d7' },
+    83→]
+    84→
+    85→const rarityData = [
+    86→  { name: 'Iron', count: 45, color: '#D4D4D4' },
+    87→  { name: 'Gold', count: 28, color: '#FBBF24' },
+    88→  { name: 'Diamond', count: 18, color: '#2DD4BF' },
+    89→  { name: 'Netherite', count: 9, color: '#3C3C4E' },
+    90→]
+    91→
+    92→// ─── Stats Card Data — Web3 + Nexus Forge Hybrid ─────────────────────────────
+    93→
+    94→const statsCards = [
+    95→  {
+    96→    label: 'TOTAL VALUE LOCKED',
+    97→    emoji: '💎',
+    98→    value: '$2.4M',
+    99→    subtext: '12,847 ALGO',
+   100→    change: +14.2,
+   101→    icon: <Gem className="h-5 w-5" />,
+   102→    color: '#C026D3',
+   103→    bgColor: 'rgba(192, 38, 211, 0.12)',
+   104→    glowColor: 'rgba(192, 38, 211, 0.15)',
+   105→  },
+   106→  {
+   107→    label: 'ACTIVE WALLETS',
+   108→    emoji: '🔗',
+   109→    value: '1,847',
+   110→    subtext: '+128 today',
+   111→    change: +8.7,
+   112→    icon: <Wallet className="h-5 w-5" />,
+   113→    color: '#2DD4BF',
+   114→    bgColor: 'rgba(45, 212, 191, 0.12)',
+   115→    glowColor: 'rgba(45, 212, 191, 0.15)',
+   116→  },
+   117→  {
+   118→    label: 'GAS FEES (24H)',
+   119→    emoji: '⛽',
+   120→    value: '342 ALGO',
+   121→    subtext: 'Avg 0.028/tx',
+   122→    change: -3.1,
+   123→    icon: <Fuel className="h-5 w-5" />,
+   124→    color: '#E67E22',
+   125→    bgColor: 'rgba(230, 126, 34, 0.12)',
+   126→    glowColor: 'rgba(230, 126, 34, 0.15)',
+   127→  },
+   128→  {
+   129→    label: 'CROSS-CHAIN VOL',
+   130→    emoji: '🌐',
+   131→    value: '$847K',
+   132→    subtext: '5 chains',
+   133→    change: +23.5,
+   134→    icon: <Globe className="h-5 w-5" />,
+   135→    color: '#A78BFA',
+   136→    bgColor: 'rgba(192, 132, 252, 0.12)',
+   137→    glowColor: 'rgba(192, 132, 252, 0.15)',
+   138→  },
+   139→]
+   140→
+   141→// ─── Quick Actions ────────────────────────────────────────────────────────────
+   142→
+   143→const quickActions = [
+   144→  { label: 'Mint NFT', desc: 'Forge new item', icon: <Sparkles className="h-4 w-4" />, color: '#C026D3', action: 'Mint NFT' },
+   145→  { label: 'List Item', desc: 'Place in chest', icon: <Package className="h-4 w-4" />, color: '#2DD4BF', action: 'List Item' },
+   146→  { label: 'Connect Wallet', desc: 'Link account', icon: <Link2 className="h-4 w-4" />, color: '#A78BFA', action: 'Connect Wallet' },
+   147→  { label: 'View Docs', desc: 'SDK reference', icon: <BookOpen className="h-4 w-4" />, color: '#FBBF24', action: 'View Docs' },
+   148→]
+   149→
+   150→// ─── Activity Icon Map ────────────────────────────────────────────────────────
+   151→
+   152→const activityIconMap: Record<ActivityType, { icon: React.ReactNode; color: string; label: string }> = {
+   153→  mint: { icon: <Sparkles className="h-3.5 w-3.5" />, color: '#C026D3', label: 'FORGE' },
+   154→  buy: { icon: <Zap className="h-3.5 w-3.5" />, color: '#2DD4BF', label: 'TRADE' },
+   155→  list: { icon: <Tag className="h-3.5 w-3.5" />, color: '#A78BFA', label: 'DISPLAY' },
+   156→  cancel: { icon: <Flame className="h-3.5 w-3.5" />, color: '#F43F5E', label: 'CANCEL' },
+   157→}
+   158→
+   159→const rarityColorMap: Record<string, string> = {
+   160→  common: '#9E9E9E',
+   161→  rare: '#2DD4BF',
+   162→  epic: '#A78BFA',
+   163→  legendary: '#FBBF24',
+   164→}
+   165→
+   166→// ─── Custom Tooltip ───────────────────────────────────────────────────────────
+   167→
+   168→function CustomTooltip({ active, payload, label }: any) {
+   169→  if (!active || !payload?.length) return null
+   170→  return (
+   171→    <div
+   172→      className="mc-card"
+   173→      style={{
+   174→        background: 'rgba(20, 16, 12, 0.95)',
+   175→        backdropFilter: 'blur(8px)',
+   176→        border: '2px solid rgba(192, 38, 211, 0.4)',
+   177→        boxShadow: '0 0 16px rgba(192, 38, 211, 0.15)',
+   178→        padding: '10px 14px',
+   179→        imageRendering: 'pixelated',
+   180→      }}
+   181→    >
+   182→      <p style={{ color: '#A1A1AA', fontSize: 11, marginBottom: 4, fontWeight: 700, textTransform: 'uppercase' }}>{label}</p>
+   183→      {payload.map((entry: any, idx: number) => (
+   184→        <p key={idx} style={{ color: entry.color, fontSize: 13, fontWeight: 700 }}>
+   185→          {entry.name === 'price' ? '💎 Price' : '📦 Volume'}: {entry.name === 'price' ? `${entry.value} ALGO` : entry.value}
+   186→        </p>
+   187→      ))}
+   188→    </div>
+   189→  )
+   190→}
+   191→
+   192→// ─── Animation Variants ───────────────────────────────────────────────────────
+   193→
+   194→const containerVariants = {
+   195→  hidden: { opacity: 0 },
+   196→  visible: {
+   197→    opacity: 1,
+   198→    transition: { staggerChildren: 0.06 },
+   199→  },
+   200→}
+   201→
+   202→const itemVariants = {
+   203→  hidden: { opacity: 0, y: 20 },
+   204→  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' as const } },
+   205→}
+   206→
+   207→const slideInRight = {
+   208→  hidden: { opacity: 0, x: 30 },
+   209→  visible: { opacity: 1, x: 0, transition: { duration: 0.35, ease: 'easeOut' as const } },
+   210→}
+   211→
+   212→// ─── Component ────────────────────────────────────────────────────────────────
+   213→
+   214→export default function DashboardPremium() {
+   215→  const { setActivePage, addNotification, setShowWalletModal } = useDeShopStore()
+   216→
+   217→  // Theme detection for Recharts tick colors (CSS vars not supported in SVG fill)
+   218→  const [isLightTheme, setIsLightTheme] = useState(false)
+   219→  useEffect(() => {
+   220→    const check = () => setIsLightTheme(document.documentElement.getAttribute('data-theme') === 'light')
+   221→    check()
+   222→    const observer = new MutationObserver(check)
+   223→    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+   224→    return () => observer.disconnect()
+   225→  }, [])
+   226→
+   227→  const handleQuickAction = (action: string) => {
+   228→    if (action === 'Connect Wallet') {
+   229→      setShowWalletModal(true)
+   230→      return
+   231→    }
+   232→    addNotification('info', `${action} initiated from Nexus Ledger`)
+   233→    if (action === 'List Item') setActivePage('market')
+   234→    if (action === 'View Docs') setActivePage('terminal')
+   235→  }
+   236→
+   237→  return (
+   238→    <motion.div
+   239→      variants={containerVariants}
+   240→      initial="hidden"
+   241→      animate="visible"
+   242→      style={{
+   243→        display: 'flex',
+   244→        flexDirection: 'column',
+   245→        gap: 20,
+   246→        height: '100%',
+   247→        overflowY: 'auto',
+   248→        paddingRight: 4,
+   249→      }}
+   250→    >
+   251→      {/* ─── Header ──────────────────────────────────────────────────────── */}
+   252→      <motion.div
+   253→        variants={itemVariants}
+   254→        style={{
+   255→          display: 'flex',
+   256→          alignItems: 'center',
+   257→          justifyContent: 'space-between',
+   258→          marginBottom: 4,
+   259→        }}
+   260→      >
+   261→        <div>
+   262→          <h2
+   263→            className="mc-title"
+   264→            style={{
+   265→              fontSize: 22,
+   266→              fontWeight: 800,
+   267→              color: '#C026D3',
+   268→              letterSpacing: '0.06em',
+   269→              textTransform: 'uppercase',
+   270→              margin: 0,
+   271→              textShadow: '2px 2px 0px rgba(0,0,0,0.6), 0 0 20px rgba(192, 38, 211, 0.3)',
+   272→            }}
+   273→          >
+   274→            ◆ NEXUS LEDGER
+   275→          </h2>
+   276→          <p style={{ fontSize: 11, color: '#A1A1AA', marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+   277→            ◆ Live marketplace analytics &amp; web3 insights
+   278→          </p>
+   279→        </div>
+   280→        <div
+   281→          className="mc-card"
+   282→          style={{
+   283→            display: 'flex',
+   284→            alignItems: 'center',
+   285→            gap: 6,
+   286→            padding: '4px 12px',
+   287→            background: 'rgba(192, 38, 211, 0.08)',
+   288→            backdropFilter: 'blur(8px)',
+   289→            border: '2px solid rgba(192, 38, 211, 0.3)',
+   290→            boxShadow: '0 0 12px rgba(192, 38, 211, 0.1)',
+   291→            fontSize: 10,
+   292→            color: '#C026D3',
+   293→            fontWeight: 700,
+   294→            textTransform: 'uppercase',
+   295→          }}
+   296→        >
+   297→          <span
+   298→            style={{
+   299→              width: 6,
+   300→              height: 6,
+   301→              background: '#C026D3',
+   302→              boxShadow: '0 0 6px #C026D3',
+   303→              animation: 'mc-pulse 2s infinite',
+   304→            }}
+   305→          />
+   306→          LIVE
+   307→        </div>
+   308→      </motion.div>
+   309→
+   310→      {/* ─── Stats Cards Row — Professional Glow ─────────────────────────── */}
+   311→      <div className="dash-stats">
+   312→        {statsCards.map((card, i) => (
+   313→          <motion.div
+   314→            key={card.label}
+   315→            variants={itemVariants}
+   316→            className="premium-card dash-stat-card mc-card dash-stat-glow"
+   317→            style={{
+   318→              padding: 14,
+   319→              cursor: 'default',
+   320→              display: 'flex',
+   321→              flexDirection: 'column',
+   322→              gap: 8,
+   323→              boxShadow: `0 0 20px ${card.glowColor}, inset 0 1px 0 rgba(255,255,255,0.05)`,
+   324→              transition: 'box-shadow 0.3s ease, transform 0.2s ease',
+   325→            }}
+   326→            whileHover={{
+   327→              boxShadow: `0 0 30px ${card.glowColor.replace('0.15', '0.3')}, 0 4px 12px rgba(0,0,0,0.3)`,
+   328→              y: -2,
+   329→            }}
+   330→          >
+   331→            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+   332→              <div
+   333→                style={{
+   334→                  width: 36,
+   335→                  height: 36,
+   336→                  background: card.bgColor,
+   337→                  border: `2px solid ${card.color}33`,
+   338→                  display: 'flex',
+   339→                  alignItems: 'center',
+   340→                  justifyContent: 'center',
+   341→                  color: card.color,
+   342→                  boxShadow: `0 0 10px ${card.glowColor}`,
+   343→                }}
+   344→              >
+   345→                {card.icon}
+   346→              </div>
+   347→              <div
+   348→                style={{
+   349→                  display: 'flex',
+   350→                  alignItems: 'center',
+   351→                  gap: 3,
+   352→                  fontSize: 11,
+   353→                  fontWeight: 700,
+   354→                  color: card.change >= 0 ? '#C026D3' : '#F43F5E',
+   355→                }}
+   356→              >
+   357→                {card.change >= 0 ? (
+   358→                  <ArrowUpRight className="h-3 w-3" />
+   359→                ) : (
+   360→                  <ArrowDownRight className="h-3 w-3" />
+   361→                )}
+   362→                {Math.abs(card.change)}%
+   363→              </div>
+   364→            </div>
+   365→            <div>
+   366→              <p style={{ fontSize: 10, color: '#A1A1AA', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+   367→                {card.emoji} {card.label}
+   368→              </p>
+   369→              <p style={{ fontSize: 20, fontWeight: 800, color: card.color, marginTop: 2, textShadow: `0 0 12px ${card.glowColor}` }}>
+   370→                {card.value}
+   371→              </p>
+   372→              <p style={{ fontSize: 9, color: '#71717A', marginTop: 1 }}>{card.subtext}</p>
+   373→            </div>
+   374→            {/* XP bar style progress with glow */}
+   375→            <div style={{ width: '100%', height: 3, background: 'rgba(0,0,0,0.3)', overflow: 'hidden', borderRadius: 2 }}>
+   376→              <div
+   377→                style={{
+   378→                  width: `${Math.min(100, Math.abs(card.change) * 3)}%`,
+   379→                  height: '100%',
+   380→                  background: `linear-gradient(90deg, ${card.color}80, ${card.color})`,
+   381→                  boxShadow: `0 0 6px ${card.color}80`,
+   382→                  borderRadius: 2,
+   383→                }}
+   384→              />
+   385→            </div>
+   386→          </motion.div>
+   387→        ))}
+   388→      </div>
+   389→
+   390→      {/* ─── Quick Actions — Professional Web3 SDK Feel ──────────────────── */}
+   391→      <motion.div variants={itemVariants}>
+   392→        <div className="quick-actions-grid">
+   393→          {quickActions.map((action) => (
+   394→            <motion.button
+   395→              key={action.label}
+   396→              whileHover={{ scale: 1.03, y: -2 }}
+   397→              whileTap={{ scale: 0.97 }}
+   398→              className="premium-card mc-card quick-action-btn"
+   399→              style={{
+   400→                display: 'flex',
+   401→                alignItems: 'center',
+   402→                gap: 10,
+   403→                padding: '10px 14px',
+   404→                cursor: 'pointer',
+   405→                background: 'rgba(13, 13, 31, 0.8)',
+   406→                backdropFilter: 'blur(8px)',
+   407→                border: `2px solid ${action.color}25`,
+   408→                boxShadow: `0 0 12px ${action.color}10`,
+   409→                transition: 'all 0.25s ease',
+   410→              }}
+   411→              onClick={() => handleQuickAction(action.action)}
+   412→              onMouseEnter={(e) => {
+   413→                const el = e.currentTarget as HTMLButtonElement
+   414→                el.style.borderColor = `${action.color}50`
+   415→                el.style.boxShadow = `0 0 20px ${action.color}20, 0 4px 12px rgba(0,0,0,0.2)`
+   416→              }}
+   417→              onMouseLeave={(e) => {
+   418→                const el = e.currentTarget as HTMLButtonElement
+   419→                el.style.borderColor = `${action.color}25`
+   420→                el.style.boxShadow = `0 0 12px ${action.color}10`
+   421→              }}
+   422→            >
+   423→              <div
+   424→                style={{
+   425→                  width: 32,
+   426→                  height: 32,
+   427→                  background: `${action.color}15`,
+   428→                  border: `2px solid ${action.color}30`,
+   429→                  display: 'flex',
+   430→                  alignItems: 'center',
+   431→                  justifyContent: 'center',
+   432→                  color: action.color,
+   433→                  flexShrink: 0,
+   434→                }}
+   435→              >
+   436→                {action.icon}
+   437→              </div>
+   438→              <div style={{ textAlign: 'left', minWidth: 0 }}>
+   439→                <div style={{ fontSize: 10, fontWeight: 700, color: action.color, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+   440→                  {action.label}
+   441→                </div>
+   442→                <div style={{ fontSize: 9, color: '#71717A', marginTop: 1 }}>{action.desc}</div>
+   443→              </div>
+   444→              <ExternalLink className="h-3 w-3" style={{ marginLeft: 'auto', color: '#71717A', opacity: 0.5, flexShrink: 0 }} />
+   445→            </motion.button>
+   446→          ))}
+   447→        </div>
+   448→      </motion.div>
+   449→
+   450→      {/* ─── Main Content: Chart + Activity Feed ─────────────────────────── */}
+   451→      <div className="dashboard-main-grid">
+   452→        {/* Price Chart — Marketplace */}
+   453→        <motion.div variants={itemVariants} className="premium-card mc-card dash-chart dashboard-chart-container" style={{ padding: 20, boxShadow: '0 0 16px rgba(192, 38, 211, 0.06)' }}>
+   454→          <div
+   455→            style={{
+   456→              display: 'flex',
+   457→              alignItems: 'center',
+   458→              justifyContent: 'space-between',
+   459→              marginBottom: 16,
+   460→            }}
+   461→          >
+   462→            <div>
+   463→              <h3
+   464→                style={{
+   465→                  fontSize: 14,
+   466→                  fontWeight: 700,
+   467→                  color: '#C026D3',
+   468→                  textTransform: 'uppercase',
+   469→                  letterSpacing: '0.06em',
+   470→                  margin: 0,
+   471→                  textShadow: '1px 1px 0px rgba(0,0,0,0.5), 0 0 12px rgba(192, 38, 211, 0.2)',
+   472→                }}
+   473→              >
+   474→                ◆ MARKETPLACE
+   475→              </h3>
+   476→              <p style={{ fontSize: 10, color: '#A1A1AA', marginTop: 2, fontWeight: 600 }}>7-DAY ASSET EXCHANGE RATE</p>
+   477→            </div>
+   478→            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+   479→              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+   480→                <span style={{ width: 10, height: 3, background: '#C026D3', boxShadow: '0 0 4px rgba(192, 38, 211, 0.4)' }} />
+   481→                <span style={{ fontSize: 9, color: '#A1A1AA', fontWeight: 600, textTransform: 'uppercase' }}>💎 Price</span>
+   482→              </div>
+   483→              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+   484→                <span style={{ width: 10, height: 3, background: '#2DD4BF', opacity: 0.6 }} />
+   485→                <span style={{ fontSize: 9, color: '#A1A1AA', fontWeight: 600, textTransform: 'uppercase' }}>📦 Volume</span>
+   486→              </div>
+   487→            </div>
+   488→          </div>
+   489→          <ResponsiveContainer width="100%" height={240}>
+   490→            <AreaChart data={priceData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+   491→              <defs>
+   492→                <linearGradient id="mcEmeraldGradient" x1="0" y1="0" x2="0" y2="1">
+   493→                  <stop offset="0%" stopColor="#C026D3" stopOpacity={0.35} />
+   494→                  <stop offset="50%" stopColor="#C026D3" stopOpacity={0.1} />
+   495→                  <stop offset="100%" stopColor="#C026D3" stopOpacity={0} />
+   496→                </linearGradient>
+   497→                <linearGradient id="mcVolumeGradient" x1="0" y1="0" x2="0" y2="1">
+   498→                  <stop offset="0%" stopColor="#2DD4BF" stopOpacity={0.15} />
+   499→                  <stop offset="100%" stopColor="#2DD4BF" stopOpacity={0} />
+   500→                </linearGradient>
+   501→              </defs>
+   502→              <CartesianGrid
+   503→                strokeDasharray="4 4"
+   504→                stroke="rgba(113, 113, 122, 0.12)"
+   505→                vertical={false}
+   506→              />
+   507→              <XAxis
+   508→                dataKey="day"
+   509→                axisLine={false}
+   510→                tickLine={false}
+   511→                tick={{ fill: isLightTheme ? '#334155' : '#A1A1AA', fontSize: 10, fontWeight: 700 }}
+   512→              />
+   513→              <YAxis
+   514→                axisLine={false}
+   515→                tickLine={false}
+   516→                tick={{ fill: isLightTheme ? '#334155' : '#A1A1AA', fontSize: 10, fontWeight: 700 }}
+   517→                domain={['auto', 'auto']}
+   518→              />
+   519→              <Tooltip content={<CustomTooltip />} />
+   520→              <Area
+   521→                type="monotone"
+   522→                dataKey="price"
+   523→                stroke="#C026D3"
+   524→                strokeWidth={2.5}
+   525→                fill="url(#mcEmeraldGradient)"
+   526→                dot={false}
+   527→                activeDot={{
+   528→                  r: 5,
+   529→                  fill: '#C026D3',
+   530→                  stroke: '#1a1a1a',
+   531→                  strokeWidth: 3,
+   532→                }}
+   533→                name="price"
+   534→              />
+   535→              <Area
+   536→                type="monotone"
+   537→                dataKey="volume"
+   538→                stroke="#2DD4BF"
+   539→                strokeWidth={1.5}
+   540→                strokeDasharray="4 3"
+   541→                fill="url(#mcVolumeGradient)"
+   542→                dot={false}
+   543→                name="volume"
+   544→                yAxisId={0}
+   545→                opacity={0.4}
+   546→              />
+   547→            </AreaChart>
+   548→          </ResponsiveContainer>
+   549→        </motion.div>
+   550→
+   551→        {/* Activity Feed — Nexus Feed with Tx Hashes */}
+   552→        <motion.div variants={slideInRight} className="premium-card mc-card dash-activity" style={{ padding: 0, display: 'flex', flexDirection: 'column', boxShadow: '0 0 16px rgba(45, 212, 191, 0.06)' }}>
+   553→          <div
+   554→            style={{
+   555→              padding: '14px 18px 12px',
+   556→              borderBottom: '2px solid rgba(192, 38, 211, 0.15)',
+   557→              display: 'flex',
+   558→              alignItems: 'center',
+   559→              justifyContent: 'space-between',
+   560→            }}
+   561→          >
+   562→            <h3
+   563→              style={{
+   564→                fontSize: 13,
+   565→                fontWeight: 700,
+   566→                color: '#2DD4BF',
+   567→                textTransform: 'uppercase',
+   568→                letterSpacing: '0.06em',
+   569→                margin: 0,
+   570→                textShadow: '1px 1px 0px rgba(0,0,0,0.5), 0 0 12px rgba(45, 212, 191, 0.2)',
+   571→              }}
+   572→            >
+   573→              📢 VILLAGE CRIER
+   574→            </h3>
+   575→            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+   576→              <span
+   577→                style={{
+   578→                  width: 5,
+   579→                  height: 5,
+   580→                  background: '#C026D3',
+   581→                  boxShadow: '0 0 6px #C026D3',
+   582→                  animation: 'mc-pulse 2s infinite',
+   583→                }}
+   584→              />
+   585→              <span style={{ fontSize: 9, color: '#A1A1AA', fontWeight: 700, textTransform: 'uppercase' }}>LIVE</span>
+   586→            </div>
+   587→          </div>
+   588→          <div
+   589→            style={{
+   590→              flex: 1,
+   591→              overflowY: 'auto',
+   592→              padding: '8px 0',
+   593→              maxHeight: 268,
+   594→            }}
+   595→          >
+   596→            {activityItems.map((item, i) => {
+   597→              const meta = activityIconMap[item.type]
+   598→              return (
+   599→                <motion.div
+   600→                  key={item.id}
+   601→                  initial={{ opacity: 0, x: 20 }}
+   602→                  animate={{ opacity: 1, x: 0 }}
+   603→                  transition={{ duration: 0.3, delay: i * 0.04, ease: 'easeOut' as const }}
+   604→                  style={{
+   605→                    display: 'flex',
+   606→                    alignItems: 'center',
+   607→                    gap: 10,
+   608→                    padding: '8px 18px',
+   609→                    borderBottom: '1px solid rgba(113, 113, 122, 0.08)',
+   610→                    transition: 'background 0.2s ease',
+   611→                    cursor: 'default',
+   612→                  }}
+   613→                  onMouseEnter={(e) => {
+   614→                    ;(e.currentTarget as HTMLDivElement).style.background = 'rgba(192, 38, 211, 0.04)'
+   615→                  }}
+   616→                  onMouseLeave={(e) => {
+   617→                    ;(e.currentTarget as HTMLDivElement).style.background = 'transparent'
+   618→                  }}
+   619→                >
+   620→                  {/* Type icon */}
+   621→                  <div
+   622→                    style={{
+   623→                      width: 28,
+   624→                      height: 28,
+   625→                      background: `${meta.color}15`,
+   626→                      border: `2px solid ${meta.color}30`,
+   627→                      display: 'flex',
+   628→                      alignItems: 'center',
+   629→                      justifyContent: 'center',
+   630→                      color: meta.color,
+   631→                      flexShrink: 0,
+   632→                      boxShadow: `0 0 8px ${meta.color}10`,
+   633→                    }}
+   634→                  >
+   635→                    {meta.icon}
+   636→                  </div>
+   637→                  {/* Info */}
+   638→                  <div style={{ flex: 1, minWidth: 0 }}>
+   639→                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+   640→                      <span
+   641→                        style={{
+   642→                          fontSize: 9,
+   643→                          fontWeight: 800,
+   644→                          color: meta.color,
+   645→                          letterSpacing: '0.06em',
+   646→                        }}
+   647→                      >
+   648→                        {meta.label}
+   649→                      </span>
+   650→                      <span
+   651→                        style={{
+   652→                          fontSize: 11,
+   653→                          fontWeight: 600,
+   654→                          color: '#E4E4E7',
+   655→                          overflow: 'hidden',
+   656→                          textOverflow: 'ellipsis',
+   657→                          whiteSpace: 'nowrap',
+   658→                        }}
+   659→                      >
+   660→                        {item.item}
+   661→                      </span>
+   662→                    </div>
+   663→                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+   664→                      {item.price > 0 && (
+   665→                        <span style={{ fontSize: 10, fontWeight: 700, color: rarityColorMap[item.rarity] || '#A1A1AA' }}>
+   666→                          💎 {item.price} ALGO
+   667→                        </span>
+   668→                      )}
+   669→                      {item.price === 0 && (
+   670→                        <span style={{ fontSize: 10, fontWeight: 600, color: '#A1A1AA', fontStyle: 'italic' }}>
+   671→                          ◆ newly minted
+   672→                        </span>
+   673→                      )}
+   674→                      <span style={{ fontSize: 9, color: '#71717A', display: 'flex', alignItems: 'center', gap: 2 }}>
+   675→                        <Clock className="h-2.5 w-2.5" />
+   676→                        {item.timeAgo}
+   677→                      </span>
+   678→                    </div>
+   679→                    {/* Transaction hash */}
+   680→                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+   681→                      <span style={{ fontSize: 8, color: '#2DD4BF', opacity: 0.6, fontFamily: 'monospace', letterSpacing: '0.02em' }}>
+   682→                        {item.txHash}
+   683→                      </span>
+   684→                    </div>
+   685→                  </div>
+   686→                </motion.div>
+   687→              )
+   688→            })}
+   689→          </div>
+   690→        </motion.div>
+   691→      </div>
+   692→
+   693→      {/* ─── Bottom Row: Asset Distribution + SDK Stats ────────────────── */}
+   694→      <div className="dashboard-bottom-grid">
+   695→        {/* Asset Distribution */}
+   696→        <motion.div variants={itemVariants} className="premium-card mc-card dashboard-chart-container" style={{ padding: 20, boxShadow: '0 0 16px rgba(251, 191, 36, 0.06)' }}>
+   697→          <h3
+   698→            style={{
+   699→              fontSize: 13,
+   700→              fontWeight: 700,
+   701→              color: '#FBBF24',
+   702→              textTransform: 'uppercase',
+   703→              letterSpacing: '0.06em',
+   704→              margin: '0 0 16px 0',
+   705→              textShadow: '1px 1px 0px rgba(0,0,0,0.5), 0 0 12px rgba(251, 191, 36, 0.2)',
+   706→            }}
+   707→          >
+   708→            ◆ ASSET DISTRIBUTION
+   709→          </h3>
+   710→          <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+   711→            <div style={{ flex: 1 }}>
+   712→              <ResponsiveContainer width="100%" height={140}>
+   713→                <BarChart
+   714→                  data={rarityData}
+   715→                  layout="vertical"
+   716→                  margin={{ top: 0, right: 20, left: 70, bottom: 0 }}
+   717→                  barCategoryGap={12}
+   718→                >
+   719→                  <CartesianGrid strokeDasharray="4 4" stroke="rgba(113, 113, 122, 0.08)" horizontal={false} />
+   720→                  <XAxis
+   721→                    type="number"
+   722→                    axisLine={false}
+   723→                    tickLine={false}
+   724→                    tick={{ fill: isLightTheme ? '#334155' : '#A1A1AA', fontSize: 10, fontWeight: 700 }}
+   725→                  />
+   726→                  <YAxis
+   727→                    type="category"
+   728→                    dataKey="name"
+   729→                    axisLine={false}
+   730→                    tickLine={false}
+   731→                    tick={{ fill: isLightTheme ? '#475569' : '#E4E4E7', fontSize: 11, fontWeight: 700 }}
+   732→                    width={65}
+   733→                  />
+   734→                  <Tooltip content={<CustomTooltip />} />
+   735→                  <Bar dataKey="count" barSize={18}>
+   736→                    {rarityData.map((entry, index) => (
+   737→                      <Cell
+   738→                        key={`cell-${index}`}
+   739→                        fill={entry.color}
+   740→                        fillOpacity={0.8}
+   741→                        stroke={entry.color}
+   742→                        strokeWidth={1}
+   743→                      />
+   744→                    ))}
+   745→                  </Bar>
+   746→                </BarChart>
+   747→              </ResponsiveContainer>
+   748→            </div>
+   749→            {/* Asset legend */}
+   750→            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 110 }}>
+   751→              {rarityData.map((r) => (
+   752→                <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+   753→                  <span
+   754→                    style={{
+   755→                      width: 12,
+   756→                      height: 12,
+   757→                      background: r.color,
+   758→                      border: '2px solid rgba(0,0,0,0.3)',
+   759→                      boxShadow: r.name === 'Diamond' ? `0 0 8px ${r.color}80` : r.name === 'Netherite' ? `0 0 12px rgba(200,200,200,0.3)` : 'none',
+   760→                    }}
+   761→                  />
+   762→                  <span style={{ fontSize: 10, color: '#A1A1AA', fontWeight: 700, textTransform: 'uppercase' }}>{r.name}</span>
+   763→                  <span style={{ fontSize: 11, color: r.color, fontWeight: 800, marginLeft: 'auto' }}>{r.count}</span>
+   764→                </div>
+   765→              ))}
+   766→            </div>
+   767→          </div>
+   768→        </motion.div>
+   769→
+   770→        {/* SDK Quick Reference */}
+   771→        <motion.div variants={slideInRight} className="premium-card mc-card" style={{ padding: 20, boxShadow: '0 0 16px rgba(192, 132, 252, 0.06)' }}>
+   772→          <h3
+   773→            style={{
+   774→              fontSize: 13,
+   775→              fontWeight: 700,
+   776→              color: '#A78BFA',
+   777→              textTransform: 'uppercase',
+   778→              letterSpacing: '0.06em',
+   779→              margin: '0 0 16px 0',
+   780→              textShadow: '1px 1px 0px rgba(0,0,0,0.5), 0 0 12px rgba(192, 132, 252, 0.2)',
+   781→            }}
+   782→          >
+   783→            📜 SDK REFERENCE
+   784→          </h3>
+   785→          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+   786→            {/* Code snippet preview */}
+   787→            <div
+   788→              style={{
+   789→                background: 'rgba(0,0,0,0.4)',
+   790→                border: '2px solid rgba(192, 132, 252, 0.2)',
+   791→                padding: '10px 12px',
+   792→                fontFamily: 'monospace',
+   793→                fontSize: 10,
+   794→                lineHeight: 1.6,
+   795→                color: '#E4E4E7',
+   796→                overflow: 'hidden',
+   797→              }}
+   798→            >
+   799→              <span style={{ color: '#A78BFA' }}>import</span> {'{ DeShopSDK }'} <span style={{ color: '#A78BFA' }}>from</span> <span style={{ color: '#C026D3' }}>'@de-shop/sdk'</span>
+   800→              <br />
+   801→              <span style={{ color: '#A78BFA' }}>const</span> sdk = <span style={{ color: '#A78BFA' }}>new</span> <span style={{ color: '#2DD4BF' }}>DeShopSDK</span>({'{'}
+   802→              <br />
+   803→              &nbsp;&nbsp;network: <span style={{ color: '#FBBF24' }}>'testnet'</span>,{'\n'}
+   804→              &nbsp;&nbsp;wallet: provider
+   805→              {'}'})
+   806→            </div>
+   807→            {/* SDK feature buttons */}
+   808→            {[
+   809→              { label: 'Mint NFT', desc: 'Create game assets on-chain', icon: <Sparkles className="h-4 w-4" />, color: '#C026D3' },
+   810→              { label: 'Trade Items', desc: 'Peer-to-peer marketplace', icon: <Zap className="h-4 w-4" />, color: '#2DD4BF' },
+   811→              { label: 'Read Docs', desc: 'Full API reference', icon: <FileText className="h-4 w-4" />, color: '#FBBF24' },
+   812→            ].map((ref) => (
+   813→              <motion.button
+   814→                key={ref.label}
+   815→                whileHover={{ scale: 1.02, x: 4 }}
+   816→                whileTap={{ scale: 0.98 }}
+   817→                className="premium-btn premium-btn--sm"
+   818→                style={{
+   819→                  width: '100%',
+   820→                  justifyContent: 'flex-start',
+   821→                  padding: '6px 14px',
+   822→                  borderColor: `${ref.color}30`,
+   823→                  color: ref.color,
+   824→                  background: `${ref.color}08`,
+   825→                  transition: 'all 0.2s ease',
+   826→                }}
+   827→                onClick={() => handleQuickAction(ref.label)}
+   828→              >
+   829→                {ref.icon}
+   830→                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+   831→                  <span style={{ fontSize: 9, fontWeight: 700 }}>{ref.label.toUpperCase()}</span>
+   832→                  <span style={{ fontSize: 7, color: '#71717A', fontWeight: 400 }}>{ref.desc}</span>
+   833→                </div>
+   834→                <span style={{ marginLeft: 'auto', fontSize: 9, opacity: 0.5 }}>→</span>
+   835→              </motion.button>
+   836→            ))}
+   837→          </div>
+   838→        </motion.div>
+   839→      </div>
+   840→
+   841→      {/* ─── Nexus Forge Pulse Animation Keyframe ─────────────────────────── */}
+   842→      <style>{`
+   843→        @keyframes mc-pulse {
+   844→          0%, 100% { opacity: 1; }
+   845→          50% { opacity: 0.4; }
+   846→        }
+   847→      `}</style>
+   848→    </motion.div>
+   849→  )
+   850→}
+   851→

@@ -1,0 +1,1575 @@
+     1→/**
+     2→ * De-Shop SDK — Profile / Stats Page (Premium — Nexus Forge Theme)
+     3→ * ══════════════════════════════════════════════
+     4→ * Achievements → Advancements, Transaction History → Nexus Ledger,
+     5→ * Portfolio Analytics → Asset Vault Stats, Connected Accounts → Portal Links
+     6→ * All in Nexus Forge graphite theme with clean fonts and no border-radius.
+     7→ */
+     8→
+     9→import { useState, useEffect } from 'react'
+    10→import { motion, AnimatePresence } from 'framer-motion'
+    11→import {
+    12→  Copy,
+    13→  Check,
+    14→  Edit3,
+    15→  Sparkles,
+    16→  ShoppingCart,
+    17→  Coins,
+    18→  Tag,
+    19→  ArrowDownToLine,
+    20→  Clock,
+    21→  Zap,
+    22→  Wallet,
+    23→  ChevronRight,
+    24→  TrendingUp,
+    25→  BarChart3,
+    26→  PieChart as PieChartIcon,
+    27→  Shield,
+    28→  Unplug,
+    29→} from 'lucide-react'
+    30→import {
+    31→  ResponsiveContainer,
+    32→  AreaChart,
+    33→  Area,
+    34→  XAxis,
+    35→  YAxis,
+    36→  Tooltip,
+    37→  CartesianGrid,
+    38→  PieChart,
+    39→  Pie,
+    40→  Cell,
+    41→} from 'recharts'
+    42→import { useDeShopStore } from '../store/useDeShopStore'
+    43→import { useWallet } from '@txnlab/use-wallet-react'
+    44→import { ellipseAddress } from '../utils/ellipseAddress'
+    45→
+    46→// ═══════════════════════════════════════════════════════════════════════════════
+    47→// NEXUS FORGE THEME CONSTANTS
+    48→// ═══════════════════════════════════════════════════════════════════════════════
+    49→
+    50→const MC = {
+    51→  // Nexus Forge palette
+    52→  dirt: '#27272A',
+    53→  dirtDark: '#1F1F23',
+    54→  dirtLight: '#3F3F46',
+    55→  stone: '#52525B',
+    56→  stoneDark: '#3F3F46',
+    57→  stoneLight: '#71717A',
+    58→  grass: '#3F3F46',
+    59→  grassDark: '#27272A',
+    60→  grassLight: '#52525B',
+    61→  emerald: '#C026D3',
+    62→  emeraldDark: '#A21CAF',
+    63→  emeraldGlow: 'rgba(192, 38, 211, 0.3)',
+    64→  diamond: '#2DD4BF',
+    65→  diamondDark: '#14B8A6',
+    66→  diamondGlow: 'rgba(45, 212, 191, 0.3)',
+    67→  gold: '#FBBF24',
+    68→  goldDark: '#F59E0B',
+    69→  goldGlow: 'rgba(251, 191, 36, 0.3)',
+    70→  redstone: '#F43F5E',
+    71→  redstoneGlow: 'rgba(244, 63, 94, 0.3)',
+    72→  netherite: '#2A2A35',
+    73→  netheriteLight: '#3F3F46',
+    74→  obsidian: '#18181B',
+    75→  ender: '#7C3AED',
+    76→  enderGlow: 'rgba(124, 58, 237, 0.3)',
+    77→  nightSky: '#0E0E12',
+    78→  panelBg: 'rgba(18, 18, 23, 0.92)',
+    79→  panelBorder: 'rgba(192, 38, 211, 0.4)',
+    80→  textLight: '#E4E4E7',
+    81→  textMuted: '#A1A1AA',
+    82→  textDark: '#71717A',
+    83→}
+    84→
+    85→const mcBorder = `3px solid ${MC.dirt}`
+    86→const mcInnerBorder = `1px solid ${MC.dirtLight}`
+    87→const mcPanelShadow = `4px 4px 0px ${MC.dirtDark}, inset 1px 1px 0px ${MC.dirtLight}33`
+    88→
+    89→// ═══════════════════════════════════════════════════════════════════════════════
+    90→// MOCK DATA
+    91→// ═══════════════════════════════════════════════════════════════════════════════
+    92→
+    93→// ─── Nexus Forge Advancements ───────────────────────────────────────────────
+    94→
+    95→interface Achievement {
+    96→  id: string
+    97→  name: string
+    98→  description: string
+    99→  earned: boolean
+   100→  earnedDate?: string
+   101→  emoji: string
+   102→}
+   103→
+   104→const achievements: Achievement[] = [
+   105→  {
+   106→    id: 'first-ingot',
+   107→    name: 'First Ingot',
+   108→    description: 'Forge your first blockchain asset',
+   109→    earned: true,
+   110→    earnedDate: '2024-11-15',
+   111→    emoji: '⚒️',
+   112→  },
+   113→  {
+   114→    id: 'wandering-trader',
+   115→    name: 'Wandering Trader',
+   116→    description: 'Complete your first trade',
+   117→    earned: true,
+   118→    earnedDate: '2024-12-03',
+   119→    emoji: '🧳',
+   120→  },
+   121→  {
+   122→    id: 'hoarder',
+   123→    name: 'Hoarder',
+   124→    description: 'Own 5 or more rare items',
+   125→    earned: false,
+   126→    emoji: '💎',
+   127→  },
+   128→  {
+   129→    id: 'diamond-hands',
+   130→    name: 'Diamond Hands',
+   131→    description: 'Trade over 10,000 μALGO',
+   132→    earned: false,
+   133→    emoji: '💎',
+   134→  },
+   135→  {
+   136→    id: 'pioneer',
+   137→    name: 'Pioneer',
+   138→    description: 'Joined in the first era',
+   139→    earned: true,
+   140→    earnedDate: '2025-01-20',
+   141→    emoji: '🏕️',
+   142→  },
+   143→  {
+   144→    id: 'portal-linked',
+   145→    name: 'Portal Linked',
+   146→    description: 'Connected Steam account',
+   147→    earned: false,
+   148→    emoji: '🌀',
+   149→  },
+   150→]
+   151→
+   152→// ─── Nexus Ledger (Transaction History) ──────────────────────────────────────
+   153→
+   154→type TxType = 'Mint' | 'Buy' | 'Sell' | 'List' | 'Withdraw'
+   155→type TxStatus = 'Confirmed' | 'Pending'
+   156→
+   157→interface Transaction {
+   158→  id: string
+   159→  type: TxType
+   160→  itemName: string
+   161→  price: number
+   162→  counterparty: string
+   163→  date: string
+   164→  status: TxStatus
+   165→}
+   166→
+   167→const txTypeLabel: Record<TxType, string> = {
+   168→  Mint: 'Forged',
+   169→  Buy: 'Traded',
+   170→  Sell: 'Sold',
+   171→  List: 'Displayed',
+   172→  Withdraw: 'Withdrawn',
+   173→}
+   174→
+   175→const txTypeEmoji: Record<TxType, string> = {
+   176→  Mint: '⚒️',
+   177→  Buy: '🤝',
+   178→  Sell: '💰',
+   179→  List: '🏪',
+   180→  Withdraw: '⬇️',
+   181→}
+   182→
+   183→const txTypeColor: Record<TxType, string> = {
+   184→  Mint: MC.emerald,
+   185→  Buy: MC.diamond,
+   186→  Sell: MC.gold,
+   187→  List: MC.ender,
+   188→  Withdraw: MC.redstone,
+   189→}
+   190→
+   191→const mockTransactions: Transaction[] = [
+   192→  { id: 'tx-1', type: 'Buy', itemName: 'Diamond Pickaxe', price: 58400, counterparty: 'VILLAGER7X...K4M2', date: '2025-03-03 14:23', status: 'Confirmed' },
+   193→  { id: 'tx-2', type: 'Sell', itemName: 'Ender Pearl', price: 34200, counterparty: 'VILLAGER3F...N8P1', date: '2025-03-03 11:05', status: 'Confirmed' },
+   194→  { id: 'tx-3', type: 'Mint', itemName: 'Netherite Sword', price: 0, counterparty: 'You', date: '2025-03-02 22:17', status: 'Confirmed' },
+   195→  { id: 'tx-4', type: 'List', itemName: 'Iron Chestplate', price: 22800, counterparty: 'You', date: '2025-03-02 18:40', status: 'Confirmed' },
+   196→  { id: 'tx-5', type: 'Buy', itemName: 'Enchanted Bow', price: 112000, counterparty: 'VILLAGER9A...Q5R7', date: '2025-03-02 09:12', status: 'Confirmed' },
+   197→  { id: 'tx-6', type: 'Withdraw', itemName: 'Golden Apple', price: 45000, counterparty: 'You', date: '2025-03-01 20:55', status: 'Confirmed' },
+   198→  { id: 'tx-7', type: 'Buy', itemName: 'Blaze Rod', price: 45000, counterparty: 'VILLAGER2B...W3T9', date: '2025-03-01 15:33', status: 'Pending' },
+   199→  { id: 'tx-8', type: 'Sell', itemName: 'Creeper Head', price: 89500, counterparty: 'VILLAGER6D...Y1U4', date: '2025-02-28 12:08', status: 'Confirmed' },
+   200→  { id: 'tx-9', type: 'Mint', itemName: 'TNT Block', price: 0, counterparty: 'You', date: '2025-02-28 07:45', status: 'Confirmed' },
+   201→  { id: 'tx-10', type: 'List', itemName: 'Obsidian Shard', price: 76300, counterparty: 'You', date: '2025-02-27 21:30', status: 'Confirmed' },
+   202→  { id: 'tx-11', type: 'Buy', itemName: 'Totem of Undying', price: 64700, counterparty: 'VILLAGER8E...L2H6', date: '2025-02-27 16:22', status: 'Confirmed' },
+   203→  { id: 'tx-12', type: 'Sell', itemName: 'Ghast Tear', price: 19900, counterparty: 'VILLAGER1C...M5J8', date: '2025-02-27 10:15', status: 'Pending' },
+   204→]
+   205→
+   206→// ─── Ender Chest Stats (Portfolio Data) ────────────────────────────────────────
+   207→
+   208→const rarityDistribution = [
+   209→  { name: 'Iron', count: 5, color: '#AAAAAA' },
+   210→  { name: 'Gold', count: 3, color: '#FBBF24' },
+   211→  { name: 'Diamond', count: 2, color: '#2DD4BF' },
+   212→  { name: 'Netherite', count: 1, color: '#4A4040' },
+   213→]
+   214→
+   215→const portfolioPerformance = Array.from({ length: 7 }, (_, i) => {
+   216→  const day = new Date()
+   217→  day.setDate(day.getDate() - (6 - i))
+   218→  const base = 285 + i * 4.5
+   219→  const noise = Math.sin(i * 1.7) * 8 + (Math.random() * 6 - 3)
+   220→  return {
+   221→    day: day.toLocaleDateString('en', { weekday: 'short' }),
+   222→    value: +(base + noise).toFixed(2),
+   223→  }
+   224→})
+   225→
+   226→// ═══════════════════════════════════════════════════════════════════════════════
+   227→// CUSTOM TOOLTIP (Nexus Forge style)
+   228→// ═══════════════════════════════════════════════════════════════════════════════
+   229→
+   230→function CustomTooltip({ active, payload, label }: any) {
+   231→  if (!active || !payload?.length) return null
+   232→  return (
+   233→    <div
+   234→      style={{
+   235→        background: MC.panelBg,
+   236→        border: mcBorder,
+   237→        padding: '8px 12px',
+   238→        boxShadow: mcPanelShadow,
+   239→      }}
+   240→    >
+   241→      <p style={{ color: MC.textMuted, fontSize: 11, marginBottom: 4, fontFamily: "'Courier New', monospace" }}>{label}</p>
+   242→      {payload.map((entry: any, idx: number) => (
+   243→        <p key={idx} style={{ color: entry.color || MC.emerald, fontSize: 13, fontWeight: 700, fontFamily: "'Courier New', monospace" }}>
+   244→          {entry.name === 'value' ? 'Ender Chest' : entry.name}: {entry.name === 'value' ? `${entry.value} ⬡` : entry.value}
+   245→        </p>
+   246→      ))}
+   247→    </div>
+   248→  )
+   249→}
+   250→
+   251→// ═══════════════════════════════════════════════════════════════════════════════
+   252→// ANIMATION VARIANTS
+   253→// ═══════════════════════════════════════════════════════════════════════════════
+   254→
+   255→const containerVariants = {
+   256→  hidden: { opacity: 0 },
+   257→  visible: {
+   258→    opacity: 1,
+   259→    transition: { staggerChildren: 0.07 },
+   260→  },
+   261→}
+   262→
+   263→const itemVariants = {
+   264→  hidden: { opacity: 0, y: 20 },
+   265→  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' as const } },
+   266→}
+   267→
+   268→const badgeVariants = {
+   269→  hidden: { opacity: 0, scale: 0.85 },
+   270→  visible: { opacity: 1, scale: 1, transition: { duration: 0.35, ease: 'easeOut' as const } },
+   271→}
+   272→
+   273→// ═══════════════════════════════════════════════════════════════════════════════
+   274→// HELPERS
+   275→// ═══════════════════════════════════════════════════════════════════════════════
+   276→
+   277→function formatMicroAlgo(val: number): string {
+   278→  if (val === 0) return '—'
+   279→  return `${(val / 1000).toFixed(1)}k μALGO`
+   280→}
+   281→
+   282→function formatTimeAgo(dateStr: string): string {
+   283→  const diff = Date.now() - new Date(dateStr).getTime()
+   284→  const mins = Math.floor(diff / 60000)
+   285→  if (mins < 60) return `${mins}m ago`
+   286→  const hrs = Math.floor(mins / 60)
+   287→  if (hrs < 24) return `${hrs}h ago`
+   288→  const days = Math.floor(hrs / 24)
+   289→  return `${days}d ago`
+   290→}
+   291→
+   292→// ═══════════════════════════════════════════════════════════════════════════════
+   293→// COMPONENT
+   294→// ═══════════════════════════════════════════════════════════════════════════════
+   295→
+   296→export default function ProfilePage() {
+   297→  const { activeAddress } = useWallet()
+   298→  const { steamProfile, inventory, setSteamProfile, addNotification } = useDeShopStore()
+   299→  const [copied, setCopied] = useState(false)
+   300→  const [editingName, setEditingName] = useState(false)
+   301→  const [displayNameValue, setDisplayNameValue] = useState('')
+   302→
+   303→  // Theme detection for Recharts tick colors
+   304→  const [isLightTheme, setIsLightTheme] = useState(false)
+   305→  useEffect(() => {
+   306→    const checkTheme = () => setIsLightTheme(document.documentElement.getAttribute('data-theme') === 'light')
+   307→    checkTheme()
+   308→    const observer = new MutationObserver(checkTheme)
+   309→    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+   310→    return () => observer.disconnect()
+   311→  }, [])
+   312→
+   313→  // Parse Steam login callback from URL hash fragment
+   314→  useEffect(() => {
+   315→    const hash = window.location.hash
+   316→    if (hash.includes('steam_id=')) {
+   317→      const params = new URLSearchParams(hash.substring(1))
+   318→      const steamId = params.get('steam_id')
+   319→      if (steamId) {
+   320→        fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/auth/steam/profile/${steamId}`)
+   321→          .then(res => res.json())
+   322→          .then(data => {
+   323→            if (data.profile) setSteamProfile(data.profile)
+   324→          })
+   325→          .catch(err => console.error('Failed to fetch steam profile:', err))
+   326→        window.history.replaceState(null, '', window.location.pathname)
+   327→      }
+   328→    }
+   329→  }, [setSteamProfile])
+   330→
+   331→  const [hoveredBadge, setHoveredBadge] = useState<string | null>(null)
+   332→
+   333→  const displayName = steamProfile?.personaname || (activeAddress ? ellipseAddress(activeAddress, 8) : 'Steve')
+   334→  const avatarUrl = steamProfile?.avatarfull || null
+   335→
+   336→  const handleCopyAddress = () => {
+   337→    if (activeAddress) {
+   338→      navigator.clipboard.writeText(activeAddress)
+   339→      setCopied(true)
+   340→      setTimeout(() => setCopied(false), 2000)
+   341→    }
+   342→  }
+   343→
+   344→  const [steamConnecting, setSteamConnecting] = useState(false)
+   345→
+   346→  const handleSteamConnect = async () => {
+   347→    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'
+   348→    setSteamConnecting(true)
+   349→    try {
+   350→      // Check if the backend is reachable before redirecting
+   351→      const controller = new AbortController()
+   352→      const timeoutId = setTimeout(() => controller.abort(), 5000)
+   353→      const res = await fetch(`${backendUrl}/auth/steam/health`, { method: 'GET', signal: controller.signal })
+   354→      clearTimeout(timeoutId)
+   355→      if (res.ok) {
+   356→        window.location.href = `${backendUrl}/auth/steam`
+   357→      } else {
+   358→        addNotification('error', 'Backend not available. Please start the Flask server first.')
+   359→      }
+   360→    } catch {
+   361→      addNotification('error', 'Backend not available. Please start the Flask server first.')
+   362→    } finally {
+   363→      setSteamConnecting(false)
+   364→    }
+   365→  }
+   366→
+   367→  const handleStartEditName = () => {
+   368→    setDisplayNameValue(steamProfile?.personaname || '')
+   369→    setEditingName(true)
+   370→  }
+   371→
+   372→  const handleSaveName = () => {
+   373→    setEditingName(false)
+   374→    // In a real app, this would save the display name to the backend
+   375→  }
+   376→
+   377→  const statsRow = [
+   378→    { label: 'Emeralds Spent 💎', value: '3.2k', color: MC.emerald },
+   379→    { label: 'Items in Chest 📦', value: String(inventory.length || 11), color: MC.diamond },
+   380→    { label: 'Trading Profit 📈', value: '+12.4%', color: MC.gold },
+   381→    { label: 'Chest Displays 🏪', value: '3', color: MC.ender },
+   382→  ]
+   383→
+   384→  return (
+   385→    <motion.div
+   386→      variants={containerVariants}
+   387→      initial="hidden"
+   388→      animate="visible"
+   389→      style={{
+   390→        display: 'flex',
+   391→        flexDirection: 'column',
+   392→        gap: 16,
+   393→        height: '100%',
+   394→        overflowY: 'auto',
+   395→        paddingRight: 4,
+   396→      }}
+   397→    >
+   398→      {/* ═══════════════════════════════════════════════════════════════════════
+   399→          PLAYER PROFILE HEADER — Nexus Forge Player Card
+   400→          ═══════════════════════════════════════════════════════════════════════ */}
+   401→      <motion.div
+   402→        variants={itemVariants}
+   403→        style={{
+   404→          background: MC.panelBg,
+   405→          border: mcBorder,
+   406→          padding: 20,
+   407→          boxShadow: mcPanelShadow,
+   408→        }}
+   409→      >
+   410→        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+   411→          {/* Avatar — Steve or Steam */}
+   412→          <div
+   413→            style={{
+   414→              position: 'relative',
+   415→              width: 64,
+   416→              height: 64,
+   417→              flexShrink: 0,
+   418→            }}
+   419→          >
+   420→            {avatarUrl ? (
+   421→              <img
+   422→                src={avatarUrl}
+   423→                alt="Player Avatar"
+   424→                style={{
+   425→                  width: 64,
+   426→                  height: 64,
+   427→                  imageRendering: 'pixelated',
+   428→                  border: `2px solid ${MC.dirtLight}`,
+   429→                }}
+   430→              />
+   431→            ) : (
+   432→              <img
+   433→                src="/minecraft/steve-avatar.png"
+   434→                alt="Steve Avatar"
+   435→                style={{
+   436→                  width: 64,
+   437→                  height: 64,
+   438→                  imageRendering: 'pixelated',
+   439→                  border: `2px solid ${MC.dirtLight}`,
+   440→                }}
+   441→                onError={(e) => {
+   442→                  // Fallback if Steve image not found
+   443→                  const target = e.target as HTMLImageElement
+   444→                  target.style.display = 'none'
+   445→                  const parent = target.parentElement
+   446→                  if (parent) {
+   447→                    parent.style.background = `${MC.grassDark}`
+   448→                    parent.style.display = 'flex'
+   449→                    parent.style.alignItems = 'center'
+   450→                    parent.style.justifyContent = 'center'
+   451→                    const fallback = document.createElement('span')
+   452→                    fallback.textContent = '◆'
+   453→                    fallback.style.fontSize = '28px'
+   454→                    parent.appendChild(fallback)
+   455→                  }
+   456→                }}
+   457→              />
+   458→            )}
+   459→            {/* Online indicator — green square (MC style, no circle) */}
+   460→            <div
+   461→              style={{
+   462→                position: 'absolute',
+   463→                bottom: -2,
+   464→                right: -2,
+   465→                width: 12,
+   466→                height: 12,
+   467→                background: MC.emerald,
+   468→                border: `2px solid ${MC.dirtDark}`,
+   469→              }}
+   470→            />
+   471→          </div>
+   472→
+   473→          {/* Player Info */}
+   474→          <div style={{ flex: 1, minWidth: 200 }}>
+   475→            {/* Title Label */}
+   476→            <p
+   477→              style={{
+   478→                fontSize: 9,
+   479→                fontWeight: 700,
+   480→                color: MC.textDark,
+   481→                textTransform: 'uppercase',
+   482→                letterSpacing: '0.1em',
+   483→                margin: '0 0 4px 0',
+   484→                fontFamily: "'Courier New', monospace",
+   485→              }}
+   486→            >
+   487→              PLAYER PROFILE
+   488→            </p>
+   489→
+   490→            {/* Display Name */}
+   491→            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+   492→              {editingName ? (
+   493→                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+   494→                  <input
+   495→                    value={displayNameValue}
+   496→                    onChange={(e) => setDisplayNameValue(e.target.value)}
+   497→                    style={{
+   498→                      fontSize: 18,
+   499→                      fontWeight: 800,
+   500→                      color: MC.textLight,
+   501→                      background: 'rgba(0,0,0,0.4)',
+   502→                      border: `2px solid ${MC.emerald}`,
+   503→                      padding: '2px 8px',
+   504→                      fontFamily: "'Courier New', monospace",
+   505→                      outline: 'none',
+   506→                      width: 180,
+   507→                    }}
+   508→                    autoFocus
+   509→                    onKeyDown={(e) => {
+   510→                      if (e.key === 'Enter') handleSaveName()
+   511→                      if (e.key === 'Escape') setEditingName(false)
+   512→                    }}
+   513→                  />
+   514→                  <button
+   515→                    onClick={handleSaveName}
+   516→                    style={{
+   517→                      background: MC.emeraldDark,
+   518→                      border: `2px solid ${MC.emerald}`,
+   519→                      color: '#fff',
+   520→                      padding: '2px 8px',
+   521→                      cursor: 'pointer',
+   522→                      fontSize: 10,
+   523→                      fontWeight: 700,
+   524→                      fontFamily: "'Courier New', monospace",
+   525→                    }}
+   526→                  >
+   527→                    ✓
+   528→                  </button>
+   529→                </div>
+   530→              ) : (
+   531→                <>
+   532→                  <h2
+   533→                    style={{
+   534→                      fontSize: 18,
+   535→                      fontWeight: 800,
+   536→                      color: MC.textLight,
+   537→                      letterSpacing: '0.02em',
+   538→                      margin: 0,
+   539→                      fontFamily: "'Courier New', monospace",
+   540→                    }}
+   541→                  >
+   542→                    {displayName}
+   543→                  </h2>
+   544→                  <button
+   545→                    onClick={handleStartEditName}
+   546→                    style={{
+   547→                      background: 'none',
+   548→                      border: 'none',
+   549→                      cursor: 'pointer',
+   550→                      color: MC.textMuted,
+   551→                      padding: 2,
+   552→                      display: 'flex',
+   553→                      alignItems: 'center',
+   554→                      transition: 'color 0.2s',
+   555→                    }}
+   556→                    title="Edit display name"
+   557→                    onMouseEnter={(e) => { e.currentTarget.style.color = MC.emerald }}
+   558→                    onMouseLeave={(e) => { e.currentTarget.style.color = MC.textMuted }}
+   559→                  >
+   560→                    <Edit3 className="h-3.5 w-3.5" />
+   561→                  </button>
+   562→                </>
+   563→              )}
+   564→              <div
+   565→                style={{
+   566→                  display: 'flex',
+   567→                  alignItems: 'center',
+   568→                  gap: 4,
+   569→                  padding: '2px 8px',
+   570→                  background: `${MC.gold}15`,
+   571→                  border: `1px solid ${MC.goldDark}40`,
+   572→                  fontSize: 9,
+   573→                  color: MC.gold,
+   574→                  fontWeight: 700,
+   575→                  letterSpacing: '0.06em',
+   576→                  fontFamily: "'Courier New', monospace",
+   577→                }}
+   578→              >
+   579→                <span style={{ width: 5, height: 5, background: MC.gold }} />
+   580→                TESTNET
+   581→              </div>
+   582→            </div>
+   583→
+   584→            {/* Wallet Address — MC Tooltip Style */}
+   585→            <div
+   586→              style={{
+   587→                display: 'flex',
+   588→                alignItems: 'center',
+   589→                gap: 8,
+   590→                marginTop: 6,
+   591→              }}
+   592→            >
+   593→              {activeAddress ? (
+   594→                <>
+   595→                  <div
+   596→                    style={{
+   597→                      background: 'rgba(0,0,0,0.5)',
+   598→                      border: `2px solid ${MC.dirt}`,
+   599→                      padding: '3px 10px',
+   600→                      position: 'relative',
+   601→                    }}
+   602→                  >
+   603→                    {/* Tooltip arrow notch */}
+   604→                    <div
+   605→                      style={{
+   606→                        position: 'absolute',
+   607→                        top: -6,
+   608→                        left: 12,
+   609→                        width: 0,
+   610→                        height: 0,
+   611→                        borderLeft: '5px solid transparent',
+   612→                        borderRight: '5px solid transparent',
+   613→                        borderBottom: `6px solid ${MC.dirt}`,
+   614→                      }}
+   615→                    />
+   616→                    <code
+   617→                      style={{
+   618→                        fontSize: 11,
+   619→                        color: MC.textLight,
+   620→                        fontFamily: "'Courier New', monospace",
+   621→                      }}
+   622→                    >
+   623→                      📍 {ellipseAddress(activeAddress, 10)}
+   624→                    </code>
+   625→                  </div>
+   626→                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+   627→                    <AnimatePresence>
+   628→                      {copied && (
+   629→                        <motion.span
+   630→                          initial={{ opacity: 0, y: 4 }}
+   631→                          animate={{ opacity: 1, y: 0 }}
+   632→                          exit={{ opacity: 0, y: 4 }}
+   633→                          transition={{ duration: 0.15 }}
+   634→                          style={{
+   635→                            position: 'absolute',
+   636→                            top: -22,
+   637→                            left: '50%',
+   638→                            transform: 'translateX(-50%)',
+   639→                            background: `${MC.emerald}22`,
+   640→                            border: `2px solid ${MC.emerald}`,
+   641→                            color: MC.emerald,
+   642→                            fontSize: 9,
+   643→                            fontWeight: 700,
+   644→                            padding: '2px 8px',
+   645→                            whiteSpace: 'nowrap',
+   646→                            pointerEvents: 'none',
+   647→                            fontFamily: "'Courier New', monospace",
+   648→                          }}
+   649→                        >
+   650→                          Copied! ✨
+   651→                        </motion.span>
+   652→                      )}
+   653→                    </AnimatePresence>
+   654→                    <button
+   655→                      onClick={handleCopyAddress}
+   656→                      style={{
+   657→                        background: 'none',
+   658→                        border: 'none',
+   659→                        cursor: 'pointer',
+   660→                        color: copied ? MC.emerald : MC.textMuted,
+   661→                        padding: 2,
+   662→                        display: 'flex',
+   663→                        alignItems: 'center',
+   664→                        transition: 'color 0.2s',
+   665→                      }}
+   666→                      title="Copy Coordinates 📍"
+   667→                    >
+   668→                      {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+   669→                    </button>
+   670→                  </div>
+   671→                </>
+   672→              ) : (
+   673→                <span style={{ fontSize: 11, color: MC.textDark, fontStyle: 'italic', fontFamily: "'Courier New', monospace" }}>
+   674→                  No wallet bound ◆
+   675→                </span>
+   676→              )}
+   677→            </div>
+   678→          </div>
+   679→        </div>
+   680→
+   681→        {/* Stats Row */}
+   682→        <div
+   683→          style={{
+   684→            display: 'grid',
+   685→            gridTemplateColumns: 'repeat(4, 1fr)',
+   686→            gap: 10,
+   687→            marginTop: 16,
+   688→            paddingTop: 14,
+   689→            borderTop: `2px solid ${MC.dirtDark}`,
+   690→          }}
+   691→        >
+   692→          {statsRow.map((stat) => (
+   693→            <div key={stat.label} style={{ textAlign: 'center', padding: '6px 4px', background: 'rgba(0,0,0,0.3)', border: `1px solid ${MC.dirtDark}` }}>
+   694→              <p style={{ fontSize: 9, color: MC.textMuted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0, fontFamily: "'Courier New', monospace" }}>
+   695→                {stat.label}
+   696→              </p>
+   697→              <p style={{ fontSize: 16, fontWeight: 800, color: stat.color, marginTop: 4, marginBottom: 0, fontFamily: "'Courier New', monospace" }}>
+   698→                {stat.value}
+   699→              </p>
+   700→            </div>
+   701→          ))}
+   702→        </div>
+   703→      </motion.div>
+   704→
+   705→      {/* ═══════════════════════════════════════════════════════════════════════
+   706→          MINECRAFT ADVANCEMENTS SECTION
+   707→          ═══════════════════════════════════════════════════════════════════════ */}
+   708→      <motion.div variants={itemVariants}>
+   709→        <div
+   710→          style={{
+   711→            display: 'flex',
+   712→            alignItems: 'center',
+   713→            gap: 8,
+   714→            marginBottom: 12,
+   715→            paddingBottom: 8,
+   716→            borderBottom: `2px solid ${MC.dirtDark}`,
+   717→          }}
+   718→        >
+   719→          <Shield className="h-4 w-4" style={{ color: MC.emerald }} />
+   720→          <h3
+   721→            style={{
+   722→              fontSize: 14,
+   723→              fontWeight: 700,
+   724→              color: MC.emerald,
+   725→              textTransform: 'uppercase',
+   726→              letterSpacing: '0.08em',
+   727→              margin: 0,
+   728→              fontFamily: "'Courier New', monospace",
+   729→            }}
+   730→          >
+   731→            Advancements ⚔️
+   732→          </h3>
+   733→          <span
+   734→            style={{
+   735→              fontSize: 10,
+   736→              color: MC.textMuted,
+   737→              marginLeft: 4,
+   738→              fontFamily: "'Courier New', monospace",
+   739→            }}
+   740→          >
+   741→            {achievements.filter((a) => a.earned).length}/{achievements.length} Earned
+   742→          </span>
+   743→        </div>
+   744→        <div
+   745→          className="achievements-grid"
+   746→          style={{
+   747→            display: 'grid',
+   748→            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+   749→            gap: 10,
+   750→          }}
+   751→        >
+   752→          {achievements.map((badge) => (
+   753→            <motion.div
+   754→              key={badge.id}
+   755→              variants={badgeVariants}
+   756→              onMouseEnter={() => setHoveredBadge(badge.id)}
+   757→              onMouseLeave={() => setHoveredBadge(null)}
+   758→              style={{
+   759→                padding: 14,
+   760→                cursor: 'default',
+   761→                position: 'relative',
+   762→                opacity: badge.earned ? 1 : 0.4,
+   763→                background: badge.earned ? MC.panelBg : 'rgba(20, 20, 35, 0.5)',
+   764→                border: `2px solid ${badge.earned ? MC.emeraldDark : MC.stoneDark}`,
+   765→                boxShadow: badge.earned ? `3px 3px 0px ${MC.emeraldDark}44` : `3px 3px 0px ${MC.stoneDark}44`,
+   766→                transition: 'all 0.25s ease',
+   767→                overflow: 'visible',
+   768→              }}
+   769→            >
+   770→              <div style={{ position: 'relative', zIndex: 1 }}>
+   771→                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+   772→                  {/* Square icon box — MC advancement style */}
+   773→                  <div
+   774→                    style={{
+   775→                      width: 36,
+   776→                      height: 36,
+   777→                      background: badge.earned ? `${MC.emerald}20` : 'rgba(0,0,0,0.3)',
+   778→                      border: `2px solid ${badge.earned ? MC.emerald : MC.stoneDark}`,
+   779→                      display: 'flex',
+   780→                      alignItems: 'center',
+   781→                      justifyContent: 'center',
+   782→                      fontSize: 18,
+   783→                      imageRendering: 'pixelated',
+   784→                    }}
+   785→                  >
+   786→                    {badge.emoji}
+   787→                  </div>
+   788→                  {badge.earned && (
+   789→                    <div
+   790→                      style={{
+   791→                        marginLeft: 'auto',
+   792→                        color: MC.emerald,
+   793→                        fontSize: 14,
+   794→                        fontWeight: 800,
+   795→                      }}
+   796→                    >
+   797→                      ✓
+   798→                    </div>
+   799→                  )}
+   800→                </div>
+   801→                <p
+   802→                  style={{
+   803→                    fontSize: 12,
+   804→                    fontWeight: 700,
+   805→                    color: badge.earned ? MC.textLight : MC.textDark,
+   806→                    margin: 0,
+   807→                    marginBottom: 2,
+   808→                    fontFamily: "'Courier New', monospace",
+   809→                  }}
+   810→                >
+   811→                  {badge.name}
+   812→                </p>
+   813→                <p style={{ fontSize: 9, color: MC.textMuted, margin: 0, fontFamily: "'Courier New', monospace" }}>
+   814→                  {badge.description}
+   815→                </p>
+   816→              </div>
+   817→
+   818→              {/* Hover Tooltip — MC style */}
+   819→              <AnimatePresence>
+   820→                {hoveredBadge === badge.id && (
+   821→                  <motion.div
+   822→                    initial={{ opacity: 0, y: 4 }}
+   823→                    animate={{ opacity: 1, y: 0 }}
+   824→                    exit={{ opacity: 0, y: 4 }}
+   825→                    transition={{ duration: 0.15 }}
+   826→                    style={{
+   827→                      position: 'absolute',
+   828→                      bottom: '100%',
+   829→                      left: '50%',
+   830→                      transform: 'translateX(-50%)',
+   831→                      marginBottom: 8,
+   832→                      background: MC.panelBg,
+   833→                      border: `2px solid ${badge.earned ? MC.emerald : MC.stoneDark}`,
+   834→                      padding: '6px 10px',
+   835→                      boxShadow: `3px 3px 0px ${MC.dirtDark}`,
+   836→                      whiteSpace: 'nowrap',
+   837→                      zIndex: 100,
+   838→                      pointerEvents: 'none',
+   839→                    }}
+   840→                  >
+   841→                    <p style={{ fontSize: 11, fontWeight: 600, color: badge.earned ? MC.emerald : MC.textDark, margin: 0, fontFamily: "'Courier New', monospace" }}>
+   842→                      {badge.earned ? '✅ Earned' : '🔒 Locked'} — {badge.name}
+   843→                    </p>
+   844→                    {badge.earnedDate && (
+   845→                      <p style={{ fontSize: 9, color: MC.textMuted, margin: '2px 0 0', fontFamily: "'Courier New', monospace" }}>
+   846→                        Earned on {badge.earnedDate}
+   847→                      </p>
+   848→                    )}
+   849→                  </motion.div>
+   850→                )}
+   851→              </AnimatePresence>
+   852→            </motion.div>
+   853→          ))}
+   854→        </div>
+   855→      </motion.div>
+   856→
+   857→      {/* ═══════════════════════════════════════════════════════════════════════
+   858→          NEXUS LEDGER + ASSET VAULT STATS (Side by Side)
+   859→          ═══════════════════════════════════════════════════════════════════════ */}
+   860→      <div
+   861→        style={{
+   862→          display: 'grid',
+   863→          gridTemplateColumns: '1fr 380px',
+   864→          gap: 14,
+   865→        }}
+   866→      >
+   867→        {/* ─── Nexus Ledger (Transaction History) ──────────────────────── */}
+   868→        <motion.div
+   869→          variants={itemVariants}
+   870→          style={{
+   871→            padding: 18,
+   872→            display: 'flex',
+   873→            flexDirection: 'column',
+   874→            background: MC.panelBg,
+   875→            border: mcBorder,
+   876→            boxShadow: mcPanelShadow,
+   877→          }}
+   878→        >
+   879→          <div
+   880→            style={{
+   881→              display: 'flex',
+   882→              alignItems: 'center',
+   883→              justifyContent: 'space-between',
+   884→              marginBottom: 14,
+   885→              paddingBottom: 8,
+   886→              borderBottom: `2px solid ${MC.dirtDark}`,
+   887→            }}
+   888→          >
+   889→            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+   890→              <Clock className="h-4 w-4" style={{ color: MC.gold }} />
+   891→              <h3
+   892→                style={{
+   893→                  fontSize: 14,
+   894→                  fontWeight: 700,
+   895→                  color: MC.gold,
+   896→                  textTransform: 'uppercase',
+   897→                  letterSpacing: '0.08em',
+   898→                  margin: 0,
+   899→                  fontFamily: "'Courier New', monospace",
+   900→                }}
+   901→              >
+   902→                Nexus Ledger 📜
+   903→              </h3>
+   904→            </div>
+   905→            <span style={{ fontSize: 10, color: MC.textMuted, fontFamily: "'Courier New', monospace" }}>{mockTransactions.length} entries</span>
+   906→          </div>
+   907→
+   908→          {/* Table with horizontal scroll wrapper */}
+   909→          <div className="transaction-table-wrapper">
+   910→            {/* Table Header */}
+   911→            <div
+   912→              style={{
+   913→                display: 'grid',
+   914→                gridTemplateColumns: '80px 1fr 90px 110px 80px 70px',
+   915→                gap: 6,
+   916→                padding: '6px 8px',
+   917→                background: 'rgba(0,0,0,0.4)',
+   918→                border: `1px solid ${MC.dirtDark}`,
+   919→                marginBottom: 4,
+   920→              }}
+   921→            >
+   922→              {['Type', 'Item', 'Price', 'Counterparty', 'Time', 'Status'].map((h) => (
+   923→                <span
+   924→                  key={h}
+   925→                  style={{
+   926→                    fontSize: 9,
+   927→                    fontWeight: 700,
+   928→                    color: MC.textMuted,
+   929→                    textTransform: 'uppercase',
+   930→                    letterSpacing: '0.06em',
+   931→                    fontFamily: "'Courier New', monospace",
+   932→                  }}
+   933→                >
+   934→                  {h}
+   935→                </span>
+   936→              ))}
+   937→            </div>
+   938→
+   939→            {/* Table Body */}
+   940→            <div style={{ flex: 1, maxHeight: 360, overflowY: 'auto' }}>
+   941→              {mockTransactions.map((tx, i) => {
+   942→                const color = txTypeColor[tx.type]
+   943→                return (
+   944→                  <motion.div
+   945→                    key={tx.id}
+   946→                    initial={{ opacity: 0, x: -10 }}
+   947→                    animate={{ opacity: 1, x: 0 }}
+   948→                    transition={{ delay: i * 0.03, duration: 0.25 }}
+   949→                    style={{
+   950→                      display: 'grid',
+   951→                      gridTemplateColumns: '80px 1fr 90px 110px 80px 70px',
+   952→                      gap: 6,
+   953→                      padding: '8px 8px',
+   954→                      borderBottom: `1px solid ${MC.dirtDark}44`,
+   955→                      alignItems: 'center',
+   956→                      transition: 'background 0.15s',
+   957→                      cursor: 'default',
+   958→                    }}
+   959→                    onMouseEnter={(e) => {
+   960→                      e.currentTarget.style.background = 'rgba(82, 82, 91, 0.08)'
+   961→                    }}
+   962→                    onMouseLeave={(e) => {
+   963→                      e.currentTarget.style.background = 'transparent'
+   964→                    }}
+   965→                  >
+   966→                    {/* Type */}
+   967→                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+   968→                      <span style={{ fontSize: 11 }}>{txTypeEmoji[tx.type]}</span>
+   969→                      <span style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: '0.03em', fontFamily: "'Courier New', monospace" }}>
+   970→                        {txTypeLabel[tx.type]}
+   971→                      </span>
+   972→                    </div>
+   973→                    {/* Item */}
+   974→                    <span style={{ fontSize: 11, fontWeight: 600, color: MC.textLight, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'Courier New', monospace" }}>
+   975→                      {tx.itemName}
+   976→                    </span>
+   977→                    {/* Price — emerald color */}
+   978→                    <span style={{ fontSize: 11, fontWeight: 600, color: tx.price > 0 ? MC.emerald : MC.textDark, fontFamily: "'Courier New', monospace" }}>
+   979→                      {formatMicroAlgo(tx.price)}
+   980→                    </span>
+   981→                    {/* Counterparty */}
+   982→                    <span style={{ fontSize: 10, color: tx.counterparty === 'You' ? MC.diamond : MC.textMuted, fontFamily: "'Courier New', monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+   983→                      {tx.counterparty === 'You' ? '◆ You' : tx.counterparty}
+   984→                    </span>
+   985→                    {/* Time ago */}
+   986→                    <span style={{ fontSize: 10, color: MC.textMuted, fontFamily: "'Courier New', monospace" }}>
+   987→                      {formatTimeAgo(tx.date)}
+   988→                    </span>
+   989→                    {/* Status */}
+   990→                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+   991→                      <span
+   992→                        style={{
+   993→                          width: 8,
+   994→                          height: 8,
+   995→                          background: tx.status === 'Confirmed' ? MC.emerald : MC.gold,
+   996→                          border: `1px solid ${tx.status === 'Confirmed' ? MC.emeraldDark : MC.goldDark}`,
+   997→                        }}
+   998→                      />
+   999→                      <span
+  1000→                        style={{
+  1001→                          fontSize: 9,
+  1002→                          fontWeight: 600,
+  1003→                          color: tx.status === 'Confirmed' ? MC.emerald : MC.gold,
+  1004→                          fontFamily: "'Courier New', monospace",
+  1005→                        }}
+  1006→                      >
+  1007→                        {tx.status === 'Confirmed' ? '✓' : '⏳'}
+  1008→                      </span>
+  1009→                    </div>
+  1010→                  </motion.div>
+  1011→                )
+  1012→              })}
+  1013→            </div>
+  1014→          </div>{/* end transaction-table-wrapper */}
+  1015→
+  1016→          {/* View All Button */}
+  1017→          <button
+  1018→            style={{
+  1019→              marginTop: 10,
+  1020→              display: 'flex',
+  1021→              alignItems: 'center',
+  1022→              justifyContent: 'center',
+  1023→              gap: 6,
+  1024→              padding: '7px 0',
+  1025→              background: `${MC.gold}15`,
+  1026→              border: `2px solid ${MC.goldDark}50`,
+  1027→              color: MC.gold,
+  1028→              fontSize: 11,
+  1029→              fontWeight: 600,
+  1030→              cursor: 'pointer',
+  1031→              letterSpacing: '0.03em',
+  1032→              transition: 'all 0.2s',
+  1033→              width: '100%',
+  1034→              fontFamily: "'Courier New', monospace",
+  1035→            }}
+  1036→            onMouseEnter={(e) => {
+  1037→              e.currentTarget.style.background = `${MC.gold}25`
+  1038→              e.currentTarget.style.borderColor = MC.gold
+  1039→            }}
+  1040→            onMouseLeave={(e) => {
+  1041→              e.currentTarget.style.background = `${MC.gold}15`
+  1042→              e.currentTarget.style.borderColor = `${MC.goldDark}50`
+  1043→            }}
+  1044→          >
+  1045→            View Full Ledger
+  1046→            <ChevronRight className="h-3.5 w-3.5" />
+  1047→          </button>
+  1048→        </motion.div>
+  1049→
+  1050→        {/* ─── Ender Chest Stats (Portfolio Analytics) ─────────────────────── */}
+  1051→        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+  1052→          {/* Chest Value Card */}
+  1053→          <motion.div
+  1054→            variants={itemVariants}
+  1055→            style={{
+  1056→              padding: 18,
+  1057→              background: MC.panelBg,
+  1058→              border: mcBorder,
+  1059→              boxShadow: mcPanelShadow,
+  1060→            }}
+  1061→          >
+  1062→            <div
+  1063→              style={{
+  1064→                display: 'flex',
+  1065→                alignItems: 'center',
+  1066→                justifyContent: 'space-between',
+  1067→                marginBottom: 14,
+  1068→                paddingBottom: 8,
+  1069→                borderBottom: `2px solid ${MC.dirtDark}`,
+  1070→              }}
+  1071→            >
+  1072→              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+  1073→                <TrendingUp className="h-4 w-4" style={{ color: MC.emerald }} />
+  1074→                <h3
+  1075→                  style={{
+  1076→                    fontSize: 14,
+  1077→                    fontWeight: 700,
+  1078→                    color: MC.emerald,
+  1079→                    textTransform: 'uppercase',
+  1080→                    letterSpacing: '0.08em',
+  1081→                    margin: 0,
+  1082→                    fontFamily: "'Courier New', monospace",
+  1083→                  }}
+  1084→                >
+  1085→                  Ender Chest 🟣
+  1086→                </h3>
+  1087→              </div>
+  1088→              <div
+  1089→                style={{
+  1090→                  display: 'flex',
+  1091→                  alignItems: 'center',
+  1092→                  gap: 3,
+  1093→                  fontSize: 11,
+  1094→                  fontWeight: 700,
+  1095→                  color: MC.emerald,
+  1096→                  fontFamily: "'Courier New', monospace",
+  1097→                }}
+  1098→              >
+  1099→                <TrendingUp className="h-3 w-3" />
+  1100→                +12.4%
+  1101→              </div>
+  1102→            </div>
+  1103→            <p
+  1104→              style={{
+  1105→                fontSize: 28,
+  1106→                fontWeight: 800,
+  1107→                color: MC.emerald,
+  1108→                margin: 0,
+  1109→                fontFamily: "'Courier New', monospace",
+  1110→              }}
+  1111→            >
+  1112→              312.5
+  1113→              <span style={{ fontSize: 14, color: MC.textMuted, marginLeft: 6, fontWeight: 600 }}>ALGO</span>
+  1114→            </p>
+  1115→            <p style={{ fontSize: 10, color: MC.textMuted, marginTop: 4, fontFamily: "'Courier New', monospace" }}>
+  1116→              ≈ $62.50 USD 💎
+  1117→            </p>
+  1118→          </motion.div>
+  1119→
+  1120→          {/* Rarity Distribution Pie Chart — Iron/Gold/Diamond/Netherite */}
+  1121→          <motion.div
+  1122→            variants={itemVariants}
+  1123→            className="chart-container"
+  1124→            style={{
+  1125→              padding: 18,
+  1126→              background: MC.panelBg,
+  1127→              border: mcBorder,
+  1128→              boxShadow: mcPanelShadow,
+  1129→            }}
+  1130→          >
+  1131→            <div
+  1132→              style={{
+  1133→                display: 'flex',
+  1134→                alignItems: 'center',
+  1135→                gap: 8,
+  1136→                marginBottom: 14,
+  1137→                paddingBottom: 8,
+  1138→                borderBottom: `2px solid ${MC.dirtDark}`,
+  1139→              }}
+  1140→            >
+  1141→              <PieChartIcon className="h-4 w-4" style={{ color: MC.ender }} />
+  1142→              <h3
+  1143→                style={{
+  1144→                  fontSize: 14,
+  1145→                  fontWeight: 700,
+  1146→                  color: MC.ender,
+  1147→                  textTransform: 'uppercase',
+  1148→                  letterSpacing: '0.08em',
+  1149→                  margin: 0,
+  1150→                  fontFamily: "'Courier New', monospace",
+  1151→                }}
+  1152→              >
+  1153→                Rarity Distribution ⚡
+  1154→              </h3>
+  1155→            </div>
+  1156→            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+  1157→              <div style={{ width: 140, height: 140 }}>
+  1158→                <ResponsiveContainer width="100%" height="100%">
+  1159→                  <PieChart>
+  1160→                    <Pie
+  1161→                      data={rarityDistribution}
+  1162→                      dataKey="count"
+  1163→                      nameKey="name"
+  1164→                      cx="50%"
+  1165→                      cy="50%"
+  1166→                      innerRadius={30}
+  1167→                      outerRadius={55}
+  1168→                      paddingAngle={3}
+  1169→                      strokeWidth={0}
+  1170→                    >
+  1171→                      {rarityDistribution.map((entry, index) => (
+  1172→                        <Cell key={`cell-${index}`} fill={entry.color} />
+  1173→                      ))}
+  1174→                    </Pie>
+  1175→                    <Tooltip
+  1176→                      contentStyle={{
+  1177→                        background: MC.panelBg,
+  1178→                        border: mcBorder,
+  1179→                        fontSize: 12,
+  1180→                        color: MC.textLight,
+  1181→                        fontFamily: "'Courier New', monospace",
+  1182→                      }}
+  1183→                    />
+  1184→                  </PieChart>
+  1185→                </ResponsiveContainer>
+  1186→              </div>
+  1187→              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+  1188→                {rarityDistribution.map((r) => (
+  1189→                  <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+  1190→                    <span
+  1191→                      style={{
+  1192→                        width: 10,
+  1193→                        height: 10,
+  1194→                        background: r.color,
+  1195→                        border: `1px solid ${r.color}`,
+  1196→                      }}
+  1197→                    />
+  1198→                    <span style={{ fontSize: 11, color: MC.textMuted, fontWeight: 500, minWidth: 70, fontFamily: "'Courier New', monospace" }}>
+  1199→                      {r.name}
+  1200→                    </span>
+  1201→                    <span style={{ fontSize: 12, color: MC.textLight, fontWeight: 700, fontFamily: "'Courier New', monospace" }}>{r.count}</span>
+  1202→                  </div>
+  1203→                ))}
+  1204→              </div>
+  1205→            </div>
+  1206→          </motion.div>
+  1207→
+  1208→          {/* Performance Area Chart — Emerald green line */}
+  1209→          <motion.div
+  1210→            variants={itemVariants}
+  1211→            className="chart-container"
+  1212→            style={{
+  1213→              padding: 18,
+  1214→              background: MC.panelBg,
+  1215→              border: mcBorder,
+  1216→              boxShadow: mcPanelShadow,
+  1217→            }}
+  1218→          >
+  1219→            <div
+  1220→              style={{
+  1221→                display: 'flex',
+  1222→                alignItems: 'center',
+  1223→                gap: 8,
+  1224→                marginBottom: 14,
+  1225→                paddingBottom: 8,
+  1226→                borderBottom: `2px solid ${MC.dirtDark}`,
+  1227→              }}
+  1228→            >
+  1229→              <BarChart3 className="h-4 w-4" style={{ color: MC.diamond }} />
+  1230→              <h3
+  1231→                style={{
+  1232→                  fontSize: 14,
+  1233→                  fontWeight: 700,
+  1234→                  color: MC.diamond,
+  1235→                  textTransform: 'uppercase',
+  1236→                  letterSpacing: '0.08em',
+  1237→                  margin: 0,
+  1238→                  fontFamily: "'Courier New', monospace",
+  1239→                }}
+  1240→              >
+  1241→                Chest Performance 💫
+  1242→              </h3>
+  1243→            </div>
+  1244→            <p style={{ fontSize: 10, color: MC.textMuted, marginTop: 0, marginBottom: 8, fontFamily: "'Courier New', monospace" }}>
+  1245→              Portfolio value — last 7 days
+  1246→            </p>
+  1247→            <ResponsiveContainer width="100%" height={180}>
+  1248→              <AreaChart data={portfolioPerformance} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+  1249→                <defs>
+  1250→                  <linearGradient id="mcPortfolioGradient" x1="0" y1="0" x2="0" y2="1">
+  1251→                    <stop offset="0%" stopColor={MC.emerald} stopOpacity={0.3} />
+  1252→                    <stop offset="50%" stopColor={MC.emerald} stopOpacity={0.08} />
+  1253→                    <stop offset="100%" stopColor={MC.emerald} stopOpacity={0} />
+  1254→                  </linearGradient>
+  1255→                </defs>
+  1256→                <CartesianGrid strokeDasharray="3 3" stroke={`${MC.dirt}33`} vertical={false} />
+  1257→                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: isLightTheme ? '#334155' : '#94a3b8' }} />
+  1258→                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: isLightTheme ? '#334155' : '#94a3b8' }} domain={['dataMin - 5', 'dataMax + 5']} />
+  1259→                <Tooltip content={<CustomTooltip />} />
+  1260→                <Area
+  1261→                  type="monotone"
+  1262→                  dataKey="value"
+  1263→                  name="value"
+  1264→                  stroke={MC.emerald}
+  1265→                  strokeWidth={2}
+  1266→                  fill="url(#mcPortfolioGradient)"
+  1267→                  dot={false}
+  1268→                  activeDot={{ r: 4, stroke: MC.emerald, strokeWidth: 2, fill: MC.obsidian }}
+  1269→                />
+  1270→              </AreaChart>
+  1271→            </ResponsiveContainer>
+  1272→          </motion.div>
+  1273→        </div>
+  1274→      </div>
+  1275→
+  1276→      {/* ═══════════════════════════════════════════════════════════════════════
+  1277→          PORTAL LINKS (Connected Accounts) SECTION
+  1278→          ═══════════════════════════════════════════════════════════════════════ */}
+  1279→      <motion.div variants={itemVariants}>
+  1280→        <div
+  1281→          style={{
+  1282→            display: 'flex',
+  1283→            alignItems: 'center',
+  1284→            gap: 8,
+  1285→            marginBottom: 12,
+  1286→            paddingBottom: 8,
+  1287→            borderBottom: `2px solid ${MC.dirtDark}`,
+  1288→          }}
+  1289→        >
+  1290→          <span style={{ fontSize: 16 }}>🌀</span>
+  1291→          <h3
+  1292→            style={{
+  1293→              fontSize: 14,
+  1294→              fontWeight: 700,
+  1295→              color: MC.gold,
+  1296→              textTransform: 'uppercase',
+  1297→              letterSpacing: '0.08em',
+  1298→              margin: 0,
+  1299→              fontFamily: "'Courier New', monospace",
+  1300→            }}
+  1301→          >
+  1302→            Portal Links
+  1303→          </h3>
+  1304→        </div>
+  1305→        <div className="connected-accounts-grid">
+  1306→          {/* Steam Portal Connection */}
+  1307→          <motion.div
+  1308→            variants={itemVariants}
+  1309→            style={{
+  1310→              padding: 16,
+  1311→              display: 'flex',
+  1312→              alignItems: 'center',
+  1313→              gap: 12,
+  1314→              background: MC.panelBg,
+  1315→              border: `2px solid ${steamProfile ? MC.emeraldDark : MC.stoneDark}`,
+  1316→              boxShadow: steamProfile ? `3px 3px 0px ${MC.emeraldDark}44` : `3px 3px 0px ${MC.stoneDark}44`,
+  1317→              transition: 'border-color 0.3s',
+  1318→            }}
+  1319→          >
+  1320→            <div
+  1321→              style={{
+  1322→                width: 44,
+  1323→                height: 44,
+  1324→                background: steamProfile ? `${MC.emerald}15` : 'rgba(0,0,0,0.3)',
+  1325→                border: `2px solid ${steamProfile ? MC.emerald : MC.stoneDark}`,
+  1326→                display: 'flex',
+  1327→                alignItems: 'center',
+  1328→                justifyContent: 'center',
+  1329→                color: steamProfile ? MC.emerald : MC.stoneDark,
+  1330→                position: 'relative',
+  1331→                flexShrink: 0,
+  1332→              }}
+  1333→            >
+  1334→              {steamProfile?.avatarfull ? (
+  1335→                <img
+  1336→                  src={steamProfile.avatarfull}
+  1337→                  alt="Steam Avatar"
+  1338→                  style={{ width: 36, height: 36, imageRendering: 'pixelated' }}
+  1339→                />
+  1340→              ) : (
+  1341→                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.74.45 3.38 1.23 4.81l2.37-1.01A5.48 5.48 0 0 1 5.5 12.5c0-3.04 2.46-5.5 5.5-5.5 2.56 0 4.72 1.75 5.33 4.12l2.79-.49C18.26 6.72 15.44 4 12 4c-4.42 0-8 3.58-8 8 0 .68.09 1.34.24 1.97l-2.15.92C1.42 13.34 1 11.72 1 10 1 5.03 5.03 1 10 1c4.28 0 7.86 3.01 8.78 7.02l-2.79.49C15.42 5.62 13.88 4 12 4zm0 6c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+  1342→              )}
+  1343→              {steamProfile && (
+  1344→                <div
+  1345→                  style={{
+  1346→                    position: 'absolute',
+  1347→                    top: -3,
+  1348→                    right: -3,
+  1349→                    width: 10,
+  1350→                    height: 10,
+  1351→                    background: MC.emerald,
+  1352→                    border: `2px solid ${MC.dirtDark}`,
+  1353→                  }}
+  1354→                />
+  1355→              )}
+  1356→            </div>
+  1357→            <div style={{ flex: 1, minWidth: 0 }}>
+  1358→              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+  1359→                <p style={{ fontSize: 12, fontWeight: 700, color: MC.textLight, margin: 0, fontFamily: "'Courier New', monospace" }}>Steam Portal</p>
+  1360→                {steamProfile ? (
+  1361→                  <span
+  1362→                    style={{
+  1363→                      fontSize: 9,
+  1364→                      fontWeight: 700,
+  1365→                      color: MC.emerald,
+  1366→                      background: `${MC.emerald}15`,
+  1367→                      padding: '1px 6px',
+  1368→                      border: `1px solid ${MC.emerald}`,
+  1369→                      letterSpacing: '0.04em',
+  1370→                      fontFamily: "'Courier New', monospace",
+  1371→                    }}
+  1372→                  >
+  1373→                    LINKED ✓
+  1374→                  </span>
+  1375→                ) : (
+  1376→                  <span
+  1377→                    style={{
+  1378→                      fontSize: 9,
+  1379→                      fontWeight: 700,
+  1380→                      color: MC.redstone,
+  1381→                      background: `${MC.redstone}15`,
+  1382→                      padding: '1px 6px',
+  1383→                      border: `1px solid ${MC.redstone}`,
+  1384→                      letterSpacing: '0.04em',
+  1385→                      fontFamily: "'Courier New', monospace",
+  1386→                    }}
+  1387→                  >
+  1388→                    UNLINKED
+  1389→                  </span>
+  1390→                )}
+  1391→              </div>
+  1392→              <p style={{ fontSize: 10, color: MC.textMuted, margin: '2px 0 0', fontFamily: "'Courier New', monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+  1393→                {steamProfile ? steamProfile.personaname : 'Portal not activated'}
+  1394→              </p>
+  1395→            </div>
+  1396→            {!steamProfile ? (
+  1397→              <button
+  1398→                onClick={handleSteamConnect}
+  1399→                disabled={steamConnecting}
+  1400→                className="premium-btn premium-btn--sm premium-btn--green"
+  1401→                style={{
+  1402→                  flexShrink: 0,
+  1403→                  fontSize: 8,
+  1404→                  display: 'flex',
+  1405→                  alignItems: 'center',
+  1406→                  gap: 4,
+  1407→                }}
+  1408→              >
+  1409→                {steamConnecting ? '⏳ Checking...' : '🔗 Link Steam'}
+  1410→              </button>
+  1411→            ) : (
+  1412→              <button
+  1413→                onClick={() => {
+  1414→                  // Disconnect Steam — clear from store
+  1415→                  setSteamProfile(null as any)
+  1416→                }}
+  1417→                style={{
+  1418→                  padding: '4px 10px',
+  1419→                  background: `${MC.redstone}15`,
+  1420→                  border: `1px solid ${MC.redstone}60`,
+  1421→                  color: MC.redstone,
+  1422→                  fontSize: 9,
+  1423→                  fontWeight: 600,
+  1424→                  cursor: 'pointer',
+  1425→                  letterSpacing: '0.03em',
+  1426→                  transition: 'all 0.2s',
+  1427→                  whiteSpace: 'nowrap',
+  1428→                  fontFamily: "'Courier New', monospace",
+  1429→                  display: 'flex',
+  1430→                  alignItems: 'center',
+  1431→                  gap: 4,
+  1432→                }}
+  1433→                onMouseEnter={(e) => {
+  1434→                  e.currentTarget.style.background = `${MC.redstone}30`
+  1435→                }}
+  1436→                onMouseLeave={(e) => {
+  1437→                  e.currentTarget.style.background = `${MC.redstone}15`
+  1438→                }}
+  1439→              >
+  1440→                <Unplug className="h-3 w-3" />
+  1441→                Unlink
+  1442→              </button>
+  1443→            )}
+  1444→          </motion.div>
+  1445→
+  1446→          {/* Wallet Connection */}
+  1447→          <motion.div
+  1448→            variants={itemVariants}
+  1449→            style={{
+  1450→              padding: 16,
+  1451→              display: 'flex',
+  1452→              alignItems: 'center',
+  1453→              gap: 12,
+  1454→              background: MC.panelBg,
+  1455→              border: `2px solid ${activeAddress ? MC.diamond : MC.stoneDark}`,
+  1456→              boxShadow: activeAddress ? `3px 3px 0px ${MC.diamond}33` : `3px 3px 0px ${MC.stoneDark}44`,
+  1457→              transition: 'border-color 0.3s',
+  1458→            }}
+  1459→          >
+  1460→            <div
+  1461→              style={{
+  1462→                width: 44,
+  1463→                height: 44,
+  1464→                background: activeAddress ? `${MC.diamond}15` : 'rgba(0,0,0,0.3)',
+  1465→                border: `2px solid ${activeAddress ? MC.diamond : MC.stoneDark}`,
+  1466→                display: 'flex',
+  1467→                alignItems: 'center',
+  1468→                justifyContent: 'center',
+  1469→                color: activeAddress ? MC.diamond : MC.stoneDark,
+  1470→                position: 'relative',
+  1471→                flexShrink: 0,
+  1472→              }}
+  1473→            >
+  1474→              <Wallet className="h-5 w-5" />
+  1475→              {activeAddress && (
+  1476→                <div
+  1477→                  style={{
+  1478→                    position: 'absolute',
+  1479→                    top: -3,
+  1480→                    right: -3,
+  1481→                    width: 10,
+  1482→                    height: 10,
+  1483→                    background: MC.diamond,
+  1484→                    border: `2px solid ${MC.dirtDark}`,
+  1485→                  }}
+  1486→                />
+  1487→              )}
+  1488→            </div>
+  1489→            <div style={{ flex: 1, minWidth: 0 }}>
+  1490→              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+  1491→                <p style={{ fontSize: 12, fontWeight: 700, color: MC.textLight, margin: 0, fontFamily: "'Courier New', monospace" }}>Algorand Wallet</p>
+  1492→                {/* Connection status indicator — emerald (green) or redstone (red) */}
+  1493→                <span
+  1494→                  style={{
+  1495→                    display: 'flex',
+  1496→                    alignItems: 'center',
+  1497→                    gap: 4,
+  1498→                    fontSize: 9,
+  1499→                    fontWeight: 700,
+  1500→                    color: activeAddress ? MC.emerald : MC.redstone,
+  1501→                    background: activeAddress ? `${MC.emerald}15` : `${MC.redstone}15`,
+  1502→                    padding: '1px 6px',
+  1503→                    border: `1px solid ${activeAddress ? MC.emerald : MC.redstone}`,
+  1504→                    letterSpacing: '0.04em',
+  1505→                    fontFamily: "'Courier New', monospace",
+  1506→                  }}
+  1507→                >
+  1508→                  <span
+  1509→                    style={{
+  1510→                      width: 6,
+  1511→                      height: 6,
+  1512→                      background: activeAddress ? MC.emerald : MC.redstone,
+  1513→                    }}
+  1514→                  />
+  1515→                  {activeAddress ? 'BOUND' : 'UNBOUND'}
+  1516→                </span>
+  1517→              </div>
+  1518→              <p style={{ fontSize: 10, color: MC.textMuted, margin: '2px 0 0', fontFamily: "'Courier New', monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+  1519→                {activeAddress ? `📍 ${ellipseAddress(activeAddress, 10)}` : 'No wallet bound'}
+  1520→              </p>
+  1521→            </div>
+  1522→            {activeAddress ? (
+  1523→              <div
+  1524→                style={{
+  1525→                  display: 'flex',
+  1526→                  alignItems: 'center',
+  1527→                  gap: 4,
+  1528→                  padding: '4px 8px',
+  1529→                  background: `${MC.gold}10`,
+  1530→                  border: `1px solid ${MC.goldDark}40`,
+  1531→                  fontSize: 9,
+  1532→                  color: MC.gold,
+  1533→                  fontWeight: 700,
+  1534→                  letterSpacing: '0.04em',
+  1535→                  fontFamily: "'Courier New', monospace",
+  1536→                }}
+  1537→              >
+  1538→                <Zap className="h-3 w-3" />
+  1539→                TESTNET
+  1540→              </div>
+  1541→            ) : (
+  1542→              <button
+  1543→                style={{
+  1544→                  padding: '6px 14px',
+  1545→                  background: `${MC.emerald}20`,
+  1546→                  border: `2px solid ${MC.emerald}`,
+  1547→                  color: MC.emerald,
+  1548→                  fontSize: 11,
+  1549→                  fontWeight: 700,
+  1550→                  cursor: 'pointer',
+  1551→                  letterSpacing: '0.03em',
+  1552→                  transition: 'all 0.2s',
+  1553→                  whiteSpace: 'nowrap',
+  1554→                  fontFamily: "'Courier New', monospace",
+  1555→                }}
+  1556→                onMouseEnter={(e) => {
+  1557→                  e.currentTarget.style.background = `${MC.emerald}35`
+  1558→                  e.currentTarget.style.boxShadow = `0 0 10px ${MC.emeraldGlow}`
+  1559→                }}
+  1560→                onMouseLeave={(e) => {
+  1561→                  e.currentTarget.style.background = `${MC.emerald}20`
+  1562→                  e.currentTarget.style.boxShadow = 'none'
+  1563→                }}
+  1564→                title="Connect wallet via the header button"
+  1565→              >
+  1566→                🔗 Bind Wallet
+  1567→              </button>
+  1568→            )}
+  1569→          </motion.div>
+  1570→        </div>
+  1571→      </motion.div>
+  1572→    </motion.div>
+  1573→  )
+  1574→}
+  1575→

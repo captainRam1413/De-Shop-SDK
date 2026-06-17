@@ -1,0 +1,1510 @@
+     1→/**
+     2→ * De-Shop SDK — Premium Web3 Gaming Landing Page
+     3→ * ────────────────────────────────────────────────────────────────────────────
+     4→ * A single-page scroll experience with 12 sections, designed for investor
+     5→ * demos. Renders BEFORE the existing dashboard; the "Launch App" / "Get
+     6→ * Started" CTAs invoke `onLaunchApp` to swap into the dashboard view.
+     7→ *
+     8→ * Design system: dark theme, emerald/amber gradients, glassmorphism, Framer
+     9→ * Motion scroll reveals, CSS-only continuous animations (float/pulse).
+    10→ */
+    11→
+    12→import { useCallback, useEffect, useRef, useState } from 'react'
+    13→import { motion, AnimatePresence, type Variants } from 'framer-motion'
+    14→import {
+    15→  Area,
+    16→  AreaChart,
+    17→  CartesianGrid,
+    18→  Line,
+    19→  LineChart,
+    20→  ReferenceLine,
+    21→  ResponsiveContainer,
+    22→  Tooltip as RTooltip,
+    23→  XAxis,
+    24→  YAxis,
+    25→} from 'recharts'
+    26→import {
+    27→  ArrowRight,
+    28→  Award,
+    29→  BookOpen,
+    30→  Bot,
+    31→  Box,
+    32→  BrainCircuit,
+    33→  Check,
+    34→  ChevronDown,
+    35→  Code,
+    36→  Coins,
+    37→  Copy,
+    38→  Cuboid,
+    39→  Database,
+    40→  Diamond,
+    41→  FileText,
+    42→  Gamepad2,
+    43→  Globe,
+    44→  Layers,
+    45→  Lock,
+    46→  Menu,
+    47→  Pickaxe,
+    48→  Plug,
+    49→  Puzzle,
+    50→  Quote,
+    51→  Rocket,
+    52→  Search,
+    53→  Send,
+    54→  Server,
+    55→  Shield,
+    56→  ShoppingBag,
+    57→  Sparkles,
+    58→  Store,
+    59→  Terminal,
+    60→  ToyBrick,
+    61→  TrendingUp,
+    62→  Wallet,
+    63→  X,
+    64→  Zap,
+    65→} from 'lucide-react'
+    66→import { useDeShopStore } from '../store/useDeShopStore'
+    67→import { useWallet } from '@txnlab/use-wallet-react'
+    68→import WalletModal from './WalletModal.premium'
+    69→
+    70→// ─── Brand SVGs (lucide dropped brand icons in v1) ─────────────────────────
+    71→
+    72→function GithubIcon({ size = 16 }: { size?: number }) {
+    73→  return (
+    74→    <svg
+    75→      width={size}
+    76→      height={size}
+    77→      viewBox="0 0 24 24"
+    78→      fill="currentColor"
+    79→      aria-hidden="true"
+    80→      xmlns="http://www.w3.org/2000/svg"
+    81→    >
+    82→      <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+    83→    </svg>
+    84→  )
+    85→}
+    86→
+    87→function TwitterIcon({ size = 16 }: { size?: number }) {
+    88→  return (
+    89→    <svg
+    90→      width={size}
+    91→      height={size}
+    92→      viewBox="0 0 24 24"
+    93→      fill="currentColor"
+    94→      aria-hidden="true"
+    95→      xmlns="http://www.w3.org/2000/svg"
+    96→    >
+    97→      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    98→    </svg>
+    99→  )
+   100→}
+   101→
+   102→function DiscordIcon({ size = 16 }: { size?: number }) {
+   103→  return (
+   104→    <svg
+   105→      width={size}
+   106→      height={size}
+   107→      viewBox="0 0 24 24"
+   108→      fill="currentColor"
+   109→      aria-hidden="true"
+   110→      xmlns="http://www.w3.org/2000/svg"
+   111→    >
+   112→      <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
+   113→    </svg>
+   114→  )
+   115→}
+   116→
+   117→// ─── Motion variants ────────────────────────────────────────────────────────
+   118→
+   119→const fadeUp: Variants = {
+   120→  hidden: { opacity: 0, y: 28 },
+   121→  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
+   122→}
+   123→
+   124→const stagger: Variants = {
+   125→  hidden: {},
+   126→  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+   127→}
+   128→
+   129→const itemVariants: Variants = {
+   130→  hidden: { opacity: 0, y: 24 },
+   131→  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+   132→}
+   133→
+   134→// Reusable viewport config so reveals only animate the first time.
+   135→const VIEWPORT = { once: true, amount: 0.2 } as const
+   136→
+   137→// ─── Mock data ──────────────────────────────────────────────────────────────
+   138→
+   139→const HERO_STATS = [
+   140→  { label: 'Game Engines', value: '4' },
+   141→  { label: 'Assets Minted', value: '10K+' },
+   142→  { label: 'Uptime', value: '99.9%' },
+   143→  { label: 'Avg Transaction', value: '<2s' },
+   144→]
+   145→
+   146→const FEATURES = [
+   147→  {
+   148→    icon: Zap,
+   149→    title: 'Instant Minting',
+   150→    desc: 'One-call ASA minting with IPFS-backed metadata. Turn any game asset into a tradable NFT in under 2 seconds.',
+   151→    color: 'var(--ds-emerald)',
+   152→  },
+   153→  {
+   154→    icon: Shield,
+   155→    title: 'On-Chain Escrow',
+   156→    desc: 'Atomic swaps via Algorand smart contracts. Funds release only when both parties confirm — zero counterparty risk.',
+   157→    color: 'var(--ds-diamond)',
+   158→  },
+   159→  {
+   160→    icon: BrainCircuit,
+   161→    title: 'AI Pricing',
+   162→    desc: 'Weighted Least Squares regression with time-decay suggests fair prices from 4 live market signals.',
+   163→    color: 'var(--ds-amber)',
+   164→  },
+   165→  {
+   166→    icon: Plug,
+   167→    title: 'Cross-Game SDK',
+   168→    desc: 'One TypeScript SDK, four runtimes. Inventory and currency move with the player across every supported title.',
+   169→    color: 'var(--ds-lapis)',
+   170→  },
+   171→  {
+   172→    icon: Coins,
+   173→    title: 'Royalty System',
+   174→    desc: 'Creator royalties enforced at the protocol level. Configurable 1–10% on every secondary trade, automatically.',
+   175→    color: 'var(--ds-redstone)',
+   176→  },
+   177→  {
+   178→    icon: Gamepad2,
+   179→    title: 'Steam Integration',
+   180→    desc: 'Verify Steam ownership to unlock gated drops, then mint earned items directly to the player wallet.',
+   181→    color: 'var(--ds-emerald)',
+   182→  },
+   183→]
+   184→
+   185→const ENGINES = [
+   186→  { name: 'Unity', tag: 'C# • IL2CPP', icon: Box, desc: 'Drop-in package with native Algorand client. Supports 2021 LTS and newer.' },
+   187→  { name: 'Unreal', tag: 'C++ • Blueprints', icon: ToyBrick, desc: 'Plugin with Blueprint nodes for mint, buy, list, and withdraw flows.' },
+   188→  { name: 'Minecraft', tag: 'Java Edition', icon: Cuboid, desc: 'Bukkit/Spigot plugin syncs player inventory with on-chain assets in real time.' },
+   189→  { name: 'Web', tag: 'React • Vite', icon: Globe, desc: 'First-class TypeScript SDK with React hooks. SSR-friendly, zero native deps.' },
+   190→]
+   191→
+   192→const DEMO_SKINS = [
+   193→  { name: 'Emerald Dragon', rarity: 'Legendary', price: 4200, hue: 'emerald', emoji: '🐉' },
+   194→  { name: 'Diamond Sword', rarity: 'Epic', price: 1850, hue: 'diamond', emoji: '⚔️' },
+   195→  { name: 'Golden Crown', rarity: 'Rare', price: 920, hue: 'amber', emoji: '👑' },
+   196→  { name: 'Redstone Golem', rarity: 'Common', price: 280, hue: 'redstone', emoji: '🤖' },
+   197→] as const
+   198→
+   199→const RARITY_META: Record<string, { color: string; glow: string }> = {
+   200→  Legendary: { color: 'var(--ds-amber)', glow: 'rgba(251, 191, 36, 0.18)' },
+   201→  Epic: { color: 'var(--ds-diamond)', glow: 'rgba(77, 166, 255, 0.18)' },
+   202→  Rare: { color: 'var(--ds-lapis)', glow: 'rgba(99, 102, 241, 0.18)' },
+   203→  Common: { color: 'var(--ds-redstone)', glow: 'rgba(239, 68, 68, 0.18)' },
+   204→}
+   205→
+   206→const PRICE_TREND = Array.from({ length: 14 }, (_, i) => {
+   207→  const base = 38 + Math.sin(i / 2) * 6 + i * 1.4
+   208→  const noise = (Math.sin(i * 1.7) * 2.5) + (i % 3 === 0 ? -1.8 : 1.2)
+   209→  return {
+   210→    day: `D${i + 1}`,
+   211→    market: +(base + noise).toFixed(2),
+   212→    suggested: +(base + 1.6).toFixed(2),
+   213→  }
+   214→})
+   215→
+   216→const VOLUME_TREND = Array.from({ length: 12 }, (_, i) => ({
+   217→  month: `M${i + 1}`,
+   218→  volume: Math.round(24000 + Math.sin(i / 1.6) * 9000 + i * 2200),
+   219→  listings: Math.round(140 + Math.cos(i / 2) * 28 + i * 6),
+   220→}))
+   221→
+   222→const TESTIMONIALS = [
+   223→  {
+   224→    quote: 'We shipped our entire NFT marketplace in 3 days. The SDK abstracted away all the wallet plumbing — our Unity team just called mint() and it worked.',
+   225→    name: 'Sarah Chen',
+   226→    role: 'CTO, Aether Games',
+   227→    initials: 'SC',
+   228→    color: 'var(--ds-emerald)',
+   229→  },
+   230→  {
+   231→    quote: 'The AI pricing engine alone is worth it. We were manually pricing 4,000 skins a week — now the SDK suggests fair values from market data in real time.',
+   232→    name: 'Marcus Okonkwo',
+   233→    role: 'Founder, PixelForge',
+   234→    initials: 'MO',
+   235→    color: 'var(--ds-amber)',
+   236→  },
+   237→  {
+   238→    quote: 'Algorand finality in under 3 seconds meant we could finally do in-game purchases without ruining the player experience. Game-changer.',
+   239→    name: 'Lila Vasquez',
+   240→    role: 'Lead Engineer, Nexus Studios',
+   241→    initials: 'LV',
+   242→    color: 'var(--ds-diamond)',
+   243→  },
+   244→]
+   245→
+   246→const FAQS = [
+   247→  {
+   248→    q: 'What is De-Shop SDK?',
+   249→    a: 'De-Shop SDK is an open-source toolkit for embedding NFT marketplaces directly inside games. It bundles an Algorand smart-contract layer, a Flask backend for indexing and AI pricing, and first-class SDKs for Unity, Unreal, Minecraft, and the web.',
+   250→  },
+   251→  {
+   252→    q: 'Which blockchains are supported?',
+   253→    a: 'De-Shop SDK currently runs on Algorand (Testnet and Mainnet). Algorand was chosen for its sub-3-second finality, near-zero fees, and built-in ASA standard — ideal for high-volume game economies. Multi-chain support is on the roadmap.',
+   254→  },
+   255→  {
+   256→    q: 'How does the AI pricing work?',
+   257→    a: 'A Weighted Least Squares regression model with time-decay consumes four features: recent trade prices, listing volume, asset rarity tier, and time-since-last-sale. The model retrains nightly and returns a suggested price per asset in <50ms via the Flask API.',
+   258→  },
+   259→  {
+   260→    q: 'Can I use this with my existing game?',
+   261→    a: 'Yes. The SDK is engine-agnostic — if your game can make HTTP calls, it can talk to De-Shop. For Unity, Unreal, Minecraft, and web games, we ship native plugins that handle wallet connection, signing, and asset sync out of the box.',
+   262→  },
+   263→  {
+   264→    q: 'What are the fees?',
+   265→    a: 'On Testnet, fees are zero. On Mainnet, Algorand\'s standard transaction fee applies (~0.001 ALGO per txn). The SDK itself is free and open-source. Creators can optionally configure a 1–10% royalty on secondary trades, which goes directly to the original creator wallet.',
+   266→  },
+   267→  {
+   268→    q: 'Is there a testnet?',
+   269→    a: 'Yes — the SDK ships preconfigured for Algorand Testnet. You get free test ALGO from the Algorand dispenser, mint unlimited test assets, and exercise every marketplace flow without spending real funds. The dashboard you launch from this page runs against Testnet by default.',
+   270→  },
+   271→]
+   272→
+   273→const DOC_CATEGORIES = [
+   274→  { icon: Rocket, title: 'Quick Start', desc: 'Install the SDK, connect a wallet, and mint your first asset in under 5 minutes.', color: 'var(--ds-emerald)' },
+   275→  { icon: Code, title: 'API Reference', desc: 'Complete TypeScript API docs for the DeShop client, escrow, and royalty modules.', color: 'var(--ds-diamond)' },
+   276→  { icon: FileText, title: 'Smart Contracts', desc: 'Deep dive into the Algorand stateless and stateful contracts powering escrow.', color: 'var(--ds-amber)' },
+   277→  { icon: Puzzle, title: 'Game Plugins', desc: 'Per-engine integration guides for Unity, Unreal, Minecraft, and web games.', color: 'var(--ds-lapis)' },
+   278→]
+   279→
+   280→// ─── Helper components ──────────────────────────────────────────────────────
+   281→
+   282→function SectionHeading({
+   283→  eyebrow,
+   284→  title,
+   285→  subtitle,
+   286→  align = 'center',
+   287→}: {
+   288→  eyebrow: string
+   289→  title: string
+   290→  subtitle?: string
+   291→  align?: 'center' | 'left'
+   292→}) {
+   293→  return (
+   294→    <motion.div
+   295→      variants={stagger}
+   296→      initial="hidden"
+   297→      whileInView="visible"
+   298→      viewport={VIEWPORT}
+   299→      className={`ds-section__head ${align === 'left' ? 'ds-section__head--left' : ''}`}
+   300→    >
+   301→      <motion.span variants={itemVariants} className="ds-eyebrow">
+   302→        <Sparkles size={12} /> {eyebrow}
+   303→      </motion.span>
+   304→      <motion.h2 variants={itemVariants} className="ds-section__title">
+   305→        {title}
+   306→      </motion.h2>
+   307→      {subtitle && (
+   308→        <motion.p variants={itemVariants} className="ds-section__subtitle">
+   309→          {subtitle}
+   310→        </motion.p>
+   311→      )}
+   312→    </motion.div>
+   313→  )
+   314→}
+   315→
+   316→function CodeBlock({ code, language = 'bash' }: { code: string; language?: string }) {
+   317→  const [copied, setCopied] = useState(false)
+   318→  const handleCopy = useCallback(async () => {
+   319→    try {
+   320→      if (navigator.clipboard && window.isSecureContext) {
+   321→        await navigator.clipboard.writeText(code)
+   322→      } else {
+   323→        // Fallback for non-secure contexts (older browsers / IP dev)
+   324→        const ta = document.createElement('textarea')
+   325→        ta.value = code
+   326→        ta.style.position = 'fixed'
+   327→        ta.style.opacity = '0'
+   328→        document.body.appendChild(ta)
+   329→        ta.select()
+   330→        document.execCommand('copy')
+   331→        document.body.removeChild(ta)
+   332→      }
+   333→      setCopied(true)
+   334→      setTimeout(() => setCopied(false), 1800)
+   335→    } catch {
+   336→      /* no-op: clipboard unavailable */
+   337→    }
+   338→  }, [code])
+   339→
+   340→  return (
+   341→    <div className="ds-code">
+   342→      <div className="ds-code__bar">
+   343→        <span className="ds-code__lang">{language}</span>
+   344→        <button className="ds-code__copy" onClick={handleCopy} type="button" aria-label="Copy code">
+   345→          {copied ? <Check size={14} /> : <Copy size={14} />}
+   346→          {copied ? 'Copied' : 'Copy'}
+   347→        </button>
+   348→      </div>
+   349→      <pre className="ds-code__pre">
+   350→        <code>{code}</code>
+   351→      </pre>
+   352→    </div>
+   353→  )
+   354→}
+   355→
+   356→// ─── Floating NFT cards for the hero ────────────────────────────────────────
+   357→
+   358→const HERO_CARDS = [
+   359→  { emoji: '⚔️', label: 'Diamond Sword', hue: 'var(--ds-diamond)', delay: 0, x: -180, y: -120, rotate: -8 },
+   360→  { emoji: '🐉', label: 'Emerald Dragon', hue: 'var(--ds-emerald)', delay: 0.6, x: 200, y: -80, rotate: 6 },
+   361→  { emoji: '👑', label: 'Golden Crown', hue: 'var(--ds-amber)', delay: 1.2, x: -150, y: 140, rotate: -4 },
+   362→  { emoji: '🤖', label: 'Redstone Golem', hue: 'var(--ds-redstone)', delay: 1.8, x: 180, y: 120, rotate: 8 },
+   363→]
+   364→
+   365→function FloatingCard({ card }: { card: typeof HERO_CARDS[number] }) {
+   366→  return (
+   367→    <motion.div
+   368→      className="ds-float-card"
+   369→      style={{
+   370→        left: `calc(50% + ${card.x}px)`,
+   371→        top: `calc(50% + ${card.y}px)`,
+   372→        '--card-hue': card.hue,
+   373→        transform: `translate(-50%, -50%) rotate(${card.rotate}deg)`,
+   374→      } as React.CSSProperties}
+   375→      initial={{ opacity: 0, scale: 0.6 }}
+   376→      animate={{ opacity: 1, scale: 1 }}
+   377→      transition={{ delay: 0.4 + card.delay, duration: 0.6, ease: 'easeOut' }}
+   378→    >
+   379→      <span className="ds-float-card__emoji">{card.emoji}</span>
+   380→      <span className="ds-float-card__label">{card.label}</span>
+   381→      <span className="ds-float-card__chip" />
+   382→    </motion.div>
+   383→  )
+   384→}
+   385→
+   386→// ─── Section components ─────────────────────────────────────────────────────
+   387→
+   388→function Navbar({ onLaunchApp }: { onLaunchApp: () => void }) {
+   389→  const [scrolled, setScrolled] = useState(false)
+   390→  const [mobileOpen, setMobileOpen] = useState(false)
+   391→  const setShowWalletModal = useDeShopStore((s) => s.setShowWalletModal)
+   392→  const { activeAddress } = useWallet()
+   393→
+   394→  useEffect(() => {
+   395→    const onScroll = () => setScrolled(window.scrollY > 16)
+   396→    onScroll()
+   397→    window.addEventListener('scroll', onScroll, { passive: true })
+   398→    return () => window.removeEventListener('scroll', onScroll)
+   399→  }, [])
+   400→
+   401→  const links = [
+   402→    { href: '#features', label: 'Features' },
+   403→    { href: '#marketplace', label: 'Marketplace' },
+   404→    { href: '#docs', label: 'Docs' },
+   405→    { href: '#pricing', label: 'Pricing' },
+   406→  ]
+   407→
+   408→  const handleConnect = () => {
+   409→    if (activeAddress) onLaunchApp()
+   410→    else setShowWalletModal(true)
+   411→  }
+   412→
+   413→  const go = (href: string) => {
+   414→    setMobileOpen(false)
+   415→    const el = document.querySelector(href)
+   416→    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+   417→  }
+   418→
+   419→  return (
+   420→    <motion.nav
+   421→      initial={{ y: -80, opacity: 0 }}
+   422→      animate={{ y: 0, opacity: 1 }}
+   423→      transition={{ duration: 0.5, ease: 'easeOut' }}
+   424→      className={`ds-nav ${scrolled ? 'ds-nav--scrolled' : ''}`}
+   425→    >
+   426→      <div className="ds-nav__inner">
+   427→        <a className="ds-nav__brand" href="#top" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
+   428→          <Pickaxe size={20} style={{ color: 'var(--ds-emerald)' }} />
+   429→          <span>De-Shop SDK</span>
+   430→        </a>
+   431→
+   432→        <div className="ds-nav__links">
+   433→          {links.map((l) => (
+   434→            <button key={l.href} className="ds-nav__link" onClick={() => go(l.href)}>
+   435→              {l.label}
+   436→            </button>
+   437→          ))}
+   438→        </div>
+   439→
+   440→        <div className="ds-nav__actions">
+   441→          <button className="ds-btn ds-btn--ghost ds-btn--sm" onClick={handleConnect}>
+   442→            <Wallet size={14} />
+   443→            <span className="ds-hide-sm">Connect Wallet</span>
+   444→            <span className="ds-hide-md">Wallet</span>
+   445→          </button>
+   446→          <button className="ds-btn ds-btn--primary ds-btn--sm" onClick={onLaunchApp}>
+   447→            <Rocket size={14} />
+   448→            Launch App
+   449→          </button>
+   450→          <button
+   451→            className="ds-nav__burger"
+   452→            onClick={() => setMobileOpen((v) => !v)}
+   453→            aria-label="Toggle menu"
+   454→            aria-expanded={mobileOpen}
+   455→          >
+   456→            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+   457→          </button>
+   458→        </div>
+   459→      </div>
+   460→
+   461→      <AnimatePresence>
+   462→        {mobileOpen && (
+   463→          <motion.div
+   464→            initial={{ opacity: 0, height: 0 }}
+   465→            animate={{ opacity: 1, height: 'auto' }}
+   466→            exit={{ opacity: 0, height: 0 }}
+   467→            transition={{ duration: 0.25 }}
+   468→            className="ds-nav__mobile"
+   469→          >
+   470→            {links.map((l) => (
+   471→              <button key={l.href} className="ds-nav__mobile-link" onClick={() => go(l.href)}>
+   472→                {l.label}
+   473→              </button>
+   474→            ))}
+   475→            <button
+   476→              className="ds-btn ds-btn--primary ds-btn--block"
+   477→              onClick={() => { setMobileOpen(false); onLaunchApp() }}
+   478→            >
+   479→              <Rocket size={14} /> Launch App
+   480→            </button>
+   481→          </motion.div>
+   482→        )}
+   483→      </AnimatePresence>
+   484→    </motion.nav>
+   485→  )
+   486→}
+   487→
+   488→// ─── Section 1: Hero ────────────────────────────────────────────────────────
+   489→
+   490→function Hero({ onLaunchApp }: { onLaunchApp: () => void }) {
+   491→  return (
+   492→    <section className="ds-hero" id="top">
+   493→      <div className="ds-hero__bg" aria-hidden="true">
+   494→        <div className="ds-hero__mesh ds-hero__mesh--a" />
+   495→        <div className="ds-hero__mesh ds-hero__mesh--b" />
+   496→        <div className="ds-hero__mesh ds-hero__mesh--c" />
+   497→        <div className="ds-hero__grid" />
+   498→      </div>
+   499→
+   500→      <div className="ds-float-cards" aria-hidden="true">
+   501→        {HERO_CARDS.map((c) => (
+   502→          <FloatingCard key={c.label} card={c} />
+   503→        ))}
+   504→      </div>
+   505→
+   506→      <motion.div
+   507→        className="ds-hero__content"
+   508→        variants={stagger}
+   509→        initial="hidden"
+   510→        animate="visible"
+   511→      >
+   512→        <motion.span variants={itemVariants} className="ds-eyebrow ds-eyebrow--hero">
+   513→          <span className="ds-pulse" /> v2.0 • Built on Algorand
+   514→        </motion.span>
+   515→
+   516→        <motion.h1 variants={itemVariants} className="ds-hero__title">
+   517→          Build <span className="ds-grad">AI-Powered NFT Marketplaces</span>{' '}
+   518→          Directly Inside Your Game
+   519→        </motion.h1>
+   520→
+   521→        <motion.p variants={itemVariants} className="ds-hero__subtitle">
+   522→          Algorand-powered SDK for Unity, Unreal, Minecraft, and Web Games.
+   523→          Mint, trade, and price in-game assets — without leaving the player
+   524→          experience.
+   525→        </motion.p>
+   526→
+   527→        <motion.div variants={itemVariants} className="ds-hero__cta">
+   528→          <button className="ds-btn ds-btn--primary ds-btn--lg" onClick={onLaunchApp}>
+   529→            <Rocket size={16} /> Get Started
+   530→          </button>
+   531→          <a
+   532→            className="ds-btn ds-btn--outline ds-btn--lg"
+   533→            href="https://github.com/captainRam1413/de-shop-sdk"
+   534→            target="_blank"
+   535→            rel="noopener noreferrer"
+   536→          >
+   537→            <BookOpen size={16} /> View Documentation
+   538→          </a>
+   539→          <button
+   540→            className="ds-btn ds-btn--ghost ds-btn--lg"
+   541→            onClick={() => document.querySelector('#marketplace')?.scrollIntoView({ behavior: 'smooth' })}
+   542→          >
+   543→            <Store size={16} /> Explore Marketplace Demo
+   544→          </button>
+   545→        </motion.div>
+   546→
+   547→        <motion.div variants={itemVariants} className="ds-hero__stats">
+   548→          {HERO_STATS.map((s) => (
+   549→            <div className="ds-stat" key={s.label}>
+   550→              <span className="ds-stat__value">{s.value}</span>
+   551→              <span className="ds-stat__label">{s.label}</span>
+   552→            </div>
+   553→          ))}
+   554→        </motion.div>
+   555→      </motion.div>
+   556→
+   557→      <button
+   558→        className="ds-hero__scroll"
+   559→        onClick={() => document.querySelector('#features')?.scrollIntoView({ behavior: 'smooth' })}
+   560→        aria-label="Scroll to features"
+   561→      >
+   562→        <ChevronDown size={20} />
+   563→      </button>
+   564→    </section>
+   565→  )
+   566→}
+   567→
+   568→// ─── Section 2: Features ────────────────────────────────────────────────────
+   569→
+   570→function Features() {
+   571→  return (
+   572→    <section className="ds-section ds-section--features" id="features">
+   573→      <div className="ds-container">
+   574→        <SectionHeading
+   575→          eyebrow="SDK Features"
+   576→          title="Everything you need to ship an in-game economy"
+   577→          subtitle="Six battle-tested primitives. Compose them into any marketplace flow you can imagine."
+   578→        />
+   579→        <motion.div
+   580→          className="ds-features-grid"
+   581→          variants={stagger}
+   582→          initial="hidden"
+   583→          whileInView="visible"
+   584→          viewport={VIEWPORT}
+   585→        >
+   586→          {FEATURES.map((f) => (
+   587→            <motion.article key={f.title} variants={itemVariants} className="ds-feature">
+   588→              <span className="ds-feature__icon" style={{ color: f.color, '--icon-c': f.color } as React.CSSProperties}>
+   589→                <f.icon size={22} />
+   590→              </span>
+   591→              <h3 className="ds-feature__title">{f.title}</h3>
+   592→              <p className="ds-feature__desc">{f.desc}</p>
+   593→              <span className="ds-feature__glow" style={{ background: f.color }} />
+   594→            </motion.article>
+   595→          ))}
+   596→        </motion.div>
+   597→      </div>
+   598→    </section>
+   599→  )
+   600→}
+   601→
+   602→// ─── Section 3: Architecture ────────────────────────────────────────────────
+   603→
+   604→const ARCH_LAYERS = [
+   605→  {
+   606→    icon: Puzzle,
+   607→    title: 'Game Plugins',
+   608→    sub: 'Unity · Unreal · Minecraft · Web',
+   609→    desc: 'Native SDKs handle wallet connection, signing, and asset sync inside the game loop.',
+   610→    color: 'var(--ds-emerald)',
+   611→    items: ['TypeScript SDK', 'C# / C++ bindings', 'Real-time inventory sync'],
+   612→  },
+   613→  {
+   614→    icon: Server,
+   615→    title: 'Flask Backend',
+   616→    sub: 'Indexer · AI Pricing · Auth',
+   617→    desc: 'Indexes on-chain events, runs the WLS pricing model, and authenticates Steam sessions.',
+   618→    color: 'var(--ds-amber)',
+   619→    items: ['Marketplace indexer', 'AI pricing engine', 'Steam OAuth gateway'],
+   620→  },
+   621→  {
+   622→    icon: Database,
+   623→    title: 'Algorand Blockchain',
+   624→    sub: 'ASAs · Smart Contracts',
+   625→    desc: 'Atomic escrow, royalty enforcement, and ASA minting with <3s finality.',
+   626→    color: 'var(--ds-diamond)',
+   627→    items: ['Atomic escrow', 'Protocol royalties', 'IPFS metadata'],
+   628→  },
+   629→]
+   630→
+   631→function Architecture() {
+   632→  return (
+   633→    <section className="ds-section ds-section--arch" id="architecture">
+   634→      <div className="ds-container">
+   635→        <SectionHeading
+   636→          eyebrow="Architecture"
+   637→          title="Three layers. Zero infrastructure burden."
+   638→          subtitle="The SDK orchestrates game plugins, a Flask backend, and Algorand smart contracts so you can focus on gameplay."
+   639→        />
+   640→        <motion.div
+   641→          className="ds-arch"
+   642→          variants={stagger}
+   643→          initial="hidden"
+   644→          whileInView="visible"
+   645→          viewport={VIEWPORT}
+   646→        >
+   647→          {ARCH_LAYERS.map((layer, i) => (
+   648→            <div key={layer.title} className="ds-arch__col">
+   649→              <motion.div variants={itemVariants} className="ds-arch__card" style={{ '--layer-c': layer.color } as React.CSSProperties}>
+   650→                <div className="ds-arch__icon">
+   651→                  <layer.icon size={26} />
+   652→                </div>
+   653→                <div className="ds-arch__head">
+   654→                  <h3>{layer.title}</h3>
+   655→                  <span className="ds-arch__sub">{layer.sub}</span>
+   656→                </div>
+   657→                <p className="ds-arch__desc">{layer.desc}</p>
+   658→                <ul className="ds-arch__items">
+   659→                  {layer.items.map((it) => (
+   660→                    <li key={it}>
+   661→                      <Check size={12} /> {it}
+   662→                    </li>
+   663→                  ))}
+   664→                </ul>
+   665→              </motion.div>
+   666→              {i < ARCH_LAYERS.length - 1 && (
+   667→                <div className="ds-arch__flow" aria-hidden="true">
+   668→                  <span className="ds-arch__line" />
+   669→                  <span className="ds-arch__pulse" />
+   670→                  <ArrowRight size={16} className="ds-arch__arrow" />
+   671→                </div>
+   672→              )}
+   673→            </div>
+   674→          ))}
+   675→        </motion.div>
+   676→      </div>
+   677→    </section>
+   678→  )
+   679→}
+   680→
+   681→// ─── Section 4: Game engines ────────────────────────────────────────────────
+   682→
+   683→function Engines() {
+   684→  return (
+   685→    <section className="ds-section ds-section--engines" id="engines">
+   686→      <div className="ds-container">
+   687→        <SectionHeading
+   688→          eyebrow="Supported Engines"
+   689→          title="One SDK. Every major game runtime."
+   690→          subtitle="Drop the plugin in and start minting. We handle the wallet, signing, and sync."
+   691→        />
+   692→        <motion.div
+   693→          className="ds-engines-grid"
+   694→          variants={stagger}
+   695→          initial="hidden"
+   696→          whileInView="visible"
+   697→          viewport={VIEWPORT}
+   698→        >
+   699→          {ENGINES.map((e) => (
+   700→            <motion.article key={e.name} variants={itemVariants} className="ds-engine">
+   701→              <div className="ds-engine__head">
+   702→                <span className="ds-engine__icon">
+   703→                  <e.icon size={22} />
+   704→                </span>
+   705→                <div>
+   706→                  <h3 className="ds-engine__name">{e.name}</h3>
+   707→                  <span className="ds-engine__tag">{e.tag}</span>
+   708→                </div>
+   709→                <span className="ds-engine__badge">
+   710→                  <Check size={10} /> Supported
+   711→                </span>
+   712→              </div>
+   713→              <p className="ds-engine__desc">{e.desc}</p>
+   714→            </motion.article>
+   715→          ))}
+   716→        </motion.div>
+   717→      </div>
+   718→    </section>
+   719→  )
+   720→}
+   721→
+   722→// ─── Section 5: AI Pricing showcase ─────────────────────────────────────────
+   723→
+   724→function AIPricing() {
+   725→  const [active, setActive] = useState(false)
+   726→  const ref = useRef<HTMLDivElement>(null)
+   727→
+   728→  useEffect(() => {
+   729→    const el = ref.current
+   730→    if (!el) return
+   731→    const obs = new IntersectionObserver(
+   732→      (entries) => {
+   733→        if (entries[0].isIntersecting) {
+   734→          setActive(true)
+   735→          obs.disconnect()
+   736→        }
+   737→      },
+   738→      { threshold: 0.3 },
+   739→    )
+   740→    obs.observe(el)
+   741→    return () => obs.disconnect()
+   742→  }, [])
+   743→
+   744→  const lastPoint = PRICE_TREND[PRICE_TREND.length - 1]
+   745→
+   746→  return (
+   747→    <section className="ds-section ds-section--ai" id="pricing">
+   748→      <div className="ds-container">
+   749→        <div className="ds-ai">
+   750→          <motion.div
+   751→            className="ds-ai__copy"
+   752→            variants={stagger}
+   753→            initial="hidden"
+   754→            whileInView="visible"
+   755→            viewport={VIEWPORT}
+   756→          >
+   757→            <motion.span variants={itemVariants} className="ds-eyebrow">
+   758→              <Bot size={12} /> AI Pricing Engine
+   759→            </motion.span>
+   760→            <motion.h2 variants={itemVariants} className="ds-section__title ds-section__title--left">
+   761→              Fair prices, suggested automatically
+   762→            </motion.h2>
+   763→            <motion.p variants={itemVariants} className="ds-ai__lead">
+   764→              Every listed asset passes through a Weighted Least Squares
+   765→              regression model with exponential time-decay. The model learns
+   766→              from the last 30 days of trades and re-suggests prices nightly.
+   767→            </motion.p>
+   768→            <motion.ul variants={itemVariants} className="ds-ai__features">
+   769→              <li>
+   770→                <TrendingUp size={14} style={{ color: 'var(--ds-emerald)' }} />
+   771→                <div>
+   772→                  <strong>Recent trade prices</strong>
+   773→                  <span>Weighted by recency — newer sales matter more.</span>
+   774→                </div>
+   775→              </li>
+   776→              <li>
+   777→                <Layers size={14} style={{ color: 'var(--ds-amber)' }} />
+   778→                <div>
+   779→                  <strong>Active listing volume</strong>
+   780→                  <span>Supply pressure adjusts the suggested price down.</span>
+   781→                </div>
+   782→              </li>
+   783→              <li>
+   784→                <Award size={14} style={{ color: 'var(--ds-diamond)' }} />
+   785→                <div>
+   786→                  <strong>Rarity tier coefficient</strong>
+   787→                  <span>Legendary items get a 4× multiplier vs common.</span>
+   788→                </div>
+   789→              </li>
+   790→              <li>
+   791→                <Lock size={14} style={{ color: 'var(--ds-redstone)' }} />
+   792→                <div>
+   793→                  <strong>Time-decay kernel</strong>
+   794→                  <span>Stale prices lose 5% influence per day.</span>
+   795→                </div>
+   796→              </li>
+   797→            </motion.ul>
+   798→          </motion.div>
+   799→
+   800→          <motion.div
+   801→            ref={ref}
+   802→            className="ds-ai__chart"
+   803→            initial={{ opacity: 0, y: 30 }}
+   804→            whileInView={{ opacity: 1, y: 0 }}
+   805→            viewport={VIEWPORT}
+   806→            transition={{ duration: 0.6 }}
+   807→          >
+   808→            <div className="ds-chart-head">
+   809→              <div>
+   810→                <span className="ds-chart-head__label">Suggested Price · 14d</span>
+   811→                <span className="ds-chart-head__value">
+   812→                  {lastPoint.suggested.toFixed(2)} <small>μALGO</small>
+   813→                </span>
+   814→              </div>
+   815→              <span className="ds-chart-head__tag">
+   816→                <BrainCircuit size={12} /> WLS · 4 features
+   817→              </span>
+   818→            </div>
+   819→            <ResponsiveContainer width="100%" height={260}>
+   820→              <LineChart data={PRICE_TREND} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+   821→                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+   822→                <XAxis dataKey="day" tick={{ fill: 'rgba(255,255,255,0.45)', fontSize: 11 }} axisLine={false} tickLine={false} />
+   823→                <YAxis tick={{ fill: 'rgba(255,255,255,0.45)', fontSize: 11 }} axisLine={false} tickLine={false} width={44} />
+   824→                <RTooltip
+   825→                  contentStyle={{
+   826→                    background: 'rgba(10, 10, 22, 0.95)',
+   827→                    border: '1px solid rgba(255,255,255,0.1)',
+   828→                    borderRadius: 8,
+   829→                    fontSize: 12,
+   830→                    color: '#e8e8e8',
+   831→                  }}
+   832→                />
+   833→                <ReferenceLine y={lastPoint.suggested} stroke="var(--ds-amber)" strokeDasharray="4 4" strokeOpacity={0.5} />
+   834→                <Line
+   835→                  type="monotone"
+   836→                  dataKey="market"
+   837→                  stroke="var(--ds-diamond)"
+   838→                  strokeWidth={2}
+   839→                  dot={false}
+   840→                  isAnimationActive={active}
+   841→                  animationDuration={1200}
+   842→                  name="Market price"
+   843→                />
+   844→                <Line
+   845→                  type="monotone"
+   846→                  dataKey="suggested"
+   847→                  stroke="var(--ds-amber)"
+   848→                  strokeWidth={2.5}
+   849→                  dot={false}
+   850→                  isAnimationActive={active}
+   851→                  animationDuration={1600}
+   852→                  name="AI suggested"
+   853→                />
+   854→              </LineChart>
+   855→            </ResponsiveContainer>
+   856→            <div className="ds-chart-legend">
+   857→              <span><i style={{ background: 'var(--ds-diamond)' }} /> Market price</span>
+   858→              <span><i style={{ background: 'var(--ds-amber)' }} /> AI suggested</span>
+   859→            </div>
+   860→          </motion.div>
+   861→        </div>
+   862→      </div>
+   863→    </section>
+   864→  )
+   865→}
+   866→
+   867→// ─── Section 6: Marketplace demo ────────────────────────────────────────────
+   868→
+   869→function MarketplaceDemo({ onLaunchApp }: { onLaunchApp: () => void }) {
+   870→  return (
+   871→    <section className="ds-section ds-section--market" id="marketplace">
+   872→      <div className="ds-container">
+   873→        <SectionHeading
+   874→          eyebrow="Live Marketplace Demo"
+   875→          title="Trade in-game assets without leaving the page"
+   876→          subtitle="A working preview of the SDK's marketplace flow. Hit Buy to launch the full dashboard."
+   877→        />
+   878→        <motion.div
+   879→          className="ds-skins-grid"
+   880→          variants={stagger}
+   881→          initial="hidden"
+   882→          whileInView="visible"
+   883→          viewport={VIEWPORT}
+   884→        >
+   885→          {DEMO_SKINS.map((s) => {
+   886→            const meta = RARITY_META[s.rarity]
+   887→            return (
+   888→              <motion.article
+   889→                key={s.name}
+   890→                variants={itemVariants}
+   891→                className="ds-skin"
+   892→                style={{ '--rarity-c': meta.color, '--rarity-glow': meta.glow } as React.CSSProperties}
+   893→              >
+   894→                <span className="ds-skin__rarity">{s.rarity}</span>
+   895→                <div className="ds-skin__art">
+   896→                  <span className="ds-skin__emoji">{s.emoji}</span>
+   897→                  <span className="ds-skin__shimmer" />
+   898→                </div>
+   899→                <div className="ds-skin__body">
+   900→                  <h3 className="ds-skin__name">{s.name}</h3>
+   901→                  <div className="ds-skin__row">
+   902→                    <span className="ds-skin__price">
+   903→                      <Coins size={12} /> {s.price.toLocaleString()} <small>μA</small>
+   904→                    </span>
+   905→                    <button className="ds-btn ds-btn--primary ds-btn--xs" onClick={onLaunchApp}>
+   906→                      <ShoppingBag size={11} /> Buy
+   907→                    </button>
+   908→                  </div>
+   909→                </div>
+   910→                <span className="ds-skin__demo-chip">Demo</span>
+   911→              </motion.article>
+   912→            )
+   913→          })}
+   914→        </motion.div>
+   915→        <div className="ds-section__cta">
+   916→          <button className="ds-btn ds-btn--outline" onClick={onLaunchApp}>
+   917→            Open full marketplace <ArrowRight size={14} />
+   918→          </button>
+   919→        </div>
+   920→      </div>
+   921→    </section>
+   922→  )
+   923→}
+   924→
+   925→// ─── Section 7: Analytics preview ───────────────────────────────────────────
+   926→
+   927→function AnalyticsPreview() {
+   928→  return (
+   929→    <section className="ds-section ds-section--analytics" id="analytics">
+   930→      <div className="ds-container">
+   931→        <SectionHeading
+   932→          eyebrow="Analytics Dashboard"
+   933→          title="Real-time visibility into your marketplace"
+   934→          subtitle="Every trade, listing, and royalty — indexed and visualised. Launch the app to drill in."
+   935→        />
+   936→        <motion.div
+   937→          className="ds-window"
+   938→          initial={{ opacity: 0, y: 32 }}
+   939→          whileInView={{ opacity: 1, y: 0 }}
+   940→          viewport={VIEWPORT}
+   941→          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+   942→        >
+   943→          <div className="ds-window__bar">
+   944→            <span className="ds-window__dot ds-window__dot--red" />
+   945→            <span className="ds-window__dot ds-window__dot--amber" />
+   946→            <span className="ds-window__dot ds-window__dot--green" />
+   947→            <span className="ds-window__url">
+   948→              <Globe size={11} /> app.deshop.sdk / dashboard
+   949→            </span>
+   950→          </div>
+   951→          <div className="ds-window__body">
+   952→            <div className="ds-dash-stats">
+   953→              <div className="ds-dash-stat">
+   954→                <span className="ds-dash-stat__label">Floor Price</span>
+   955→                <span className="ds-dash-stat__value">280 <small>μA</small></span>
+   956→                <span className="ds-dash-stat__trend ds-dash-stat__trend--up">
+   957→                  <TrendingUp size={11} /> +6.2%
+   958→                </span>
+   959→              </div>
+   960→              <div className="ds-dash-stat">
+   961→                <span className="ds-dash-stat__label">Active Listings</span>
+   962→                <span className="ds-dash-stat__value">1,284</span>
+   963→                <span className="ds-dash-stat__trend ds-dash-stat__trend--down">
+   964→                  <TrendingUp size={11} style={{ transform: 'rotate(180deg)' }} /> -2.1%
+   965→                </span>
+   966→              </div>
+   967→              <div className="ds-dash-stat">
+   968→                <span className="ds-dash-stat__label">24h Volume</span>
+   969→                <span className="ds-dash-stat__value">42.8K <small>μA</small></span>
+   970→                <span className="ds-dash-stat__trend ds-dash-stat__trend--up">
+   971→                  <TrendingUp size={11} /> +14.7%
+   972→                </span>
+   973→              </div>
+   974→              <div className="ds-dash-stat">
+   975→                <span className="ds-dash-stat__label">Royalties Paid</span>
+   976→                <span className="ds-dash-stat__value">2.1K <small>μA</small></span>
+   977→                <span className="ds-dash-stat__trend ds-dash-stat__trend--up">
+   978→                  <TrendingUp size={11} /> +3.4%
+   979→                </span>
+   980→              </div>
+   981→            </div>
+   982→
+   983→            <div className="ds-dash-charts">
+   984→              <div className="ds-dash-chart">
+   985→                <div className="ds-dash-chart__head">
+   986→                  <span>Trading Volume</span>
+   987→                  <small>last 12 months</small>
+   988→                </div>
+   989→                <ResponsiveContainer width="100%" height={200}>
+   990→                  <AreaChart data={VOLUME_TREND} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+   991→                    <defs>
+   992→                      <linearGradient id="dsVolumeGrad" x1="0" y1="0" x2="0" y2="1">
+   993→                        <stop offset="0%" stopColor="var(--ds-emerald)" stopOpacity={0.6} />
+   994→                        <stop offset="100%" stopColor="var(--ds-emerald)" stopOpacity={0.02} />
+   995→                      </linearGradient>
+   996→                    </defs>
+   997→                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+   998→                    <XAxis dataKey="month" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }} axisLine={false} tickLine={false} />
+   999→                    <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }} axisLine={false} tickLine={false} width={36} />
+  1000→                    <RTooltip
+  1001→                      contentStyle={{
+  1002→                        background: 'rgba(10, 10, 22, 0.95)',
+  1003→                        border: '1px solid rgba(255,255,255,0.1)',
+  1004→                        borderRadius: 8,
+  1005→                        fontSize: 11,
+  1006→                        color: '#e8e8e8',
+  1007→                      }}
+  1008→                    />
+  1009→                    <Area
+  1010→                      type="monotone"
+  1011→                      dataKey="volume"
+  1012→                      stroke="var(--ds-emerald)"
+  1013→                      strokeWidth={2}
+  1014→                      fill="url(#dsVolumeGrad)"
+  1015→                      isAnimationActive
+  1016→                      animationDuration={1400}
+  1017→                    />
+  1018→                  </AreaChart>
+  1019→                </ResponsiveContainer>
+  1020→              </div>
+  1021→
+  1022→              <div className="ds-dash-chart">
+  1023→                <div className="ds-dash-chart__head">
+  1024→                  <span>Active Listings</span>
+  1025→                  <small>last 12 months</small>
+  1026→                </div>
+  1027→                <ResponsiveContainer width="100%" height={200}>
+  1028→                  <AreaChart data={VOLUME_TREND} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+  1029→                    <defs>
+  1030→                      <linearGradient id="dsListingsGrad" x1="0" y1="0" x2="0" y2="1">
+  1031→                        <stop offset="0%" stopColor="var(--ds-amber)" stopOpacity={0.55} />
+  1032→                        <stop offset="100%" stopColor="var(--ds-amber)" stopOpacity={0.02} />
+  1033→                      </linearGradient>
+  1034→                    </defs>
+  1035→                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+  1036→                    <XAxis dataKey="month" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }} axisLine={false} tickLine={false} />
+  1037→                    <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }} axisLine={false} tickLine={false} width={36} />
+  1038→                    <RTooltip
+  1039→                      contentStyle={{
+  1040→                        background: 'rgba(10, 10, 22, 0.95)',
+  1041→                        border: '1px solid rgba(255,255,255,0.1)',
+  1042→                        borderRadius: 8,
+  1043→                        fontSize: 11,
+  1044→                        color: '#e8e8e8',
+  1045→                      }}
+  1046→                    />
+  1047→                    <Area
+  1048→                      type="monotone"
+  1049→                      dataKey="listings"
+  1050→                      stroke="var(--ds-amber)"
+  1051→                      strokeWidth={2}
+  1052→                      fill="url(#dsListingsGrad)"
+  1053→                      isAnimationActive
+  1054→                      animationDuration={1600}
+  1055→                    />
+  1056→                  </AreaChart>
+  1057→                </ResponsiveContainer>
+  1058→              </div>
+  1059→            </div>
+  1060→          </div>
+  1061→        </motion.div>
+  1062→      </div>
+  1063→    </section>
+  1064→  )
+  1065→}
+  1066→
+  1067→// ─── Section 8: Developer experience ────────────────────────────────────────
+  1068→
+  1069→const DEV_COLUMNS = [
+  1070→  {
+  1071→    icon: Zap,
+  1072→    title: 'Install in 60 seconds',
+  1073→    desc: 'One npm install. Zero native build steps. SSR-friendly out of the box.',
+  1074→  },
+  1075→  {
+  1076→    icon: Shield,
+  1077→    title: 'Type-safe SDK',
+  1078→    desc: 'Full TypeScript types for every method, event, and ABI. Catch bugs at compile time.',
+  1079→  },
+  1080→  {
+  1081→    icon: Terminal,
+  1082→    title: 'Interactive API explorer',
+  1083→    desc: 'Browse and call every method from the in-app command block — no Postman required.',
+  1084→  },
+  1085→]
+  1086→
+  1087→const INSTALL_SNIPPET = `# 1. Install the SDK
+  1088→npm install @deshop/sdk
+  1089→
+  1090→# 2. Connect a wallet
+  1091→import { DeShopClient } from '@deshop/sdk'
+  1092→const shop = new DeShopClient({ network: 'testnet' })
+  1093→await shop.connect('pera')
+  1094→
+  1095→# 3. Mint your first asset
+  1096→const txId = await shop.mint({
+  1097→  name: 'Emerald Dragon',
+  1098→  rarity: 'legendary',
+  1099→  metadataUri: 'ipfs://Qm…'
+  1100→})`
+  1101→
+  1102→function DevExperience() {
+  1103→  return (
+  1104→    <section className="ds-section ds-section--dev" id="developers">
+  1105→      <div className="ds-container">
+  1106→        <SectionHeading
+  1107→          eyebrow="Developer Experience"
+  1108→          title="From zero to minted in 60 seconds"
+  1109→          subtitle="No blockchain experience required. The SDK handles wallets, signing, and retries — you handle the game."
+  1110→        />
+  1111→        <div className="ds-dev">
+  1112→          <motion.div
+  1113→            className="ds-dev__cols"
+  1114→            variants={stagger}
+  1115→            initial="hidden"
+  1116→            whileInView="visible"
+  1117→            viewport={VIEWPORT}
+  1118→          >
+  1119→            {DEV_COLUMNS.map((c) => (
+  1120→              <motion.div key={c.title} variants={itemVariants} className="ds-dev__col">
+  1121→                <span className="ds-dev__icon">
+  1122→                  <c.icon size={20} />
+  1123→                </span>
+  1124→                <h3>{c.title}</h3>
+  1125→                <p>{c.desc}</p>
+  1126→              </motion.div>
+  1127→            ))}
+  1128→          </motion.div>
+  1129→          <motion.div
+  1130→            className="ds-dev__code"
+  1131→            initial={{ opacity: 0, y: 24 }}
+  1132→            whileInView={{ opacity: 1, y: 0 }}
+  1133→            viewport={VIEWPORT}
+  1134→            transition={{ duration: 0.55 }}
+  1135→          >
+  1136→            <CodeBlock code={INSTALL_SNIPPET} language="bash" />
+  1137→          </motion.div>
+  1138→        </div>
+  1139→      </div>
+  1140→    </section>
+  1141→  )
+  1142→}
+  1143→
+  1144→// ─── Section 9: Documentation preview ───────────────────────────────────────
+  1145→
+  1146→function DocsPreview() {
+  1147→  return (
+  1148→    <section className="ds-section ds-section--docs" id="docs">
+  1149→      <div className="ds-container">
+  1150→        <SectionHeading
+  1151→          eyebrow="Documentation"
+  1152→          title="Everything you need, indexed"
+  1153→          subtitle="From 5-minute quickstarts to deep dives into the Algorand smart contracts."
+  1154→        />
+  1155→        <motion.div
+  1156→          className="ds-docs-search"
+  1157→          initial={{ opacity: 0, y: 20 }}
+  1158→          whileInView={{ opacity: 1, y: 0 }}
+  1159→          viewport={VIEWPORT}
+  1160→          transition={{ duration: 0.4 }}
+  1161→        >
+  1162→          <Search size={16} />
+  1163→          <input
+  1164→            type="text"
+  1165→            placeholder="Search the docs…  try “mint”, “escrow”, “royalty”"
+  1166→            onFocus={(e) => e.target.blur()}
+  1167→            readOnly
+  1168→          />
+  1169→          <span className="ds-docs-search__kbd">⌘K</span>
+  1170→        </motion.div>
+  1171→        <motion.div
+  1172→          className="ds-docs-grid"
+  1173→          variants={stagger}
+  1174→          initial="hidden"
+  1175→          whileInView="visible"
+  1176→          viewport={VIEWPORT}
+  1177→        >
+  1178→          {DOC_CATEGORIES.map((d) => (
+  1179→            <motion.a
+  1180→              key={d.title}
+  1181→              variants={itemVariants}
+  1182→              className="ds-doc-card"
+  1183→              href="https://github.com/captainRam1413/de-shop-sdk"
+  1184→              target="_blank"
+  1185→              rel="noopener noreferrer"
+  1186→              style={{ '--doc-c': d.color } as React.CSSProperties}
+  1187→            >
+  1188→              <span className="ds-doc-card__icon">
+  1189→                <d.icon size={20} />
+  1190→              </span>
+  1191→              <h3 className="ds-doc-card__title">{d.title}</h3>
+  1192→              <p className="ds-doc-card__desc">{d.desc}</p>
+  1193→              <span className="ds-doc-card__link">
+  1194→                Read more <ArrowRight size={12} />
+  1195→              </span>
+  1196→            </motion.a>
+  1197→          ))}
+  1198→        </motion.div>
+  1199→      </div>
+  1200→    </section>
+  1201→  )
+  1202→}
+  1203→
+  1204→// ─── Section 10: Testimonials ───────────────────────────────────────────────
+  1205→
+  1206→function Testimonials() {
+  1207→  return (
+  1208→    <section className="ds-section ds-section--testimonials" id="testimonials">
+  1209→      <div className="ds-container">
+  1210→        <SectionHeading
+  1211→          eyebrow="Testimonials"
+  1212→          title="Loved by game studios"
+  1213→          subtitle="Real teams shipping real economies on top of De-Shop SDK."
+  1214→        />
+  1215→        <motion.div
+  1216→          className="ds-testimonials"
+  1217→          variants={stagger}
+  1218→          initial="hidden"
+  1219→          whileInView="visible"
+  1220→          viewport={VIEWPORT}
+  1221→        >
+  1222→          {TESTIMONIALS.map((t) => (
+  1223→            <motion.figure key={t.name} variants={itemVariants} className="ds-testimonial">
+  1224→              <Quote size={20} className="ds-testimonial__quote" />
+  1225→              <blockquote className="ds-testimonial__text">{t.quote}</blockquote>
+  1226→              <figcaption className="ds-testimonial__author">
+  1227→                <span className="ds-testimonial__avatar" style={{ background: t.color }}>
+  1228→                  {t.initials}
+  1229→                </span>
+  1230→                <span className="ds-testimonial__meta">
+  1231→                  <strong>{t.name}</strong>
+  1232→                  <small>{t.role}</small>
+  1233→                </span>
+  1234→              </figcaption>
+  1235→            </motion.figure>
+  1236→          ))}
+  1237→        </motion.div>
+  1238→      </div>
+  1239→    </section>
+  1240→  )
+  1241→}
+  1242→
+  1243→// ─── Section 11: FAQ ────────────────────────────────────────────────────────
+  1244→
+  1245→function FAQItem({ q, a, isOpen, onToggle }: { q: string; a: string; isOpen: boolean; onToggle: () => void }) {
+  1246→  return (
+  1247→    <div className={`ds-faq-item ${isOpen ? 'ds-faq-item--open' : ''}`}>
+  1248→      <button className="ds-faq-item__q" onClick={onToggle} aria-expanded={isOpen}>
+  1249→        <span>{q}</span>
+  1250→        <ChevronDown size={16} className="ds-faq-item__icon" />
+  1251→      </button>
+  1252→      <AnimatePresence initial={false}>
+  1253→        {isOpen && (
+  1254→          <motion.div
+  1255→            initial={{ height: 0, opacity: 0 }}
+  1256→            animate={{ height: 'auto', opacity: 1 }}
+  1257→            exit={{ height: 0, opacity: 0 }}
+  1258→            transition={{ duration: 0.28, ease: 'easeOut' }}
+  1259→            className="ds-faq-item__a-wrap"
+  1260→          >
+  1261→            <p className="ds-faq-item__a">{a}</p>
+  1262→          </motion.div>
+  1263→        )}
+  1264→      </AnimatePresence>
+  1265→    </div>
+  1266→  )
+  1267→}
+  1268→
+  1269→function FAQ() {
+  1270→  const [open, setOpen] = useState<number | null>(0)
+  1271→  return (
+  1272→    <section className="ds-section ds-section--faq" id="faq">
+  1273→      <div className="ds-container ds-container--narrow">
+  1274→        <SectionHeading
+  1275→          eyebrow="FAQ"
+  1276→          title="Questions, answered"
+  1277→          subtitle="Still stuck? Ping us in Discord — we reply within a few hours."
+  1278→        />
+  1279→        <motion.div
+  1280→          className="ds-faq"
+  1281→          variants={fadeUp}
+  1282→          initial="hidden"
+  1283→          whileInView="visible"
+  1284→          viewport={VIEWPORT}
+  1285→        >
+  1286→          {FAQS.map((f, i) => (
+  1287→            <FAQItem
+  1288→              key={f.q}
+  1289→              q={f.q}
+  1290→              a={f.a}
+  1291→              isOpen={open === i}
+  1292→              onToggle={() => setOpen(open === i ? null : i)}
+  1293→            />
+  1294→          ))}
+  1295→        </motion.div>
+  1296→      </div>
+  1297→    </section>
+  1298→  )
+  1299→}
+  1300→
+  1301→// ─── Section 12: Footer ─────────────────────────────────────────────────────
+  1302→
+  1303→const FOOTER_COLS = [
+  1304→  {
+  1305→    title: 'Product',
+  1306→    links: [
+  1307→      { label: 'Features', href: '#features' },
+  1308→      { label: 'Marketplace', href: '#marketplace' },
+  1309→      { label: 'Pricing', href: '#pricing' },
+  1310→      { label: 'Analytics', href: '#analytics' },
+  1311→    ],
+  1312→  },
+  1313→  {
+  1314→    title: 'Developers',
+  1315→    links: [
+  1316→      { label: 'Quick Start', href: '#docs' },
+  1317→      { label: 'API Reference', href: '#docs' },
+  1318→      { label: 'Smart Contracts', href: '#docs' },
+  1319→      { label: 'Game Plugins', href: '#docs' },
+  1320→    ],
+  1321→  },
+  1322→  {
+  1323→    title: 'Resources',
+  1324→    links: [
+  1325→      { label: 'Documentation', href: '#docs' },
+  1326→      { label: 'Blog', href: 'https://github.com/captainRam1413/de-shop-sdk' },
+  1327→      { label: 'Status', href: 'https://github.com/captainRam1413/de-shop-sdk' },
+  1328→      { label: 'Changelog', href: 'https://github.com/captainRam1413/de-shop-sdk' },
+  1329→    ],
+  1330→  },
+  1331→  {
+  1332→    title: 'Company',
+  1333→    links: [
+  1334→      { label: 'About', href: 'https://github.com/captainRam1413/de-shop-sdk' },
+  1335→      { label: 'Careers', href: 'https://github.com/captainRam1413/de-shop-sdk' },
+  1336→      { label: 'Contact', href: 'https://github.com/captainRam1413/de-shop-sdk' },
+  1337→      { label: 'Privacy', href: 'https://github.com/captainRam1413/de-shop-sdk' },
+  1338→    ],
+  1339→  },
+  1340→]
+  1341→
+  1342→function Footer({ onLaunchApp }: { onLaunchApp: () => void }) {
+  1343→  const [email, setEmail] = useState('')
+  1344→  const [subscribed, setSubscribed] = useState(false)
+  1345→
+  1346→  const subscribe = (e: React.FormEvent) => {
+  1347→    e.preventDefault()
+  1348→    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return
+  1349→    setSubscribed(true)
+  1350→    setEmail('')
+  1351→    setTimeout(() => setSubscribed(false), 4000)
+  1352→  }
+  1353→
+  1354→  const go = (href: string) => {
+  1355→    if (href.startsWith('#')) {
+  1356→      document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' })
+  1357→    } else {
+  1358→      window.open(href, '_blank', 'noopener,noreferrer')
+  1359→    }
+  1360→  }
+  1361→
+  1362→  return (
+  1363→    <footer className="ds-footer">
+  1364→      <div className="ds-container">
+  1365→        <div className="ds-footer__top">
+  1366→          <div className="ds-footer__brand-col">
+  1367→            <a className="ds-footer__brand" href="#top" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
+  1368→              <Pickaxe size={22} style={{ color: 'var(--ds-emerald)' }} />
+  1369→              <span>De-Shop SDK</span>
+  1370→            </a>
+  1371→            <p className="ds-footer__tagline">
+  1372→              The AI-powered NFT marketplace SDK for game studios. Build
+  1373→              player-owned economies on Algorand.
+  1374→            </p>
+  1375→            <form className="ds-footer__news" onSubmit={subscribe}>
+  1376→              <label htmlFor="ds-news">Get product updates</label>
+  1377→              <div className="ds-footer__news-row">
+  1378→                <input
+  1379→                  id="ds-news"
+  1380→                  type="email"
+  1381→                  placeholder="you@studio.gg"
+  1382→                  value={email}
+  1383→                  onChange={(e) => setEmail(e.target.value)}
+  1384→                  required
+  1385→                />
+  1386→                <button type="submit" className="ds-btn ds-btn--primary ds-btn--sm">
+  1387→                  {subscribed ? <Check size={14} /> : <Send size={14} />}
+  1388→                  {subscribed ? 'Subscribed' : 'Subscribe'}
+  1389→                </button>
+  1390→              </div>
+  1391→              {subscribed && <span className="ds-footer__news-ok">You're on the list — see you in the inbox!</span>}
+  1392→            </form>
+  1393→            <div className="ds-footer__socials">
+  1394→              <a href="https://github.com/captainRam1413/de-shop-sdk" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+  1395→                <GithubIcon size={18} />
+  1396→              </a>
+  1397→              <a href="https://discord.gg/deshop" target="_blank" rel="noopener noreferrer" aria-label="Discord">
+  1398→                <DiscordIcon size={18} />
+  1399→              </a>
+  1400→              <a href="https://twitter.com/deshopsdk" target="_blank" rel="noopener noreferrer" aria-label="Twitter / X">
+  1401→                <TwitterIcon size={18} />
+  1402→              </a>
+  1403→            </div>
+  1404→          </div>
+  1405→
+  1406→          <div className="ds-footer__cols">
+  1407→            {FOOTER_COLS.map((col) => (
+  1408→              <div className="ds-footer__col" key={col.title}>
+  1409→                <h4>{col.title}</h4>
+  1410→                <ul>
+  1411→                  {col.links.map((l) => (
+  1412→                    <li key={l.label}>
+  1413→                      <button type="button" onClick={() => go(l.href)}>
+  1414→                        {l.label}
+  1415→                      </button>
+  1416→                    </li>
+  1417→                  ))}
+  1418→                </ul>
+  1419→              </div>
+  1420→            ))}
+  1421→          </div>
+  1422→        </div>
+  1423→
+  1424→        <div className="ds-footer__bottom">
+  1425→          <span>© {new Date().getFullYear()} De-Shop SDK · MIT License</span>
+  1426→          <button className="ds-footer__built" onClick={onLaunchApp}>
+  1427→            <Diamond size={12} style={{ color: 'var(--ds-diamond)' }} /> Built on Algorand
+  1428→          </button>
+  1429→        </div>
+  1430→      </div>
+  1431→    </footer>
+  1432→  )
+  1433→}
+  1434→
+  1435→// ─── Final CTA band (between FAQ and Footer) ────────────────────────────────
+  1436→
+  1437→function FinalCTA({ onLaunchApp }: { onLaunchApp: () => void }) {
+  1438→  return (
+  1439→    <section className="ds-cta-band">
+  1440→      <div className="ds-container">
+  1441→        <motion.div
+  1442→          className="ds-cta-band__inner"
+  1443→          initial={{ opacity: 0, y: 24 }}
+  1444→          whileInView={{ opacity: 1, y: 0 }}
+  1445→          viewport={VIEWPORT}
+  1446→          transition={{ duration: 0.55 }}
+  1447→        >
+  1448→          <div>
+  1449→            <h2>Ready to ship your in-game economy?</h2>
+  1450→            <p>Launch the dashboard, connect a wallet, and mint your first asset in under five minutes.</p>
+  1451→          </div>
+  1452→          <div className="ds-cta-band__actions">
+  1453→            <button className="ds-btn ds-btn--primary ds-btn--lg" onClick={onLaunchApp}>
+  1454→              <Rocket size={16} /> Launch App
+  1455→            </button>
+  1456→            <a
+  1457→              className="ds-btn ds-btn--outline ds-btn--lg"
+  1458→              href="https://github.com/captainRam1413/de-shop-sdk"
+  1459→              target="_blank"
+  1460→              rel="noopener noreferrer"
+  1461→            >
+  1462→              <GithubIcon size={16} /> Star on GitHub
+  1463→            </a>
+  1464→          </div>
+  1465→        </motion.div>
+  1466→      </div>
+  1467→    </section>
+  1468→  )
+  1469→}
+  1470→
+  1471→// ─── Landing root ───────────────────────────────────────────────────────────
+  1472→
+  1473→export default function Landing({ onLaunchApp }: { onLaunchApp: () => void }) {
+  1474→  const showWalletModal = useDeShopStore((s) => s.showWalletModal)
+  1475→  const setShowWalletModal = useDeShopStore((s) => s.setShowWalletModal)
+  1476→  const { wallets } = useWallet()
+  1477→
+  1478→  // Lock body scroll while the wallet modal is open
+  1479→  useEffect(() => {
+  1480→    if (!showWalletModal) return
+  1481→    const prev = document.body.style.overflow
+  1482→    document.body.style.overflow = 'hidden'
+  1483→    return () => {
+  1484→      document.body.style.overflow = prev
+  1485→    }
+  1486→  }, [showWalletModal])
+  1487→
+  1488→  return (
+  1489→    <div className="ds-landing">
+  1490→      <Navbar onLaunchApp={onLaunchApp} />
+  1491→      <main>
+  1492→        <Hero onLaunchApp={onLaunchApp} />
+  1493→        <Features />
+  1494→        <Architecture />
+  1495→        <Engines />
+  1496→        <AIPricing />
+  1497→        <MarketplaceDemo onLaunchApp={onLaunchApp} />
+  1498→        <AnalyticsPreview />
+  1499→        <DevExperience />
+  1500→        <DocsPreview />
+  1501→        <Testimonials />
+  1502→        <FAQ />
+  1503→        <FinalCTA onLaunchApp={onLaunchApp} />
+  1504→        <Footer onLaunchApp={onLaunchApp} />
+  1505→      </main>
+  1506→      {showWalletModal && <WalletModal wallets={wallets} onClose={() => setShowWalletModal(false)} />}
+  1507→    </div>
+  1508→  )
+  1509→}
+  1510→
