@@ -15,6 +15,33 @@ import {
   generateAllTextures,
   type BlockTextures,
 } from '../game/texture-generator'
+import { useDeShopStore } from '../store/useDeShopStore'
+import { normalizeRarity } from '../sdk/DeShopSDK'
+
+// ─── Rarity Skin Palette ─────────────────────────────────────────────────────
+const SKIN_PALETTE: Record<string, {
+  sword: number; swordLight: number; swordGlow: number; swordGlowIntensity: number
+}> = {
+  common: {
+    sword: 0x9ca3af, swordLight: 0xd1d5db, swordGlow: 0x000000, swordGlowIntensity: 0,
+  },
+  rare: {
+    sword: 0x60a5fa, swordLight: 0x93c5fd, swordGlow: 0x2563eb, swordGlowIntensity: 1.2,
+  },
+  epic: {
+    sword: 0xc084fc, swordLight: 0xe9d5ff, swordGlow: 0x7c3aed, swordGlowIntensity: 2.0,
+  },
+  legendary: {
+    sword: 0xf59e0b, swordLight: 0xfef3c7, swordGlow: 0xd97706, swordGlowIntensity: 3.5,
+  },
+}
+
+function getSkinPalette(asset: any): typeof SKIN_PALETTE['common'] {
+  if (!asset) return SKIN_PALETTE.common
+  const rarity = normalizeRarity(asset.rarity ?? 'common')
+  return SKIN_PALETTE[rarity] || SKIN_PALETTE.common
+}
+
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -79,6 +106,19 @@ export default function MinecraftVoxelGame() {
   const [worldBlocks, setWorldBlocks] = useState<{ total: number; placed: number }>({ total: 0, placed: 0 })
   const [loading, setLoading] = useState(true)
   const [textures, setTextures] = useState<Map<BlockType, BlockTextures> | null>(null)
+
+  const activeGunSkin = useDeShopStore((s) => s.activeGunSkin)
+  const bladeMaterialRef = useRef<THREE.MeshStandardMaterial | null>(null)
+
+  useEffect(() => {
+    if (bladeMaterialRef.current) {
+      const palette = getSkinPalette(activeGunSkin)
+      bladeMaterialRef.current.color.setHex(palette.sword)
+      bladeMaterialRef.current.emissive.setHex(palette.swordGlow)
+      bladeMaterialRef.current.emissiveIntensity = palette.swordGlowIntensity
+    }
+  }, [activeGunSkin])
+
 
   // Game state refs (not React state — mutated every frame)
   const gameRef = useRef<{
@@ -208,6 +248,44 @@ export default function MinecraftVoxelGame() {
     const highlightMesh = new THREE.Mesh(highlightGeo, highlightMat)
     highlightMesh.visible = false
     scene.add(highlightMesh)
+
+    // ── Create First-Person Weapon/Tool ───
+    const toolGroup = new THREE.Group()
+
+    const handleGeo = new THREE.BoxGeometry(0.04, 0.2, 0.04)
+    const handleMat = new THREE.MeshLambertMaterial({ color: 0x5c4023 })
+    const handleMesh = new THREE.Mesh(handleGeo, handleMat)
+    handleMesh.position.set(0, -0.08, 0)
+    toolGroup.add(handleMesh)
+
+    const guardGeo = new THREE.BoxGeometry(0.14, 0.04, 0.06)
+    const guardMat = new THREE.MeshLambertMaterial({ color: 0x3a3a3a })
+    const guardMesh = new THREE.Mesh(guardGeo, guardMat)
+    guardMesh.position.set(0, 0.02, 0)
+    toolGroup.add(guardMesh)
+
+    const bladeGeo = new THREE.BoxGeometry(0.06, 0.45, 0.03)
+    const initPalette = getSkinPalette(activeGunSkin)
+    const bladeMat = new THREE.MeshStandardMaterial({
+      color: initPalette.sword,
+      emissive: initPalette.swordGlow,
+      emissiveIntensity: initPalette.swordGlowIntensity,
+      metalness: 0.8,
+      roughness: 0.2,
+    })
+    bladeMaterialRef.current = bladeMat
+
+    const bladeMesh = new THREE.Mesh(bladeGeo, bladeMat)
+    bladeMesh.position.set(0, 0.25, 0)
+    toolGroup.add(bladeMesh)
+
+    // Position tool relative to camera
+    toolGroup.position.set(0.25, -0.3, -0.45)
+    toolGroup.rotation.set(-Math.PI / 6, -Math.PI / 6, -Math.PI / 12)
+
+    scene.add(camera)
+    camera.add(toolGroup)
+
 
     // ── Player state ─────────────────────────────────────────────────────
     // Find a spawn position (center of world, on top of terrain)
@@ -540,11 +618,23 @@ export default function MinecraftVoxelGame() {
       pitch = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, pitch))
     }
 
+    // ─── Weapon swing state ───
+    let isSwinging = false
+    let swingProgress = 0
+
+    const triggerSwing = () => {
+      if (isSwinging) return
+      isSwinging = true
+      swingProgress = 0
+    }
+
     const onMouseDown = (e: MouseEvent) => {
       if (!isLocked) return
+      triggerSwing()
       if (e.button === 0) breakBlock()   // Left click: break
       if (e.button === 2) placeBlock()    // Right click: place
     }
+
 
     const onWheel = (e: WheelEvent) => {
       if (!isLocked) return
@@ -609,8 +699,42 @@ export default function MinecraftVoxelGame() {
         updateSelection()
       }
 
+      // ─── Update Weapon Bobbing & Swing ───
+      const nowMs = performance.now()
+      if (isSwinging) {
+        swingProgress += dt * 8 // swing speed
+        if (swingProgress >= 1.0) {
+          isSwinging = false
+          swingProgress = 0
+          toolGroup.position.set(0.25, -0.3, -0.45)
+          toolGroup.rotation.set(-Math.PI / 6, -Math.PI / 6, -Math.PI / 12)
+        } else {
+          // Swing motion: rotate forward and down, then return
+          const angle = Math.sin(swingProgress * Math.PI) * 0.8
+          toolGroup.rotation.x = -Math.PI / 6 - angle
+          toolGroup.rotation.y = -Math.PI / 6 + angle * 0.5
+          toolGroup.position.y = -0.3 - angle * 0.1
+        }
+      } else {
+        // Walk bobbing
+        let bobX = 0
+        let bobY = 0
+        const isMoving = keys.size > 0
+        if (isMoving && onGround && isLocked) {
+          const speed = 12
+          const amplitude = 0.015
+          bobX = Math.sin(nowMs * 0.005 * speed) * amplitude
+          bobY = Math.cos(nowMs * 0.01 * speed) * amplitude * 0.5
+          toolGroup.position.set(0.25 + bobX, -0.3 + bobY, -0.45)
+        } else {
+          // Rest position
+          toolGroup.position.set(0.25, -0.3, -0.45)
+        }
+      }
+
       renderer.render(scene, camera)
       requestAnimationFrame(animate)
+
     }
 
     requestAnimationFrame(animate)
@@ -658,6 +782,15 @@ export default function MinecraftVoxelGame() {
       // Dispose highlight
       highlightGeo.dispose()
       highlightMat.dispose()
+
+      // Dispose tool meshes
+      handleGeo.dispose()
+      handleMat.dispose()
+      guardGeo.dispose()
+      guardMat.dispose()
+      bladeGeo.dispose()
+      bladeMat.dispose()
+
 
       renderer.dispose()
       if (container.contains(renderer.domElement)) {

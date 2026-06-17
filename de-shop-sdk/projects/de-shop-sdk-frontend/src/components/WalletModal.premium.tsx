@@ -7,6 +7,7 @@ interface WalletModalProps {
   onClose: () => void
 }
 
+
 export default function WalletModal({ wallets, onClose }: WalletModalProps) {
   return (
     <AnimatePresence>
@@ -29,29 +30,30 @@ export default function WalletModal({ wallets, onClose }: WalletModalProps) {
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
             <div style={{
-              padding: 8,
-              background: '#000',
-              border: '2px solid',
-              borderColor: '#555 #222 #222 #555',
+              padding: 10,
+              background: 'rgba(74, 237, 217, 0.1)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1px solid rgba(74, 237, 217, 0.2)',
             }}>
-              <Wallet className="h-5 w-5" style={{ color: 'var(--mc-emerald)' }} />
+              <Wallet className="h-5 w-5" style={{ color: '#4AEDD9' }} />
             </div>
             <div>
               <h3 style={{
-                color: 'var(--mc-emerald)',
-                fontFamily: 'var(--font-pixel, "Press Start 2P", monospace)',
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: '0.06em',
+                color: '#fff',
+                fontFamily: '"Outfit", sans-serif',
+                fontSize: 15,
+                fontWeight: 600,
                 margin: 0,
-                textShadow: '2px 2px 0px rgba(0,0,0,0.8)',
               }}>
-                CONNECT WALLET
+                Connect Wallet
               </h3>
               <p style={{
-                color: 'var(--mc-text-dim)',
-                fontFamily: 'var(--font-body, "VT323", monospace)',
-                fontSize: 16,
+                color: 'rgba(255, 255, 255, 0.6)',
+                fontFamily: '"Inter", sans-serif',
+                fontSize: 12,
                 margin: '4px 0 0',
               }}>
                 Select a provider to bind your Algorand wallet
@@ -60,7 +62,7 @@ export default function WalletModal({ wallets, onClose }: WalletModalProps) {
           </div>
 
           {/* Wallet options */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {wallets.map((wallet) => (
               <motion.button
                 key={wallet.id}
@@ -68,29 +70,43 @@ export default function WalletModal({ wallets, onClose }: WalletModalProps) {
                 onClick={() => void wallet.connect()}
                 whileHover={{ x: 4, transition: { duration: 0.15 } }}
                 whileTap={{ scale: 0.98 }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '12px 16px',
+                  borderRadius: 12,
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  cursor: 'pointer',
+                  width: '100%',
+                  textAlign: 'left',
+                }}
               >
                 <img
                   src={wallet.metadata.icon}
                   alt={wallet.metadata.name}
-                  style={{ width: 28, height: 28, imageRendering: 'pixelated' }}
+                  style={{ width: 28, height: 28, borderRadius: 6 }}
                 />
                 <div style={{ flex: 1, textAlign: 'left' }}>
-                  <div style={{ fontFamily: 'var(--font-pixel)', fontSize: 9, color: 'var(--mc-text)', textShadow: '1px 1px 0px rgba(0,0,0,0.8)' }}>{wallet.metadata.name}</div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--mc-text-dim)', marginTop: 2 }}>
+                  <div style={{ fontFamily: '"Outfit", sans-serif', fontSize: 13, fontWeight: 500, color: '#fff' }}>
+                    {wallet.metadata.name}
+                  </div>
+                  <div style={{ fontFamily: '"Inter", sans-serif', fontSize: 11, color: 'rgba(255, 255, 255, 0.5)', marginTop: 2 }}>
                     {wallet.id === 'pera' ? 'Algorand mobile wallet' : 'Defly wallet'}
                   </div>
                 </div>
                 <span style={{
-                  fontFamily: 'var(--font-pixel)',
-                  fontSize: 7,
-                  padding: '2px 6px',
-                  background: 'rgba(46,204,113,0.08)',
-                  border: '1px solid var(--mc-emerald-dark)',
-                  color: 'var(--mc-emerald)',
+                  fontFamily: '"Inter", sans-serif',
+                  fontSize: 10,
                   fontWeight: 600,
-                  letterSpacing: '0.04em',
+                  padding: '2px 8px',
+                  borderRadius: 20,
+                  background: 'rgba(74, 237, 217, 0.1)',
+                  border: '1px solid rgba(74, 237, 217, 0.2)',
+                  color: '#4AEDD9',
                 }}>
-                  OVERWORLD
+                  Active
                 </span>
               </motion.button>
             ))}
@@ -99,11 +115,22 @@ export default function WalletModal({ wallets, onClose }: WalletModalProps) {
           {/* Close */}
           <button
             className="premium-btn premium-btn--xs"
-            style={{ width: '100%', marginTop: 14, justifyContent: 'center', borderColor: 'var(--mc-redstone-dark)', color: 'var(--mc-redstone)' }}
+            style={{
+              width: '100%',
+              marginTop: 14,
+              justifyContent: 'center',
+              borderRadius: 20,
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontFamily: '"Outfit", sans-serif',
+              fontSize: 12,
+              fontWeight: 600,
+            }}
             onClick={onClose}
           >
             <X className="h-3.5 w-3.5" />
-            CANCEL
+            Cancel
           </button>
         </motion.div>
       </motion.div>

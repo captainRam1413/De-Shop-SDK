@@ -11,26 +11,48 @@ import ParticleBackground from './components/ParticleBackground'
 import ConfettiEffect from './components/ConfettiEffect'
 import AnimatedBorder from './components/AnimatedBorder'
 import ThemeToggle from './components/ThemeToggle'
+import DocsPage from './components/DocsPage'
+import PluginsPage from './components/PluginsPage'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 import {
+  BarChart3,
+  Swords,
   Gamepad2,
   Store,
   Backpack,
+  Pickaxe,
   Terminal,
   User,
-  ChevronLeft,
-  ChevronRight,
-  Pickaxe,
-  BarChart3,
-  Swords,
+  BookOpen,
   Bell,
   Globe,
   Home,
-  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   MessageCircle,
-  BookOpen,
+  Wallet,
 } from 'lucide-react'
+
+function SDKLogo({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ width: 18, height: 18, color: '#00f2fe', flexShrink: 0 }}
+    >
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+      <line x1="12" y1="22.08" x2="12" y2="12" />
+    </svg>
+  )
+}
+
 
 // GitHub brand icon was removed from lucide-react (brand icons dropped).
 // Inline SVG keeps the GitHub logo in the footer link without extra deps.
@@ -50,12 +72,14 @@ function GithubIcon({ className }: { className?: string }) {
 
 const navItems: { id: ActivePage; label: string; icon: React.ReactNode; color: string }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 className="h-4 w-4" />, color: 'var(--mc-diamond)' },
-  { id: 'minecraft', label: 'Play', icon: <Swords className="h-4 w-4" />, color: 'var(--mc-emerald)' },
-  { id: 'game', label: 'World', icon: <Gamepad2 className="h-4 w-4" />, color: 'var(--mc-emerald)' },
-  { id: 'market', label: 'Trading Hall', icon: <Store className="h-4 w-4" />, color: 'var(--mc-gold)' },
-  { id: 'inventory', label: 'Inventory', icon: <Backpack className="h-4 w-4" />, color: 'var(--mc-lapis)' },
-  { id: 'terminal', label: 'Command Block', icon: <Terminal className="h-4 w-4" />, color: 'var(--mc-redstone)' },
-  { id: 'profile', label: 'Player', icon: <User className="h-4 w-4" />, color: 'var(--mc-gold)' },
+  { id: 'minecraft', label: '3D Sandbox', icon: <Swords className="h-4 w-4" />, color: 'var(--mc-emerald)' },
+  { id: 'game', label: 'Arena Demo', icon: <Gamepad2 className="h-4 w-4" />, color: 'var(--mc-emerald)' },
+  { id: 'market', label: 'P2P Market', icon: <Store className="h-4 w-4" />, color: 'var(--mc-gold)' },
+  { id: 'inventory', label: 'NFT Assets', icon: <Backpack className="h-4 w-4" />, color: 'var(--mc-lapis)' },
+  { id: 'terminal', label: 'SDK Console', icon: <Terminal className="h-4 w-4" />, color: 'var(--mc-redstone)' },
+  { id: 'profile', label: 'Developer ID', icon: <User className="h-4 w-4" />, color: 'var(--mc-gold)' },
+  { id: 'docs', label: 'Docs Portal', icon: <BookOpen className="h-4 w-4" />, color: 'var(--purple-bright)' },
+  { id: 'plugins', label: 'Plugins Hub', icon: <Pickaxe className="h-4 w-4" />, color: 'var(--cyan-bright)' },
 ]
 
 function Notifications() {
@@ -101,11 +125,7 @@ function Sidebar() {
     >
       {/* Logo */}
       <div className="premium-sidebar__brand mc-sidebar__brand">
-        <img
-          src="/minecraft/logo.png"
-          alt="Minecraft"
-          style={{ width: 24, height: 24, imageRendering: 'pixelated' }}
-        />
+        <SDKLogo />
         {!sidebarCollapsed && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -114,7 +134,7 @@ function Sidebar() {
             className="premium-sidebar__brand-text"
           >
             <span className="premium-sidebar__title mc-sidebar__title">DE-SHOP</span>
-            <span className="premium-sidebar__subtitle mc-sidebar__subtitle">⛏ BLOCKCHAIN</span>
+            <span className="premium-sidebar__subtitle mc-sidebar__subtitle">BLOCKCHAIN SDK</span>
           </motion.div>
         )}
       </div>
@@ -187,13 +207,15 @@ function Header() {
     : null
 
   const pageLabels: Record<ActivePage, string> = {
-    dashboard: 'Village Ledger',
-    minecraft: 'Play',
-    game: 'World',
-    market: 'Trading Hall',
-    inventory: 'Inventory',
-    terminal: 'Command Block',
-    profile: 'Player',
+    dashboard: 'Dashboard Overview',
+    minecraft: '3D Voxel Sandbox',
+    game: '3D Voxel Arena',
+    market: 'P2P Marketplace',
+    inventory: 'My NFT Inventory',
+    terminal: 'Developer Console',
+    profile: 'Developer Profile',
+    docs: 'Integration Documentation',
+    plugins: 'Game Engine Plugins',
   }
 
   const unreadCount = notifications.length
@@ -248,7 +270,7 @@ function Header() {
         )}
         {activeAddress ? (
           <div className="premium-header__wallet-info mc-header__wallet-info">
-            <Pickaxe className="h-3.5 w-3.5" style={{ color: 'var(--mc-diamond, #4da6ff)' }} />
+            <Wallet className="h-3.5 w-3.5" style={{ color: '#00f2fe' }} />
             <span className="premium-header__addr">{addr}</span>
             <button
               className="premium-header__disconnect mc-header__disconnect"
@@ -262,12 +284,44 @@ function Header() {
             className="premium-btn premium-btn--sm mc-btn-wallet"
             onClick={() => setShowWalletModal(true)}
           >
-            <Pickaxe className="h-3.5 w-3.5" />
+            <Wallet className="h-3.5 w-3.5" />
             Connect Wallet
           </button>
         )}
       </div>
     </header>
+  )
+}
+
+function Footer() {
+  return (
+    <footer className="premium-footer">
+      <div className="premium-footer__brand" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <SDKLogo />
+        <span>DE-SHOP SDK</span>
+        <span style={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: 10, fontWeight: 500 }}>v2.0</span>
+      </div>
+      <div className="premium-footer__links">
+        <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="premium-footer__link">
+          <GithubIcon className="h-3 w-3" />
+          GitHub
+        </a>
+        <a href="#" className="premium-footer__link">
+          <BookOpen className="h-3 w-3" />
+          Docs
+        </a>
+        <a href="#" className="premium-footer__link">
+          <MessageCircle className="h-3 w-3" />
+          Discord
+        </a>
+      </div>
+      <div className="premium-footer__status">
+        <div className="premium-footer__network">
+          <span style={{ width: 6, height: 6, background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 6px rgba(34, 197, 94, 0.6)' }} />
+          Algorand Testnet
+        </div>
+      </div>
+    </footer>
   )
 }
 
@@ -279,6 +333,8 @@ const pageComponents: Record<ActivePage, React.ComponentType> = {
   inventory: GameShowcase, // Will use same component with inventory tab active
   terminal: TerminalConsole, // Command Block
   profile: ProfilePage, // Player Profile
+  docs: DocsPage,
+  plugins: PluginsPage,
 }
 
 // Minecraft palette for animated border: emerald → diamond → gold → redstone → emerald
@@ -331,61 +387,82 @@ export default function App() {
   }, [notifications, showConfetti])
 
   return (
-    <div className="premium-app mc-app">
+    <div className="premium-app macos-desktop">
       <ParticleBackground />
 
       {isMobile ? (
-        <Sidebar />
-      ) : (
-        <AnimatedBorder borderRadius={0} borderWidth={1} colors={mcBorderColors}>
-          <Sidebar />
-        </AnimatedBorder>
-      )}
-
-      <div className="premium-main mc-main">
-        <Header />
-        <div className="premium-content mc-content">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activePage}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-              style={{ height: '100%' }}
-            >
-              <PageComponent />
-            </motion.div>
-          </AnimatePresence>
-        </div>
-        {/* Professional Footer */}
-        <footer className="premium-footer">
-          <div className="premium-footer__brand">
-            <span>⛏ DE-SHOP SDK</span>
-            <span style={{ color: 'var(--mc-text-dim)', fontSize: 6 }}>v2.0</span>
+        <div className="macos-window flex flex-col w-full h-full">
+          {/* macOS Title Bar */}
+          <div className="macos-window__titlebar">
+            <div className="macos-window__traffic-lights">
+              <span className="macos-window__traffic-light macos-window__traffic-light--red" />
+              <span className="macos-window__traffic-light macos-window__traffic-light--yellow" />
+              <span className="macos-window__traffic-light macos-window__traffic-light--green" />
+            </div>
+            <span className="macos-window__title">De-Shop SDK Hub</span>
           </div>
-          <div className="premium-footer__links">
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="premium-footer__link">
-              <GithubIcon className="h-3 w-3" />
-              GitHub
-            </a>
-            <a href="#" className="premium-footer__link">
-              <BookOpen className="h-3 w-3" />
-              Docs
-            </a>
-            <a href="#" className="premium-footer__link">
-              <MessageCircle className="h-3 w-3" />
-              Discord
-            </a>
-          </div>
-          <div className="premium-footer__status">
-            <div className="premium-footer__network">
-              <span style={{ width: 5, height: 5, background: 'var(--mc-emerald)', boxShadow: '0 0 4px var(--mc-emerald)' }} />
-              Algorand Testnet
+          <div className="macos-window__body flex flex-1 overflow-hidden">
+            <Sidebar />
+            <div className="premium-main flex-1 flex flex-col overflow-hidden">
+              <Header />
+              <div className="premium-content flex-1 overflow-y-auto p-4">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activePage}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                    style={{ height: '100%' }}
+                  >
+                    <PageComponent />
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+              <Footer />
             </div>
           </div>
-        </footer>
-      </div>
+        </div>
+      ) : (
+        <div className="macos-window-container">
+          <AnimatedBorder borderRadius={12} borderWidth={1.5} colors={mcBorderColors}>
+            <div className="macos-window">
+              {/* macOS Title Bar */}
+              <div className="macos-window__titlebar">
+                <div className="macos-window__traffic-lights">
+                  <span className="macos-window__traffic-light macos-window__traffic-light--red" />
+                  <span className="macos-window__traffic-light macos-window__traffic-light--yellow" />
+                  <span className="macos-window__traffic-light macos-window__traffic-light--green" />
+                </div>
+                <span className="macos-window__title">De-Shop SDK Developer Portal</span>
+              </div>
+
+              <div className="macos-window__body">
+                <Sidebar />
+                <div className="premium-main">
+                  <Header />
+                  <div className="premium-content">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={activePage}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.2 }}
+                        style={{ height: '100%' }}
+                      >
+                        <PageComponent />
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
+                  
+                  <Footer />
+                </div>
+              </div>
+            </div>
+          </AnimatedBorder>
+        </div>
+      )}
 
       {showWalletModal && (
         <WalletModal wallets={wallets} onClose={() => setShowWalletModal(false)} />

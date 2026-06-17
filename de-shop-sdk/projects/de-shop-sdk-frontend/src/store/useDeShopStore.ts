@@ -21,7 +21,7 @@ export type Notification = {
 
 // ─── Page Types ──────────────────────────────────────────────────────────────
 
-export type ActivePage = 'dashboard' | 'game' | 'market' | 'inventory' | 'terminal' | 'profile' | 'minecraft'
+export type ActivePage = 'dashboard' | 'game' | 'market' | 'inventory' | 'terminal' | 'profile' | 'minecraft' | 'docs' | 'plugins'
 
 export type MintSkinType = 'weapon' | 'character'
 

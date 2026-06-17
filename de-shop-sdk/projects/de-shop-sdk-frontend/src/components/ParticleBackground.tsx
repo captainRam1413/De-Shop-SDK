@@ -19,16 +19,13 @@ const WOBBLE_AMPLITUDE = 0.2
 const WOBBLE_SPEED = 0.002
 const FADE_MAX = 0.18
 
-// Minecraft block colors
+// macOS desktop ambient colors
 const COLORS = [
-  { r: 93, g: 140, b: 46 },    // Grass green
-  { r: 139, g: 105, b: 20 },   // Dirt brown
-  { r: 127, g: 127, b: 127 },  // Stone gray
-  { r: 74, g: 237, b: 217 },   // Diamond cyan
-  { r: 46, g: 204, b: 113 },   // Emerald green
-  { r: 255, g: 215, b: 0 },    // Gold
-  { r: 160, g: 118, b: 74 },   // Oak wood
-  { r: 212, g: 212, b: 212 },  // Iron gray
+  { r: 74, g: 237, b: 217 },   // Cyan
+  { r: 168, g: 85, b: 247 },   // Purple
+  { r: 79, g: 172, b: 254 },   // Light Blue
+  { r: 99, g: 102, b: 241 },   // Indigo
+  { r: 244, g: 63, b: 94 },    // Rose
 ]
 
 // ─── Particle Type ────────────────────────────────────────────────────────────
@@ -43,8 +40,6 @@ interface Particle {
   wobbleOffset: number
   wobbleAmp: number
   wobbleSpeed: number
-  rotation: number
-  rotationSpeed: number
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -60,13 +55,11 @@ function createParticle(width: number, height: number): Particle {
     y: Math.random() * height,
     size: randomBetween(MIN_SIZE, MAX_SIZE),
     color,
-    opacity: randomBetween(0.08, FADE_MAX),
+    opacity: randomBetween(0.1, FADE_MAX),
     speedY: randomBetween(DRIFT_SPEED_MIN, DRIFT_SPEED_MAX),
     wobbleOffset: Math.random() * Math.PI * 2,
     wobbleAmp: randomBetween(0.05, WOBBLE_AMPLITUDE),
     wobbleSpeed: randomBetween(WOBBLE_SPEED * 0.5, WOBBLE_SPEED * 1.5),
-    rotation: randomBetween(0, Math.PI / 2),
-    rotationSpeed: randomBetween(-0.005, 0.005),
   }
 }
 
@@ -101,14 +94,13 @@ export default function ParticleBackground() {
     const particles = particlesRef.current
     const time = timeRef.current
 
-    // Update & draw particles as SQUARE blocks (Minecraft style)
+    // Update & draw particles as glowing circles (macOS style)
     for (let i = 0; i < particles.length; i++) {
       const p = particles[i]
 
       // Update position — drift upward with wobble
       p.y -= p.speedY
       p.x += Math.sin(time * p.wobbleSpeed + p.wobbleOffset) * p.wobbleAmp
-      p.rotation += p.rotationSpeed
 
       // Wrap around edges
       if (p.y < -p.size * 2) {
@@ -118,18 +110,21 @@ export default function ParticleBackground() {
       if (p.x < -p.size * 2) p.x = width + p.size * 2
       if (p.x > width + p.size * 2) p.x = -p.size * 2
 
-      // Draw as a square block (no circles — Minecraft!)
+      // Draw as a soft circular particle (no squares!)
       ctx.save()
       ctx.translate(p.x, p.y)
-      ctx.rotate(p.rotation)
-      ctx.fillStyle = `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, ${p.opacity})`
-      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size)
-
-      // Subtle inner highlight (3D block effect)
-      ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity * 0.2})`
-      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, 1)
-      ctx.fillRect(-p.size / 2, -p.size / 2, 1, p.size)
-
+      
+      // Outer soft glow
+      const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, p.size * 2)
+      gradient.addColorStop(0, `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, ${p.opacity})`)
+      gradient.addColorStop(0.5, `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, ${p.opacity * 0.4})`)
+      gradient.addColorStop(1, `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, 0)`)
+      
+      ctx.beginPath()
+      ctx.arc(0, 0, p.size * 2, 0, Math.PI * 2)
+      ctx.fillStyle = gradient
+      ctx.fill()
+      
       ctx.restore()
     }
   }, [])
@@ -197,7 +192,6 @@ export default function ParticleBackground() {
         left: 0,
         zIndex: 0,
         pointerEvents: 'none',
-        imageRendering: 'pixelated',
       }}
     />
   )
