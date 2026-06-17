@@ -54,7 +54,7 @@
   --color-term-amber: #FFB800;
   --color-term-cyan: #00D4FF;
   --color-term-magenta: #FF00FF;
-  --color-term-red: #FF3333;
+  --color-term-red: #FF5555;
   --color-term-white: #FFFFFF;
   --color-term-selection: rgba(51, 255, 51, 0.15);
 }
@@ -679,4 +679,508 @@
 .breadcrumb-sep {
   color: #555555;
   margin: 0 4px;
+}
+
+/* ============================================================ */
+/* ===== TASK 9-c: ENHANCED POLISH (CRT, GLOW, SKELETONS) ===== */
+/* ============================================================ */
+
+/* ----- New keyframe animations ----- */
+
+@keyframes crt-flicker {
+  0%, 100% { opacity: 1; }
+  47% { opacity: 1; }
+  48% { opacity: 0.97; }
+  49% { opacity: 1; }
+  94% { opacity: 1; }
+  95% { opacity: 0.98; }
+  96% { opacity: 1; }
+}
+
+@keyframes text-glow-pulse {
+  0%, 100% { text-shadow: 0 0 4px rgba(51, 255, 51, 0.4); }
+  50% { text-shadow: 0 0 10px rgba(51, 255, 51, 0.7), 0 0 20px rgba(51, 255, 51, 0.3); }
+}
+
+@keyframes slide-up-fade {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes border-trace {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+@keyframes scan-line-move {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(2000%); }
+}
+
+/* ----- CRT screen effect (vignette + curvature) ----- */
+
+.crt-screen {
+  position: relative;
+}
+
+.crt-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  box-shadow:
+    inset 0 0 60px rgba(0, 0, 0, 0.4),
+    inset 0 0 120px rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+}
+
+.crt-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background:
+    radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.35) 100%);
+  border-radius: 4px;
+  animation: crt-flicker 8s infinite steps(60);
+}
+
+/* ----- Card hover glow states ----- */
+
+.terminal-card-glow {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.terminal-card-glow:hover {
+  border-color: rgba(51, 255, 51, 0.6);
+  box-shadow:
+    0 0 0 1px rgba(51, 255, 51, 0.2),
+    0 0 18px rgba(51, 255, 51, 0.18),
+    0 0 32px rgba(51, 255, 51, 0.08);
+  transform: translateY(-1px);
+}
+
+.terminal-card-amber-glow {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.terminal-card-amber-glow:hover {
+  border-color: rgba(255, 184, 0, 0.6);
+  box-shadow:
+    0 0 0 1px rgba(255, 184, 0, 0.2),
+    0 0 18px rgba(255, 184, 0, 0.18);
+  transform: translateY(-1px);
+}
+
+.terminal-card-cyan-glow {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.terminal-card-cyan-glow:hover {
+  border-color: rgba(0, 212, 255, 0.6);
+  box-shadow:
+    0 0 0 1px rgba(0, 212, 255, 0.2),
+    0 0 18px rgba(0, 212, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.terminal-card-magenta-glow {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.terminal-card-magenta-glow:hover {
+  border-color: rgba(255, 0, 255, 0.6);
+  box-shadow:
+    0 0 0 1px rgba(255, 0, 255, 0.2),
+    0 0 18px rgba(255, 0, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.terminal-card-red-glow {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.terminal-card-red-glow:hover {
+  border-color: rgba(255, 85, 85, 0.6);
+  box-shadow:
+    0 0 0 1px rgba(255, 85, 85, 0.2),
+    0 0 18px rgba(255, 85, 85, 0.18);
+  transform: translateY(-1px);
+}
+
+/* ----- Loading skeletons ----- */
+
+.skeleton-line {
+  display: block;
+  height: 10px;
+  background: linear-gradient(
+    90deg,
+    #1E1E1E 0%,
+    #2D2D2D 40%,
+    #3a4d3a 50%,
+    #2D2D2D 60%,
+    #1E1E1E 100%
+  );
+  background-size: 200% 100%;
+  border-radius: 2px;
+  animation: skeleton-shimmer 1.6s linear infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-line::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(51, 255, 51, 0.08) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s linear infinite reverse;
+}
+
+.skeleton-block {
+  display: block;
+  height: 80px;
+  background: linear-gradient(
+    90deg,
+    #1E1E1E 0%,
+    #2D2D2D 40%,
+    #3a4d3a 50%,
+    #2D2D2D 60%,
+    #1E1E1E 100%
+  );
+  background-size: 200% 100%;
+  border-radius: 2px;
+  animation: skeleton-shimmer 1.6s linear infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-block::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(51, 255, 51, 0.06) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s linear infinite reverse;
+}
+
+/* ----- Text glow utilities ----- */
+
+.text-glow-green {
+  text-shadow: 0 0 6px rgba(51, 255, 51, 0.55), 0 0 12px rgba(51, 255, 51, 0.25);
+}
+
+.text-glow-cyan {
+  text-shadow: 0 0 6px rgba(0, 212, 255, 0.55), 0 0 12px rgba(0, 212, 255, 0.25);
+}
+
+.text-glow-amber {
+  text-shadow: 0 0 6px rgba(255, 184, 0, 0.55), 0 0 12px rgba(255, 184, 0, 0.25);
+}
+
+.text-glow-magenta {
+  text-shadow: 0 0 6px rgba(255, 0, 255, 0.55), 0 0 12px rgba(255, 0, 255, 0.25);
+}
+
+.text-glow-red {
+  text-shadow: 0 0 6px rgba(255, 85, 85, 0.55), 0 0 12px rgba(255, 85, 85, 0.25);
+}
+
+/* ----- Moving scanline overlay (more prominent than the static one) ----- */
+
+.moving-scanline {
+  position: relative;
+  overflow: hidden;
+}
+
+.moving-scanline::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(51, 255, 51, 0.55) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 3;
+  animation: scan-line-move 5s linear infinite;
+  opacity: 0.7;
+}
+
+/* ----- Terminal glow input ----- */
+
+.terminal-glow-input {
+  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  padding: 8px 12px 8px 28px;
+  background: #1E1E1E;
+  color: #33FF33;
+  border: 1px solid #444444;
+  border-radius: 2px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.terminal-glow-input:focus {
+  border-color: #33FF33;
+  box-shadow:
+    0 0 0 1px rgba(51, 255, 51, 0.3),
+    0 0 12px rgba(51, 255, 51, 0.25),
+    inset 0 0 8px rgba(51, 255, 51, 0.08);
+}
+
+.terminal-glow-input::placeholder {
+  color: #555555;
+}
+
+/* ----- Rarity borders ----- */
+
+.rarity-border-common {
+  border: 1px solid #555555;
+}
+
+.rarity-border-rare {
+  border: 1px solid rgba(0, 212, 255, 0.5);
+  box-shadow: 0 0 0 1px rgba(0, 212, 255, 0.05) inset;
+}
+
+.rarity-border-epic {
+  border: 1px solid rgba(255, 0, 255, 0.5);
+  box-shadow: 0 0 0 1px rgba(255, 0, 255, 0.05) inset;
+}
+
+.rarity-border-legendary {
+  border: 1px solid rgba(255, 184, 0, 0.6);
+  box-shadow:
+    0 0 0 1px rgba(255, 184, 0, 0.05) inset,
+    0 0 10px rgba(255, 184, 0, 0.1);
+}
+
+/* ----- Improved blinking cursor with glow ----- */
+
+.blink-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 16px;
+  background: #33FF33;
+  box-shadow: 0 0 6px rgba(51, 255, 51, 0.7), 0 0 12px rgba(51, 255, 51, 0.3);
+  animation: blink 1s step-end infinite;
+  vertical-align: text-bottom;
+  margin-left: 2px;
+}
+
+/* ----- Terminal tag / chip ----- */
+
+.terminal-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 2px;
+  border: 1px solid;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ----- Terminal divider ----- */
+
+.terminal-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #444444 20%,
+    #444444 80%,
+    transparent 100%
+  );
+  margin: 12px 0;
+  border: none;
+}
+
+/* ----- Terminal progress bar (div-based, ASCII-style) ----- */
+
+.terminal-progress {
+  position: relative;
+  width: 100%;
+  height: 12px;
+  background: #1E1E1E;
+  border: 1px solid #444444;
+  border-radius: 2px;
+  overflow: hidden;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', monospace;
+}
+
+.terminal-progress-bar {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(51, 255, 51, 0.3) 0%,
+    rgba(51, 255, 51, 0.8) 100%
+  );
+  box-shadow: 0 0 8px rgba(51, 255, 51, 0.4);
+  transition: width 0.4s ease;
+  position: relative;
+}
+
+.terminal-progress-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent 4px,
+    rgba(0, 0, 0, 0.15) 4px,
+    rgba(0, 0, 0, 0.15) 5px
+  );
+}
+
+/* ----- Improved existing utilities (additive) ----- */
+
+/* Subtle text-shadow glow on all terminal color utilities */
+.text-term-green { text-shadow: 0 0 4px rgba(51, 255, 51, 0.25); }
+.text-term-cyan { text-shadow: 0 0 4px rgba(0, 212, 255, 0.25); }
+.text-term-amber { text-shadow: 0 0 4px rgba(255, 184, 0, 0.25); }
+.text-term-magenta { text-shadow: 0 0 4px rgba(255, 0, 255, 0.25); }
+.text-term-red { text-shadow: 0 0 4px rgba(255, 85, 85, 0.3); }
+
+/* Smoother nav-item transitions */
+.nav-item {
+  transition: background-color 0.2s ease, color 0.2s ease, border-left-color 0.2s ease, transform 0.15s ease;
+}
+
+/* Better terminal-card hover state (lift + glow) */
+.terminal-card {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.terminal-card:hover {
+  border-color: #555555;
+}
+
+/* Improved primary button hover (stronger glow) */
+.terminal-btn-primary {
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, text-shadow 0.2s ease, box-shadow 0.2s ease;
+}
+
+.terminal-btn-primary:hover {
+  background: rgba(51, 255, 51, 0.22);
+  color: #33FF33;
+  text-shadow: 0 0 10px rgba(51, 255, 51, 0.7), 0 0 18px rgba(51, 255, 51, 0.3);
+  box-shadow: 0 0 14px rgba(51, 255, 51, 0.25);
+}
+
+/* ----- Animation utility classes ----- */
+
+.animate-slide-up-fade {
+  animation: slide-up-fade 0.4s ease-out both;
+}
+
+.animate-text-glow-pulse {
+  animation: text-glow-pulse 2.5s ease-in-out infinite;
+}
+
+.animate-crt-flicker {
+  animation: crt-flicker 8s infinite steps(60);
+}
+
+/* ----- Command palette specific ----- */
+
+.cmd-palette-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+  color: #CCCCCC;
+  border-left: 2px solid transparent;
+  transition: background-color 0.1s ease, color 0.1s ease, border-left-color 0.1s ease;
+}
+
+.cmd-palette-item:hover {
+  background: rgba(51, 255, 51, 0.06);
+  color: #FFFFFF;
+}
+
+.cmd-palette-item.active {
+  background: rgba(51, 255, 51, 0.12);
+  color: #33FF33;
+  border-left-color: #33FF33;
+  text-shadow: 0 0 6px rgba(51, 255, 51, 0.4);
+}
+
+.cmd-palette-item.active .cmd-palette-icon {
+  color: #33FF33;
+}
+
+.cmd-palette-icon {
+  color: #888888;
+  flex-shrink: 0;
+  transition: color 0.1s ease;
+}
+
+.cmd-palette-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 16px;
+  padding: 0 4px;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', monospace;
+  font-size: 9px;
+  color: #888888;
+  background: #1E1E1E;
+  border: 1px solid #444444;
+  border-radius: 2px;
+}
+
+/* ----- Skeleton card (terminal-card shaped) ----- */
+
+.skeleton-card {
+  background: #2D2D2D;
+  border: 1px solid #444444;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.skeleton-card-header {
+  height: 32px;
+  background: #353535;
+  border-bottom: 1px solid #444444;
+}
+
+.skeleton-card-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }

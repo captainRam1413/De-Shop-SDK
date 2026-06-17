@@ -1,0 +1,719 @@
+     1→# De-Shop SDK - Mac Terminal Theme Conversion Worklog
+     2→
+     3→## Project Status
+     4→- Cloned https://github.com/captainRam1413/De-Shop-SDK (branch: enhancement/premium-web3-redesign)
+     5→- Fully analyzed the existing codebase: Vite React project with Minecraft/Nexus Forge theme
+     6→- Now converting to Next.js 16 with Mac Terminal theme
+     7→
+     8→## Original Project Components
+     9→1. Landing page (12-section premium investor demo)
+    10→2. Dashboard (Nexus Ledger - stats, charts, activity feed)
+    11→3. Marketplace V2 (grid/list views, detail modal, AI insights)
+    12→4. Terminal Console (CLI interface with command parser)
+    13→5. Game Showcase (game arena, skin cards, mint bar)
+    14→6. Profile Page (achievements, transaction ledger, portfolio)
+    15→7. Wallet Modal (Pera/Defly Algorand wallet connection)
+    16→8. Minecraft Voxel Game (3D Three.js Minecraft clone - will not port)
+    17→9. Supporting: ParticleBackground, AnimatedBorder, ConfettiEffect, ThemeToggle
+    18→
+    19→## Mac Terminal Theme Design
+    20→- Background: #1E1E1E (macOS Terminal dark)
+    21→- Primary text: #33FF33 (terminal green)
+    22→- Secondary: #CCCCCC (white), #888888 (dim)
+    23→- Accents: #FFB800 (amber), #00D4FF (cyan), #FF00FF (magenta), #FF3333 (red)
+    24→- Font: SF Mono, Menlo, Consolas, monospace
+    25→- Window chrome: Terminal title bars with traffic light dots
+    26→- Borders: Thin 1px solid #333
+    27→- No rounded corners (terminal aesthetic)
+    28→- ASCII art, scanlines, blinking cursors
+    29→- Prompt-style navigation
+    30→
+    31→## Current Goals
+    32→- Build complete Next.js app with Mac Terminal theme
+    33→- All pages functional with state management
+    34→- Documentation and plugin download pages
+    35→- API routes for backend connectivity
+    36→
+    37→---
+    38→
+    39→## Task 3: Core Layout & Theme — Completed
+    40→
+    41→**Date**: 2026-06-17
+    42→**Agent**: Main Agent
+    43→
+    44→### Files Created/Modified
+    45→
+    46→1. **`/home/z/my-project/src/app/globals.css`** — Complete replacement with Mac Terminal theme
+    47→   - CSS custom properties for all theme colors (#1E1E1E, #33FF33, #FFB800, #00D4FF, #FF00FF, #FF3333)
+    48→   - Dark-only theme (both :root and .dark point to same terminal palette)
+    49→   - Animation keyframes: blink, scanline, glow-pulse, typing, fade-in/out, slide-in-right, pulse-dot, flicker
+    50→   - Terminal window chrome styles (traffic light dots, title bars)
+    51→   - Custom scrollbar (thin, dark, terminal-style)
+    52→   - Terminal card styles with header chrome
+    53→   - Terminal button variants (primary, danger, default)
+    54→   - Terminal input styles (green text on dark bg)
+    55→   - Status dot indicators (online/offline/warning)
+    56→   - Terminal toast/notification styles with type variants
+    57→   - Prompt prefix styles
+    58→   - Glow effects (green, cyan, amber, magenta, red)
+    59→   - App layout styles (sidebar, header, content, footer)
+    60→   - Navigation item styles with active/inactive states
+    61→   - Responsive styles for mobile (sidebar overlay, mobile overlay)
+    62→   - Utility classes for terminal colors
+    63→
+    64→2. **`/home/z/my-project/src/store/useDeShopStore.ts`** — Zustand store
+    65→   - State: activePage, sidebarCollapsed, mobileSidebarOpen, notifications, showWalletModal, walletConnected, walletAddress, status
+    66→   - Actions: setActivePage, toggleSidebar, setMobileSidebarOpen, addNotification (auto-remove 5s), removeNotification, clearNotifications, setShowWalletModal, connectWallet, disconnectWallet, setStatus
+    67→   - Types: ActivePage (7 pages), NotificationType, Notification, AppStatus
+    68→
+    69→3. **`/home/z/my-project/src/components/TerminalLayout.tsx`** — Main application shell
+    70→   - Sidebar with ASCII art logo, 7 navigation items (terminal-style `$ cd` commands), wallet status, collapse toggle
+    71→   - Header with terminal chrome, breadcrumb, network badge, notification bell, wallet button
+    72→   - Footer with SDK version, network status, external links (GitHub, Docs, Discord)
+    73→   - Notification toast overlay (top-right, auto-dismiss)
+    74→   - Wallet modal (Pera/Defly selection with simulated connection)
+    75→   - 7 page placeholder components (Dashboard, Marketplace, Inventory, Terminal with working CLI, Profile, Docs, Plugins)
+    76→   - Framer Motion animations for page transitions, nav hover, toasts
+    77→
+    78→4. **`/home/z/my-project/src/app/page.tsx`** — Main page with landing/app views
+    79→   - Landing view: typing animation (`./de-shop-sdk --launch`), ASCII art logo, feature grid, enter button
+    80→   - App view: dynamically imported TerminalLayout
+    81→   - AnimatePresence transitions between views
+    82→
+    83→5. **`/home/z/my-project/src/app/layout.tsx`** — Updated root layout
+    84→   - Set `className="dark"` on html element
+    85→   - Applied terminal font and colors to body
+    86→   - Updated metadata for De-Shop SDK
+    87→
+    88→### Verification
+    89→- ESLint: Passed with no errors
+    90→- Dev server: Compiling successfully, serving pages with HTTP 200
+    91→- All pages render: Landing → Enter → Dashboard with full terminal theme
+    92→
+    93→---
+    94→
+    95→## Task 4-a: Dashboard Page Component — Completed
+    96→
+    97→**Date**: 2026-06-17
+    98→**Agent**: Main Agent
+    99→
+   100→### Files Created/Modified
+   101→
+   102→1. **`/home/z/my-project/src/components/pages/DashboardPage.tsx`** — New comprehensive dashboard component
+   103→   - Terminal Window Header with traffic lights and "dashboard@de-shop:~" title
+   104→   - Stats Grid (4 cards in 2x2 on desktop, 1 column on mobile):
+   105→     - Total Value Locked: $2.4M (+12.5%), Active Wallets: 1,847 (+8.3%), Gas Fees (24h): 0.003 ALGO (-2.1%), Cross-Chain Volume: $890K (+15.7%)
+   106→     - Each card has terminal chrome header, large green value, change indicator (green/red), mini SVG sparkline, icon
+   107→   - Price Chart (AreaChart via recharts): 7-day price data, green gradient fill, terminal-styled tooltip
+   108→   - Volume Chart (BarChart via recharts): daily volume data, cyan bars, terminal-styled tooltip
+   109→   - Rarity Distribution (PieChart via recharts): Common (gray), Rare (cyan), Epic (magenta), Legendary (amber) segments with legend
+   110→   - Live Activity Feed: 15 scrollable items with timestamp, type badges (FORGE/TRADE/LIST/CANCEL), description, ALGO value
+   111→     - Auto-scrolls to bottom, simulates new events every 8s with pulse animation
+   112→     - Terminal-style formatting: `[timestamp] TYPE: description → value`
+   113→   - Quick Actions row: [Mint NFT], [List Item], [Connect Wallet], [View Docs] with terminal-styled buttons
+   114→     - Connect Wallet integrates with Zustand store wallet modal
+   115→     - View Docs navigates to docs page via setActivePage
+   116→   - All styling uses terminal theme classes: terminal-card, terminal-card-header, terminal-card-body, text-term-green/cyan/amber/magenta/red/dim, prompt-prefix, cursor-blink, glow-green/cyan, font-terminal
+   117→   - Custom TerminalTooltip component for dark bg + monospace font + green text
+   118→   - Framer Motion staggered animations on mount
+   119→   - Fully responsive layout (1 col mobile, 2 col sm, lg grid with span)
+   120→
+   121→2. **`/home/z/my-project/src/components/TerminalLayout.tsx`** — Updated imports
+   122→   - Added `import DashboardPage from '@/components/pages/DashboardPage'`
+   123→   - Removed inline DashboardPage placeholder function
+   124→   - renderPage() switch now uses the imported DashboardPage component
+   125→
+   126→### Verification
+   127→- ESLint: Passed with no errors
+   128→- Dev server: Compiling successfully, serving pages with HTTP 200
+   129→
+   130→---
+   131→
+   132→## Task 4-b: Marketplace & Inventory Page Components — Completed
+   133→
+   134→**Date**: 2026-06-17
+   135→**Agent**: Main Agent
+   136→
+   137→### Files Created/Modified
+   138→
+   139→1. **`/home/z/my-project/src/components/pages/MarketplacePage.tsx`** — New comprehensive marketplace component
+   140→   - Terminal Window Header with traffic lights and "marketplace@de-shop:~/market" title
+   141→   - Search & Filter Bar: search input with $ prefix and "search --query" placeholder, rarity filter dropdown (All/Common/Rare/Epic/Legendary), sort dropdown (Price Low→High, Price High→Low, Newest, Rarity), view toggle (Grid ▢ / List ☰), floor price summary per rarity
+   142→   - Listings Grid: 3 columns desktop, 2 tablet, 1 mobile; each card has chrome header with rarity-colored dot + asset ID, emoji icon, name (green text), price in ALGO with confidence %, rarity badge (colored borders), seller address (truncated), hover glow effect with rarity color; click opens detail modal
+   143→   - List View: terminal table format with columns ID | NAME | RARITY | PRICE | CONFIDENCE | SELLER | ACTION; each row styled as terminal line with Buy button
+   144→   - Detail Modal: terminal window styled with "asset_detail.log" title; price chart (AreaChart with rarity-colored gradient), AI confidence meter (terminal progress bar using █ and ░), rarity score bar, description text, Buy/List buttons, close button (red dot)
+   145→   - Mock Data: 16 assets with varied rarities (Neon Blade, Cyber Shield, Quantum Helm, Digital Crown, Plasma Rifle, Void Cape, Iron Gauntlet, Shadow Dagger, Pixel Potion, Titan Armor, Storm Ring, Byte Staff, Chain Mail, Data Crystal, Flame Scroll, Neural Core)
+   146→   - Prices: 0.5-50 ALGO, Confidence: 60-97%, random truncated seller addresses
+   147→   - Full terminal styling with monospace font, rarity-specific colors, dark backgrounds, glow effects
+   148→   - Wallet integration for buy/list actions (prompts wallet modal if not connected)
+   149→
+   150→2. **`/home/z/my-project/src/components/pages/InventoryPage.tsx`** — New inventory management component
+   151→   - Terminal Window Header with traffic lights and "inventory@de-shop:~/inventory" title
+   152→   - Summary Stats bar: 4 cards (Total Items, Total Value in ALGO, Rarest Item, Latest Acquisition) each as terminal card with icon and colored value
+   153→   - Inventory Grid: 2 columns desktop, 1 mobile; each item card has chrome header with rarity dot + name + EQUIPPED badge, emoji icon, rarity badge, acquisition date, current value, action buttons (Equip/Unequip, List, Transfer); equipped items have green border glow
+   154→   - Mint Section: "mint_forge.log" terminal card with name input, rarity select (Common/Rare/Epic/Legendary), type select (Weapon/Character/Accessory), Forge NFT button (green), loading state with terminal spinner [████████░░░░] using █ and ░ characters with percentage
+   155→   - Mock Data: 8 owned assets (Neon Blade, Cyber Shield, Quantum Helm, Shadow Dagger, Pixel Potion, Chain Mail, Titan Armor, Storm Ring)
+   156→   - 3 items marked as equipped with green border glow effect
+   157→   - Wallet integration for list/transfer actions
+   158→
+   159→3. **`/home/z/my-project/src/components/TerminalLayout.tsx`** — Updated imports
+   160→   - Added `import MarketplacePage from '@/components/pages/MarketplacePage'`
+   161→   - Added `import InventoryPage from '@/components/pages/InventoryPage'`
+   162→   - Removed inline MarketplacePage placeholder function (replaced with comment)
+   163→   - Removed inline InventoryPage placeholder function (replaced with comment)
+   164→   - renderPage() switch now uses the imported MarketplacePage and InventoryPage components
+   165→
+   166→### Verification
+   167→- ESLint: Passed with no errors
+   168→- Dev server: Compiling successfully, serving pages with HTTP 200
+   169→
+   170→---
+   171→
+   172→## Task 4-c: Terminal Console & Profile Page Components — Completed
+   173→
+   174→**Date**: 2026-06-17
+   175→**Agent**: Main Agent
+   176→
+   177→### Files Created/Modified
+   178→
+   179→1. **`/home/z/my-project/src/components/pages/TerminalPage.tsx`** — New comprehensive CLI terminal interface
+   180→   - Terminal Window with chrome bar "de-shop-sdk@terminal:~" and wallet status indicator
+   181→   - ASCII Art Banner on initial load (boxed DE-SHOP SDK welcome)
+   182→   - Command Log (scrollable area) with typed log entries:
+   183→     - Types: command (white), output (gray), error (red), success (green), system (cyan)
+   184→     - Timestamp format: [HH:MM:SS] for all entries
+   185→     - Auto-scroll to bottom on new entries
+   186→   - Command Input (bottom, fixed): green prompt "user@de-shop:~$ ", cursor blink, disabled during processing
+   187→   - 16 Supported Commands with rich output:
+   188→     - `help` — Boxed table of all commands with descriptions
+   189→     - `clear` — Clears the terminal log
+   190→     - `connect` — Simulates wallet connection via store, shows address and balance
+   191→     - `disconnect` — Disconnects wallet via store
+   192→     - `status` — Boxed system status (wallet, network, block height, latency)
+   193→     - `mint <name> [rarity]` — Simulates NFT minting with animated progress bar (█░)
+   194→     - `list` — Marketplace listings in formatted table (ID, NAME, RARITY, PRICE, SELLER)
+   195→     - `buy <id>` — Simulates buying an asset with wallet check
+   196→     - `inventory` — Shows owned assets in formatted table (requires wallet)
+   197→     - `price <name>` — AI-suggested price with range and confidence %
+   198→     - `bridge <minecraft|steam>` — Bridge status display
+   199→     - `whoami` — Wallet identity info in boxed format
+   200→     - `ls` — Lists available modules as directory entries
+   201→     - `cd <module>` — Navigates to module via store.setActivePage
+   202→     - `cat readme` — Displays SDK readme in boxed format
+   203→     - `uname` — SDK version and protocol info
+   204→   - Arrow Up/Down for command history navigation
+   205→   - Tab Completion for command names and cd module names
+   206→   - Typing Animation: slight delay (30-80ms) between log entries for realism
+   207→   - Processing state lock to prevent double execution
+   208→
+   209→2. **`/home/z/my-project/src/components/pages/ProfilePage.tsx`** — New user profile page with Mac Terminal styling
+   210→   - Terminal Window Header: chrome bar "profile@de-shop:~/profile"
+   211→   - Profile Header:
+   212→     - ASCII art avatar (boxed face)
+   213→     - Username with click-to-edit (inline input + Save/Cancel buttons)
+   214→     - Wallet address display with copy button (clipboard API)
+   215→     - Member since date, online/offline status indicator
+   216→     - Connect Wallet button when not connected
+   217→   - Achievement Grid (terminal card "achievements.log"):
+   218→     - 12 achievement badges in responsive 2/3/4-column grid
+   219→     - Each: emoji icon, name, unlock date, lock overlay for locked
+   220→     - Unlocked: green border, subtle glow; Locked: dim, gray border, 🔒 overlay
+   221→     - Examples: First Mint, Trader, Collector, Whale Watcher, Early Adopter, Diamond Hands, Bridge Builder, Market Maker, Speed Demon, Champion, Oracle Eye, Guardian
+   222→     - Framer Motion staggered entry animations
+   223→   - Transaction History (terminal card "transactions.log"):
+   224→     - 15 scrollable transactions (max-h-96 overflow-y-auto)
+   225→     - Each: date, type badge (MINT=green, BUY=cyan, SELL=amber, TRANSFER=magenta, LIST=yellow), description, amount, status (✓/⏳)
+   226→     - Click to expand with AnimatePresence for details (Asset ID, From/To, TxID, Status)
+   227→   - Portfolio Analytics (terminal card "portfolio.log"):
+   228→     - Total portfolio value display (95.4 ALGO, +12.3%)
+   229→     - Mini AreaChart (recharts) with green gradient fill, custom dark tooltip
+   230→     - Rarity Distribution: ASCII bar chart using █ and ░ characters (Common/Rare/Epic/Legendary)
+   231→     - Top Holdings list with rarity badges and ALGO values
+   232→   - Connected Accounts (terminal card "accounts.log"):
+   233→     - 3-column grid: Algorand Wallet, Steam, Minecraft
+   234→     - Each: icon, name, status dot, connection info, Connect button or active status
+   235→     - Steam/Minecraft toggle state for demo purposes
+   236→
+   237→3. **`/home/z/my-project/src/components/TerminalLayout.tsx`** — Updated imports
+   238→   - Added `import TerminalPage from '@/components/pages/TerminalPage'`
+   239→   - Added `import ProfilePage from '@/components/pages/ProfilePage'`
+   240→   - Removed inline TerminalPage and ProfilePage placeholder functions (replaced with comments)
+   241→   - renderPage() switch already references TerminalPage and ProfilePage via imports
+   242→
+   243→### Verification
+   244→- ESLint: Passed with no errors (fixed 3 issues: JSX comment text nodes, `module` variable name)
+   245→- Dev server: Compiling successfully, serving pages with HTTP 200
+   246→
+   247→---
+   248→
+   249→## Task 5: Documentation & Plugin Download Pages — Completed
+   250→
+   251→**Date**: 2026-06-17
+   252→**Agent**: Main Agent
+   253→
+   254→### Files Created/Modified
+   255→
+   256→1. **`/home/z/my-project/src/components/pages/DocsPage.tsx`** — New comprehensive documentation page
+   257→   - Terminal Window Header with traffic lights and "docs@de-shop:~/documentation" title
+   258→   - Search Bar: terminal-styled input with `$` prefix and "search --query" placeholder, filters TOC sections in real-time
+   259→   - Table of Contents Sidebar: left sidebar (sticky on desktop, scrollable on mobile) with 10 clickable sections in `$ cd section_name` format; active section highlighted with green bg and `>` prefix
+   260→   - Getting Started section: overview text, ASCII art architecture diagram (Frontend/Core/Blockchain layers + Plugin layer with Minecraft/Unity/Unreal), feature checklist
+   261→   - Installation section: 4 code blocks (npm, bun, yarn, pnpm) with CopyButton; prerequisites checklist
+   262→   - Quick Start section: 5-step guide with code examples (Initialize SDK, Connect Wallet, Mint NFT, List on Marketplace, Bridge to Game); each step has amber `##` heading + CodeBlock with dark bg
+   263→   - API Reference section: SDK Constructor interface (DeShopConfig) in CodeBlock; methods table with columns: Method (green), Parameters (cyan), Return Type (amber); 8 methods: mint, buyAsset, listAsset, getInventory, getMarketplace, transferAsset, getPriceSuggestion, bridgeToGame
+   264→   - SDK Methods section: Detailed per-method cards with badge (CORE/TRADE/QUERY/AI/BRIDGE), signature in cyan, description, and usage code example
+   265→   - Smart Contracts section: ARC-3, ARC-19, ARC-69 standard descriptions; contract addresses CodeBlock for testnet/mainnet
+   266→   - Plugin Development section: DeShopPlugin TypeScript interface with onInit/onMint/onTrade/onDestroy hooks; register plugin example; CLI template creation commands
+   267→   - Game Integration section: Tabbed interface (Minecraft/Unity/Unreal) with AnimatePresence transitions:
+   268→     - Minecraft: Bukkit/Spigot install commands, config.yml code block, command reference
+   269→     - Unity: Package Manager install, DeShopSDK.cs full C# setup example
+   270→     - Unreal: Git clone install, DeShopSDKClient.h C++ header setup, Beta status warning
+   271→   - Configuration section: Full DeShopConfig TypeScript interface, environment variables .env example
+   272→   - FAQ section: 8 expandable Q&A items with AnimatePresence toggle, terminal [+] / [-] indicators, ChevronDown rotation
+   273→   - CopyButton component: clipboard API copy with [COPY] label → ✓ COPIED feedback (2s timeout)
+   274→   - CodeBlock component: dark bg (#1a1a1a), language label header bar, CopyButton in header
+   275→
+   276→2. **`/home/z/my-project/src/components/pages/PluginsPage.tsx`** — New plugin marketplace/download page
+   277→   - Terminal Window Header with traffic lights and "plugins@de-shop:~/plugins" title
+   278→   - Featured Plugin (top, large card with green border): De-Shop Minecraft Plugin (Java, Bukkit/Spigot, v2.1.0, Stable)
+   279→     - Name with glow, StatusBadge, version; description text; stats (downloads, StarRating, last updated); tags (terminal chips); Download + View Source buttons; ASCII art preview (Minecraft server status panel)
+   280→   - Plugin Grid: 3 columns desktop, 2 tablet, 1 mobile; 5 plugin cards with staggered Framer Motion entry:
+   281→     - De-Shop Unity SDK (C#, Unity 2021+, v1.8.0, Stable) — 8,320 downloads, 4.6 rating
+   282→     - De-Shop Unreal Plugin (C++, UE5, v1.3.0, Beta) — 3,450 downloads, 4.2 rating
+   283→     - De-Shop Web3 Bridge (TypeScript, Node.js, v1.0.0, Stable) — 5,670 downloads, 4.5 rating
+   284→     - De-Shop AI Pricing Engine (Python, v0.9.0, Beta) — 2,180 downloads, 4.0 rating
+   285→     - De-Shop Steam Integration (TypeScript, v1.1.0, Stable) — 4,290 downloads, 4.4 rating
+   286→   - Each PluginCard: chrome header with name + version; description (3-line clamp); tags; stats row (downloads + star rating); status badge + date; Download + Docs buttons
+   287→   - StatusBadge: Stable (green), Beta (amber), Alpha (red) with matching border/bg/text
+   288→   - StarRating: 5-star display with fill levels (full/half/empty) + numeric rating
+   289→   - Download Modal (terminal window styled):
+   290→     - Terminal chrome "download_manager.log" with close button
+   291→     - File info: name, size, version, checksum
+   292→     - Animated progress bar using █ and ░ characters (20-char width, ~200ms intervals, random increments)
+   293→     - Installation instructions per plugin type
+   294→     - Confirm Download / Cancel buttons (disabled during download)
+   295→     - Success state: ✓ checkmark, "Download Complete!", next steps ordered list, Done button
+   296→     - Triggers addNotification on completion
+   297→   - Installation Guide section: tabbed (Minecraft/Unity/Unreal/Node.js) with prerequisites checklist (☑) and step-by-step terminal commands with copy button
+   298→   - Contribute section: GitHub repo link, Plugin Template creation (npx @deshop/create-plugin), Development Setup commands (clone, install, build, test, dev)
+   299→
+   300→3. **`/home/z/my-project/src/components/TerminalLayout.tsx`** — Updated imports
+   301→   - Added `import DocsPage from '@/components/pages/DocsPage'`
+   302→   - Added `import PluginsPage from '@/components/pages/PluginsPage'`
+   303→   - Removed inline DocsPage and PluginsPage placeholder functions (replaced with comments)
+   304→   - renderPage() switch already references DocsPage and PluginsPage via imports
+   305→
+   306→### Verification
+   307→- ESLint: Passed with no errors
+   308→- Dev server: Compiling successfully, serving pages with HTTP 200
+   309→
+   310→---
+   311→
+   312→## Task 6: Backend API Routes & Frontend Integration — Completed
+   313→
+   314→**Date**: 2026-06-17
+   315→**Agent**: Main Agent
+   316→
+   317→### Database Schema
+   318→
+   319→1. **`/home/z/my-project/prisma/schema.prisma`** — Replaced User/Post models with:
+   320→   - `Asset` model: id, assetId (unique int), name, description, rarity, type, price, confidence, imageUrl, emoji, seller, owner, listed, mintedAt, updatedAt
+   321→   - `Transaction` model: id, type (mint/buy/sell/transfer/list/cancel), assetId, assetName, from, to, amount, status (confirmed/pending/failed), txHash, createdAt
+   322→   - `Plugin` model: id, name, description, version, engine (minecraft/unity/unreal/web), language, status (stable/beta/alpha), downloads, rating, fileUrl, sourceUrl, fileSize, checksum, updatedAt, createdAt
+   323→   - Ran `bun run db:push` successfully to sync schema with SQLite
+   324→
+   325→### API Routes Created
+   326→
+   327→1. **`/home/z/my-project/src/app/api/assets/route.ts`**
+   328→   - GET: Return all assets with optional filter params (rarity, listed, owner)
+   329→   - POST: Create a new asset (mint) with auto-incrementing assetId
+   330→
+   331→2. **`/home/z/my-project/src/app/api/assets/[id]/route.ts`**
+   332→   - GET: Return single asset by assetId (int)
+   333→   - PUT: Update asset fields (name, description, rarity, type, price, confidence, etc.)
+   334→   - DELETE: Remove asset by assetId
+   335→
+   336→3. **`/home/z/my-project/src/app/api/market/route.ts`**
+   337→   - GET: Return listed assets (where listed=true)
+   338→   - Query params: rarity, sort (price-asc/price-desc/newest/rarity), search, page, limit
+   339→   - Returns paginated results with pagination metadata
+   340→
+   341→4. **`/home/z/my-project/src/app/api/transactions/route.ts`**
+   342→   - GET: Return all transactions with optional type filter and limit
+   343→   - POST: Create new transaction (validates required fields: type, assetId, assetName)
+   344→
+   345→5. **`/home/z/my-project/src/app/api/plugins/route.ts`**
+   346→   - GET: Return all plugins with optional engine and status filters
+   347→   - POST: Create new plugin (validates required fields: name, description, version)
+   348→
+   349→6. **`/home/z/my-project/src/app/api/stats/route.ts`**
+   350→   - GET: Return dashboard statistics computed from database
+   351→   - Returns: totalValueLocked, activeWallets, gasFees, crossChainVolume, totalAssets, totalTransactions, rarityDistribution
+   352→
+   353→7. **`/home/z/my-project/src/app/api/seed/route.ts`**
+   354→   - POST: Seed database with sample data (only if empty)
+   355→   - Creates: 16 assets, 15 transactions, 6 plugins
+   356→   - All seed data matches the original mock data from frontend pages
+   357→   - Returns 201 with counts on success, or message if already seeded
+   358→
+   359→### Seed Data
+   360→
+   361→- **16 Assets**: Neon Blade, Cyber Shield, Quantum Helm, Digital Crown, Plasma Rifle, Void Cape, Iron Gauntlet, Shadow Dagger, Pixel Potion, Titan Armor, Storm Ring, Byte Staff, Chain Mail, Data Crystal, Flame Scroll, Neural Core
+   362→  - 4 Common, 4 Rare, 4 Epic, 4 Legendary rarity distribution
+   363→  - Prices range from 0.5 to 50.0 ALGO
+   364→  - 9 owned by user_wallet, 7 by other sellers
+   365→
+   366→- **15 Transactions**: Matches ProfilePage mock data (MINT, BUY, SELL, LIST, TRANSFER types)
+   367→  - Sequential dates from 2024-06-15 to 2024-06-01
+   368→  - 2 pending, 13 confirmed status
+   369→
+   370→- **6 Plugins**: De-Shop Minecraft Plugin (featured), Unity SDK, Unreal Plugin, Web3 Bridge, AI Pricing Engine, Steam Integration
+   371→  - Engines: minecraft, unity, unreal, web
+   372→  - 4 Stable, 2 Beta status
+   373→
+   374→### Frontend Page Updates
+   375→
+   376→1. **`/home/z/my-project/src/components/pages/DashboardPage.tsx`**
+   377→   - Added `useApiStats` hook: fetches from `/api/stats` on mount
+   378→   - Merges API stats into displayed STATS array (TVL, wallets, gas fees, cross-chain volume)
+   379→   - `RarityChartCard` accepts optional `data` prop, renders API rarity distribution
+   380→   - Loading indicator `[loading...]` shown in header during fetch
+   381→   - Falls back to all original mock data if API unavailable
+   382→
+   383→2. **`/home/z/my-project/src/components/pages/MarketplacePage.tsx`**
+   384→   - Added API fetch with `mapApiAsset()` helper: maps Prisma Asset → MarketplaceAsset interface
+   385→   - Converts rarity to Title Case, generates hex ID from assetId
+   386→   - Creates synthetic 7-day price history from current price
+   387→   - Uses API data when available, falls back to MOCK_ASSETS
+   388→   - Loading indicator in terminal header
+   389→
+   390→3. **`/home/z/my-project/src/components/pages/InventoryPage.tsx`**
+   391→   - Added API fetch from `/api/assets?owner=user_wallet` with `mapApiInventoryAsset()` helper
+   392→   - Maps to InventoryAsset interface with rarity/type conversion
+   393→   - First 3 items marked as "equipped" for demo
+   394→   - Falls back to MOCK_INVENTORY on error
+   395→
+   396→4. **`/home/z/my-project/src/components/pages/ProfilePage.tsx`**
+   397→   - Fixed `Steam` → `Monitor` icon import (Steam doesn't exist in lucide-react)
+   398→   - Added API fetch from `/api/transactions` with `mapApiTransaction()` helper
+   399→   - Maps lowercase API types to uppercase display types (mint→MINT, buy→BUY, etc.)
+   400→   - Generates description and amount strings from API data
+   401→   - Uses `displayTransactions` (API data or TRANSACTIONS fallback)
+   402→
+   403→5. **`/home/z/my-project/src/components/pages/PluginsPage.tsx`**
+   404→   - Added API fetch from `/api/plugins` with `mapApiPlugin()` helper
+   405→   - Maps engine to platform name (minecraft→Bukkit/Spigot, unity→Unity 2021+, etc.)
+   406→   - Maps engine to tag arrays matching original mock data
+   407→   - First plugin marked as featured
+   408→   - Uses `displayPlugins` (API data or PLUGINS fallback)
+   409→
+   410→### Bug Fixes
+   411→- Fixed `Steam` icon import in ProfilePage.tsx → replaced with `Monitor` (Steam doesn't exist in lucide-react)
+   412→
+   413→### Verification
+   414→- ESLint: Passed with no errors
+   415→- All API endpoints tested and returning correct data:
+   416→  - POST /api/seed → 201 (seeded 16 assets, 15 transactions, 6 plugins)
+   417→  - GET /api/stats → 200 (computed stats from DB)
+   418→  - GET /api/market → 200 (16 listed assets, paginated)
+   419→  - GET /api/assets → 200 (16 assets)
+   420→  - GET /api/assets/44721 → 200 (Neon Blade)
+   421→  - GET /api/transactions → 200 (15 transactions)
+   422→  - GET /api/plugins → 200 (6 plugins)
+   423→- Dev server: Compiling successfully, all pages rendering with HTTP 200
+   424→
+   425→---
+   426→
+   427→## Task 7: Browser Verification — Completed
+   428→
+   429→**Date**: 2026-06-17
+   430→**Agent**: Main Agent
+   431→
+   432→### Verification Results
+   433→- ✅ Landing page: Typing animation works, ASCII art renders, Enter Dashboard button works
+   434→- ✅ Dashboard: Stats grid, charts (Area, Bar, Pie), activity feed with auto-scroll, quick actions
+   435→- ✅ Marketplace: Grid/List toggle, search/filter, detail modal, 16 assets displayed
+   436→- ✅ Inventory: Summary stats, item grid with Equip/List/Transfer, Mint section with form
+   437→- ✅ Terminal: ASCII banner, command input with history, `help` command works, typing animation
+   438→- ✅ Profile: Profile header, achievement grid, transaction history, portfolio chart
+   439→- ✅ Docs: Search bar, TOC sidebar, code blocks with copy buttons, game integration tabs
+   440→- ✅ Plugins: Featured plugin, plugin grid, download modal with progress bar
+   441→- ✅ Wallet: Connect modal (Pera/Defly), simulated connection, disconnect works
+   442→- ✅ Navigation: All sidebar items work, page transitions smooth
+   443→- ✅ Mobile: Responsive layout with sidebar toggle
+   444→- ✅ Footer: Sticky at bottom, all links present
+   445→- ✅ No console errors
+   446→- ✅ ESLint: Clean
+   447→
+   448→### Screenshots Taken
+   449→- `/home/z/my-project/landing-page.png`
+   450→- `/home/z/my-project/dashboard-page.png`
+   451→- `/home/z/my-project/marketplace-page.png`
+   452→- `/home/z/my-project/terminal-page.png`
+   453→- `/home/z/my-project/terminal-help.png`
+   454→- `/home/z/my-project/docs-page.png`
+   455→- `/home/z/my-project/plugins-page.png`
+   456→- `/home/z/my-project/profile-page.png`
+   457→- `/home/z/my-project/inventory-page.png`
+   458→- `/home/z/my-project/wallet-modal.png`
+   459→- `/home/z/my-project/wallet-connected.png`
+   460→- `/home/z/my-project/mobile-view.png`
+   461→
+   462→---
+   463→
+   464→## Project Status Assessment
+   465→
+   466→### Completed
+   467→- Full Mac Terminal theme conversion from Minecraft/Nexus Forge theme
+   468→- 7 pages: Dashboard, Marketplace, Inventory, Terminal, Profile, Docs, Plugins
+   469→- Backend API routes with Prisma + SQLite
+   470→- Seed data endpoint
+   471→- Wallet connection simulation
+   472→- Responsive design
+   473→- Comprehensive documentation page
+   474→- Plugin download functionality with animated progress
+   475→
+   476→### Architecture
+   477→- Next.js 16 App Router
+   478→- Zustand for global state
+   479→- Prisma ORM with SQLite
+   480→- Framer Motion for animations
+   481→- Recharts for data visualization
+   482→- Tailwind CSS 4 + custom terminal theme CSS
+   483→
+   484→---
+   485→
+   486→## Task 8: Cron Review Round 1 — QA Assessment & Polish Plan
+   487→
+   488→**Date**: 2026-06-17 (Cron triggered)
+   489→**Agent**: Main Agent
+   490→
+   491→### QA Assessment (via agent-browser + VLM analysis)
+   492→
+   493→**Tested Pages — All Functional, No Bugs:**
+   494→- ✅ Landing → Enter Dashboard (typing animation works)
+   495→- ✅ Dashboard (4 stat cards, 3 charts, activity feed, quick actions)
+   496→- ✅ Marketplace (16 assets, grid/list toggle, search, filter, sort, detail modal with price chart)
+   497→- ✅ Inventory (8 items, equip/list/transfer buttons, mint forge form)
+   498→- ✅ Terminal (16 commands tested: help, connect, mint, etc., history, tab completion)
+   499→- ✅ Profile (achievements grid, transaction history with expand, portfolio chart, ASCII rarity bars)
+   500→- ✅ Docs (10 sections, TOC sidebar, code blocks with copy buttons, Minecraft/Unity/Unreal tabs)
+   501→- ✅ Plugins (featured card, 6 plugins, download modal with progress bar, success state)
+   502→- ✅ Wallet (Pera/Defly modal, connect from terminal updates store globally, disconnect works)
+   503→- ✅ Mobile viewport (responsive)
+   504→- ✅ No console errors, no runtime errors
+   505→- ✅ ESLint clean
+   506→
+   507→### VLM-Identified Polish Opportunities
+   508→1. **CRT effects**: Add subtle screen curvature to terminal panels
+   509→2. **Scanlines**: Overlay faint horizontal scanlines (already have, could be more visible)
+   510→3. **Glow**: Apply soft green glow to command cursor and active input
+   511→4. **Animations**: Animate progress bars (fade-in) and percentage changes (slide-up)
+   512→5. **Card hover states**: More refined hover effects
+   513→6. **Icon styling**: Make emoji icons more terminal-consistent
+   514→7. **Contrast**: Red text on dark gray slightly low-contrast
+   515→8. **Spacing**: Inconsistent vertical spacing in sidebar nav items
+   516→9. **Text overflow**: Long command lines truncated
+   517→10. **Empty panels**: Some panels render with no data initially (loading states)
+   518→
+   519→### Plan for This Round
+   520→1. **Major Enhancement**: Build a new "Game" page (mini terminal game — playable ASCII/canvas game)
+   521→2. **Major Enhancement**: Build real-time WebSocket mini-service for live activity feed
+   522→3. **Polish**: Enhance globals.css with CRT effects, better scanlines, glow animations, typography refinement
+   523→4. **Polish**: Add command palette (Cmd+K) for global search/navigation
+   524→5. **Polish**: Improve dashboard with live updating stats
+   525→6. **Polish**: Add loading skeletons for all pages
+   526→7. **Polish**: Better card hover states and micro-interactions
+   527→
+   528→---
+   529→
+   530→## Task 9-a: Real-time WebSocket Mini-Service — Completed
+   531→
+   532→**Date**: 2026-06-17
+   533→**Agent**: Main Agent (Task 9-a subagent)
+   534→**Task ID**: 9-a
+   535→
+   536→### Summary
+   537→Built a standalone Bun + socket.io WebSocket mini-service at `mini-services/realtime-service/` (port 3003, path `/`, CORS allow-all) that broadcasts simulated marketplace events every 4-8 seconds. Wired the dashboard activity feed to consume these live events via a new `useRealtimeEvents` React hook that connects through the Caddy gateway using `io('/?XTransformPort=3003')` (never direct URL).
+   538→
+   539→### Files Created / Modified
+   540→
+   541→**Created:**
+   542→- `mini-services/realtime-service/package.json` — Bun project, deps: `socket.io`, scripts `dev` (`bun --hot`) + `start`
+   543→- `mini-services/realtime-service/index.ts` — socket.io server on hardcoded port 3003, path `/`, CORS `*`
+   544→- `mini-services/realtime-service/start-realtime.sh` — Bash helper that fully detaches via `setsid`
+   545→- `src/hooks/useRealtimeEvents.ts` — React hook returning `{ events, isConnected, stats, broadcastEvent, requestStats }`
+   546→
+   547→**Modified:**
+   548→- `src/components/pages/DashboardPage.tsx` — `ActivityFeed` now uses `useRealtimeEvents`:
+   549→  - Extended `ActivityItem.type` to include `TRANSFER | BRIDGE` (magenta color)
+   550→  - Added `marketEventToActivity()` mapper
+   551→  - Realtime events take priority; simulated feed pauses when connected, resumes on disconnect
+   552→  - Added LIVE / OFFLINE pulsing badge + "Realtime via WebSocket" label in card header
+   553→  - Footer copy: "live events streaming..." / "offline - showing simulated feed..."
+   554→
+   555→**Installed:**
+   556→- `socket.io` in mini-service
+   557→- `socket.io-client@4.8.3` in main project
+   558→
+   559→### Service Behavior (per spec)
+   560→- Port 3003 (HARDCODED, no env var)
+   561→- Path `/` (Caddy requirement)
+   562→- CORS `*`
+   563→- Emits `welcome` on connect with server time + online client count
+   564→- Emits `marketplace-event` every 4-8s with full MarketEvent payload
+   565→- Event types: MINT, TRADE, LIST, CANCEL, TRANSFER, BRIDGE
+   566→- Rarity: weighted (common 60%, rare 25%, epic 12%, legendary 3%)
+   567→- 20 asset names from spec; address format `0x${4hex}...${4hex}`; tx hash `0x`+64 hex
+   568→- Amount scaled by rarity
+   569→- Listens for `subscribe`, `request-stats`, `broadcast-event` (re-broadcasts to other clients)
+   570→- Pushes `stats` every 5s (random walk: onlineClients, eventsPerMinute, totalEvents, volume24h, activeWallets, gasPrice)
+   571→
+   572→### Frontend Hook
+   573→- Connects via `io('/?XTransformPort=3003', { transports: ['websocket','polling'], reconnection: true, reconnectionDelayMax: 10000 })`
+   574→- Keeps last 50 events (newest first)
+   575→- Tracks `isConnected`
+   576→- Exposes `broadcastEvent()` and `requestStats()` for client-triggered actions
+   577→- Cleans up socket on unmount
+   578→
+   579→### Verification
+   580→- **ESLint**: Clean (0 errors, 0 warnings)
+   581→- **Service**: PID 8240, listening on `*:3003`, log at `/home/z/my-project/realtime-service.log`
+   582→- **Frontend (via Caddy port 81)**:
+   583→  - Console: `[realtime] welcome: {...onlineClients: 1}` + `[realtime] subscribed: {ok: true, channel: "marketplace-events"}`
+   584→  - Snapshot: `LIVE` badge + `Realtime via WebSocket` label visible in activity.log header
+   585→  - Screenshot: `/home/z/my-project/qa-16-realtime-dashboard.png`
+   586→  - VLM verified all 4 acceptance criteria visible (LIVE badge, label, asset names + ALGO, footer text)
+   587→
+   588→### Critical Rules Compliance
+   589→- ✅ Port 3003 hardcoded
+   590→- ✅ Path `/`
+   591→- ✅ Frontend uses `io('/?XTransformPort=3003')` — never direct URL
+   592→- ✅ `bun --hot` for dev (auto-restart on file change)
+   593→- ✅ Service is independent (own `package.json`, own deps)
+   594→- ✅ Existing functionality preserved (simulated fallback when service offline)
+   595→
+   596→### Notes
+   597→- Service started with `setsid` to fully detach — without it, the bash subshell exit kills the bun process.
+   598→- When accessing the dashboard via `localhost:3000` directly (bypassing Caddy), LIVE shows OFFLINE because the relative `/?XTransformPort=3003` URL resolves to `localhost:3000` (Next.js, not Caddy). Always test via port 81 to verify realtime behavior.
+   599→- Hook exposes `broadcastEvent()` and `requestStats()` — currently unused by UI but ready for the Mint flow to push real events to other dashboards.
+   600→
+   601→
+   602→---
+   603→
+   604→## Task 9-b: Game Page — Terminal Arcade with 4 Playable Mini-Games — Completed
+   605→
+   606→**Date**: 2026-06-17
+   607→**Agent**: Main Agent (Task 9-b subagent)
+   608→**Task ID**: 9-b
+   609→
+   610→### Summary
+   611→Added a new "Arcade" page to the De-Shop SDK Mac Terminal app featuring four fully playable, terminal-themed mini-games: ASCII Snake, Typing Speed Test, Number Guess (binary search visualizer), and Hacker Clicker (idle game). High scores, games-played counts, and clicker progress all persist to `localStorage`. New high scores trigger toast notifications via the existing `addNotification` store action (clicker excluded to avoid spam). The Arcade nav item appears in the sidebar with the `Gamepad2` lucide icon and is also surfaced on the landing features grid.
+   612→
+   613→### Files Created / Modified
+   614→
+   615→**Created:**
+   616→- `src/hooks/useGameScores.ts` — `useGameScores(onNewHigh?)` hook backed by `localStorage` key `deshop-game-scores`. Persists per-game high scores (`snake`, `typing`, `guess`, `clicker`), per-game `gamesPlayed` counters, and a top-5 `guessLeaderboard` (sorted by fewest attempts). `submitScore(game, score)` enforces "higher is better" for snake/typing/clicker and "lower is better" for guess. Calls `onNewHigh(game, score, label)` only when a new record is set.
+   617→- `src/components/pages/GamePage.tsx` — full Arcade page (single `'use client'` component file) with terminal chrome header `game@de-shop:~/arcade`, game selector tabs `[SNAKE] [TYPING TEST] [NUMBER GUESS] [HACKER CLICKER]`, game card with `AnimatePresence` transitions, and a right-hand `ScorePanel` showing current game, current score, high scores per game, and total games-played stats.
+   618→
+   619→**Modified:**
+   620→- `src/store/useDeShopStore.ts` — extended `ActivePage` type union to include `'game'`.
+   621→- `src/components/TerminalLayout.tsx` — imported `Gamepad2` from lucide-react, imported `GamePage`, added nav item `{ page: 'game', label: 'Arcade', command: 'cd arcade', icon: Gamepad2 }`, added `game: 'Arcade'` to `PAGE_TITLES`, added `case 'game': return <GamePage />` to `renderPage()` switch.
+   622→- `src/app/page.tsx` — imported `Gamepad2` from lucide-react, added `{ icon: Gamepad2, label: 'Arcade', desc: 'Mini games', color: 'text-term-amber' }` as the 7th entry in the landing-page features grid.
+   623→
+   624→### Game Implementations
+   625→
+   626→**1. ASCII Snake** (`SnakeGame` component)
+   627→- 20×15 div-grid playing field (300 cells, re-rendered each tick).
+   628→- Snake starts as a 3-cell horizontal segment at center; food is a single amber cell.
+   629→- Controls: arrow keys + WASD; `P` to pause; `SPACE`/`ENTER` to start or restart.
+   630→- Mobile: 4-button D-pad (`ChevronUp/Down/Left/Right` from lucide-react) shown only on `sm:hidden`.
+   631→- 180° reversal is blocked (prevents instant self-collision).
+   632→- Self-collision check excludes the tail cell when not eating (tail moves out of the way).
+   633→- Speed: starts at 160ms/tick, decreases by 15ms every 5 points (min 60ms) — displayed as `SPEED: Nx`.
+   634→- Status overlays via `AnimatePresence`: `idle` ("Press SPACE or any ARROW to start"), `paused`, `over` (final score + restart hint).
+   635→- Score reported to parent on game-over via `onScore(score)` (guarded by `reportedRef` to fire exactly once per game).
+   636→- Game loop uses `setInterval` with refs for snake/food/dir to avoid stale closures and unnecessary interval re-creation.
+   637→
+   638→**2. Typing Speed Test** (`TypingGame` component)
+   639→- 5 De-Shop SDK themed code snippets (TypeScript): `new DeShop({ network })`, `sdk.mint({...})`, `sdk.marketplace.list()`, `sdk.connectWallet("pera")`, `sdk.transferAsset(...).sign()`.
+   640→- Single `<input>` field auto-focused on mount and on snippet advance.
+   641→- Live stats: WPM `(correctChars/5)/minutes`, accuracy `correctChars/totalChars*100`, errors count.
+   642→- Char-level coloring in the snippet display: green=correct, red=wrong (with bg highlight), amber+underline=current cursor position. Spaces rendered as `\u00A0` to preserve width.
+   643→- Timer starts on first keystroke; tracks `correctChars`, `totalChars`, `errors` via state (incremented only on char-add, not backspace — so accuracy reflects lifetime keystrokes).
+   644→- Progress bar above snippet (5 segments, completed=green, current=amber, future=elevated).
+   645→- Final WPM calculation accounts for the last correct char not yet in state: `finalCorrect = correctChars + 1`.
+   646→- Results screen: terminal-styled stats grid (WPM, ACCURACY, CHARS x/y, ERRORS) + RETRY button.
+   647→- 200ms ticker forces re-render while playing so live WPM updates smoothly.
+   648→
+   649→**3. Number Guess — Binary Search Visualizer** (`NumberGuessGame` component)
+   650→- Computer picks random int 1-100; user submits guesses via number input + GUESS button (or ENTER key).
+   651→- Feedback panel: green `✓ CORRECT!` on win, cyan `↑ HIGHER than N` when target is greater, magenta `↓ LOWER than N` when target is less.
+   652→- Range visualization: horizontal bar 1-100 with eliminated zones (red), active range (amber, with green center marker at 50). Numeric labels at 1/25/50/75/100. Updates as `range.low`/`range.high` narrow.
+   653→- History list (newest first): `#N  <guess>  ↑ HIGHER / ↓ LOWER / ✓ CORRECT`.
+   654→- Top-5 leaderboard (lowest attempts first) shown when entries exist; persisted via `useGameScores.guessLeaderboard`. Crown icon on #1 entry.
+   655→- Best-attempt score reported on win via `onScore(attempts)`.
+   656→
+   657→**4. Hacker Clicker — Idle Game** (`HackerClickerGame` component)
+   658→- Click `HACK` button → earn `perClick` hashes (starts at 1). Floating `+N` amber indicators animate upward from click position (800ms lifetime, framer-motion).
+   659→- 4 buyable upgrades with `1.5^owned` cost scaling:
+   660→  - Bot Net (10 base, +1/click, +1/sec, 🤖 cyan)
+   661→  - Miner Rig (100 base, +5/click, +5/sec, ⛏️ amber)
+   662→  - Quantum Computer (1000 base, +50/click, +50/sec, ⚛️ magenta)
+   663→  - AI Assistant (10000 base, +500/click, +500/sec, 🧠 green)
+   664→- Auto-mining: 1-second interval adds `perSec` to `hashes` and `lifetimeEarned`.
+   665→- Achievement unlocks derived from `lifetimeEarned` (so spending hashes never un-earns an achievement): 🌱 First Hash (1), 👶 Script Kiddie (100), 💻 Hacker (1000), ⚡ Elite Hacker (10000), 👑 Living Legend (100000). 5-column grid with locked 🔒 state.
+   666→- Activity log (max 6 entries): `[BUY] +1 <name> for <cost> hashes` and `[ACHIEVEMENT] <icon> <name> unlocked!`.
+   667→- `formatHashes(n)` helper: displays K/M/B suffixes for large numbers.
+   668→- State persisted to `localStorage` key `deshop-clicker-state` (separate from high-scores key). Includes `hashes`, `perClick`, `perSec`, `upgrades`, `totalClicks`, `lifetimeEarned`.
+   669→- Max-hashes ref tracks all-time-high; on every new max, calls `onScore(newHashes)` which updates the high-score store. `handleNewHigh` skips the toast for clicker to avoid per-tick spam (achievements are surfaced in-game instead).
+   670→- RESET button clears state + localStorage.
+   671→
+   672→### Score Panel (`ScorePanel` component)
+   673→- 3 stacked `terminal-card`s in the right column (lg+) or below the game (mobile):
+   674→  1. `session.log` — current game name, current score (live, synced via 200ms ref→state interval), games played this session for active game.
+   675→  2. `high_scores.log` — all 4 games' best scores with crown icon for non-zero records; active game highlighted with green border.
+   676→  3. `stats.json` — 2-col grid of games-played per game + total row.
+   677→
+   678→### Layout & Styling
+   679→- Outer `terminal-card` with chrome header `game@de-shop:~/arcade` + traffic lights + `// 4 games loaded` comment (hidden on mobile).
+   680→- Inner game card has its own chrome header showing the active game's command (e.g., `./snake --interactive`).
+   681→- Responsive grid: `grid-cols-1 lg:grid-cols-[1fr_240px]` — game on left, score panel on right (240px fixed) on lg+, stacked on smaller screens.
+   682→- All games use existing terminal CSS classes (`terminal-card`, `terminal-btn`, `terminal-btn-primary`, `terminal-input`, `text-term-*`, `prompt-prefix`, `glow-green`, `cursor-blink`, etc.) plus `cn()` from `@/lib/utils` for conditional class merging.
+   683→- Lucide icons throughout: `Gamepad2`, `Keyboard`, `Target`, `Cpu`, `Trophy`, `Hash`, `Zap`, `Bot`, `Pickaxe`, `Atom`, `Brain`, `Award`, `RotateCcw`, `Play`, `Pause`, `TrendingUp`, `ChevronUp/Down/Left/Right`, `Crown`.
+   684→- Framer Motion: page entry (`opacity+y`), tab transitions (`AnimatePresence mode="wait"`), snake status overlays, typing results screen, click floating indicators.
+   685→
+   686→### Keyboard Handler Cleanup
+   687→- `SnakeGame` registers a single `window.keydown` listener in `useEffect` with proper cleanup (`removeEventListener`) on unmount or status change. Switching tabs unmounts the snake component (via conditional render inside `AnimatePresence mode="wait"`), so the listener is always removed before the typing input can capture keystrokes.
+   688→- `TypingGame` uses a controlled `<input>` with `onChange` — no global listeners.
+   689→- `NumberGuessGame` uses `onKeyDown` on the input for ENTER — no global listeners.
+   690→- `HackerClickerGame` uses button `onClick` — no global listeners.
+   691→
+   692→### Lint Compliance Notes
+   693→- React 19's `react-hooks/set-state-in-effect` rule flagged three legitimate patterns (client-only localStorage hydration in `useGameScores` and `HackerClickerGame`, plus an achievement-unlock setState). Fixed by:
+   694→  1. `useGameScores`: added `eslint-disable-next-line` for the mount-time `setScores(loadScores())` (intentional pattern to avoid SSR hydration mismatch).
+   695→  2. `HackerClickerGame`: refactored achievements to be **derived** from `state.lifetimeEarned` via `useMemo` (no separate `achievements` state field, no setState-in-effect for unlocks). The unlock side-effect (writing to `recentLog`) remains in a `useEffect` but only fires when `earnedAchievements.length` increases — no cascading renders.
+   696→  3. `HackerClickerGame` initial load: added `eslint-disable-next-line` for `setState(loadClicker())` (same client-only hydration rationale).
+   697→- `useGameScores`: moved `onNewHighRef.current = onNewHigh` from render body into a `useEffect` to satisfy `react-hooks/refs` rule.
+   698→- Fixed JSX text node `// 4 games loaded` → `{'// 4 games loaded'}` to satisfy `react/jsx-no-comment-textnodes`.
+   699→
+   700→### Verification
+   701→- **ESLint**: `bun run lint` — clean (0 errors, 0 warnings).
+   702→- **Dev server**: `GET / 200` (compile times 40-86ms, no errors/warnings in dev.log).
+   703→- **Code review**: all keyboard handlers properly cleaned up; all games are interactive (not visual-only); all use existing terminal CSS classes; responsive layouts verified via Tailwind breakpoints (`sm:`, `lg:`); framer-motion animations on page entry, tab switch, and overlays.
+   704→
+   705→### Critical Rules Compliance
+   706→- ✅ `'use client'` directive on `GamePage.tsx`
+   707→- ✅ Keyboard event handlers cleaned up in `useEffect` return
+   708→- ✅ All 4 games fully playable (snake moves + grows + collides; typing tracks WPM/accuracy + advances through 5 snippets; guess gives HIGHER/LOWER feedback + narrows range; clicker earns + upgrades + auto-mines + unlocks achievements)
+   709→- ✅ Existing terminal CSS classes used throughout
+   710→- ✅ `lucide-react` icons used (no inline SVGs)
+   711→- ✅ `framer-motion` for animations
+   712→- ✅ Responsive (mobile D-pad for snake, stacked layout on small screens, `max-w-md` snake grid)
+   713→- ✅ No existing functionality broken (only added: store type union, nav item, page case, landing feature)
+   714→
+   715→### Notes
+   716→- Two localStorage keys: `deshop-game-scores` (high scores + games played + guess leaderboard) and `deshop-clicker-state` (clicker progress: hashes, upgrades, lifetime earned, total clicks).
+   717→- Clicker high-score toasts are intentionally suppressed in `handleNewHigh` to avoid per-second notification spam; clicker achievements are surfaced via the in-game activity log instead.
+   718→- Snake game loop uses refs (`snakeRef`, `foodRef`, `dirRef`, `nextDirRef`) to avoid stale-closure bugs and to keep the interval from being torn down/recreated on every food change — only `status` and `speed` are effect deps.
+   719→

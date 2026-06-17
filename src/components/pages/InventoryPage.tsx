@@ -45,11 +45,11 @@ interface InventoryAsset {
 
 /* ===== RARITY CONFIG ===== */
 
-const RARITY_CONFIG: Record<Rarity, { color: string; textColor: string; borderColor: string; glow: string; bg: string }> = {
-  Common: { color: '#888888', textColor: 'text-term-dim', borderColor: 'border-[#888888]/50', glow: '', bg: 'rgba(136, 136, 136, 0.08)' },
-  Rare: { color: '#00D4FF', textColor: 'text-term-cyan', borderColor: 'border-[#00D4FF]/50', glow: 'glow-cyan', bg: 'rgba(0, 212, 255, 0.08)' },
-  Epic: { color: '#FF00FF', textColor: 'text-term-magenta', borderColor: 'border-[#FF00FF]/50', glow: 'glow-magenta', bg: 'rgba(255, 0, 255, 0.08)' },
-  Legendary: { color: '#FFB800', textColor: 'text-term-amber', borderColor: 'border-[#FFB800]/50', glow: 'glow-amber', bg: 'rgba(255, 184, 0, 0.08)' },
+const RARITY_CONFIG: Record<Rarity, { color: string; textColor: string; borderColor: string; glow: string; glowClass: string; bg: string }> = {
+  Common: { color: '#888888', textColor: 'text-term-dim', borderColor: 'border-[#888888]/50', glow: '', glowClass: 'terminal-card-glow', bg: 'rgba(136, 136, 136, 0.08)' },
+  Rare: { color: '#00D4FF', textColor: 'text-term-cyan', borderColor: 'border-[#00D4FF]/50', glow: 'glow-cyan', glowClass: 'terminal-card-cyan-glow', bg: 'rgba(0, 212, 255, 0.08)' },
+  Epic: { color: '#FF00FF', textColor: 'text-term-magenta', borderColor: 'border-[#FF00FF]/50', glow: 'glow-magenta', glowClass: 'terminal-card-magenta-glow', bg: 'rgba(255, 0, 255, 0.08)' },
+  Legendary: { color: '#FFB800', textColor: 'text-term-amber', borderColor: 'border-[#FFB800]/50', glow: 'glow-amber', glowClass: 'terminal-card-amber-glow', bg: 'rgba(255, 184, 0, 0.08)' },
 }
 
 /* ===== MOCK DATA ===== */
@@ -94,7 +94,7 @@ function SummaryStats({ inventory }: { inventory: InventoryAsset[] }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06, duration: 0.25 }}
-            className="terminal-card"
+            className="terminal-card terminal-card-glow"
           >
             <div className="terminal-card-header py-1.5 px-3">
               <Icon className={`w-3 h-3 ${stat.color}`} />
@@ -141,7 +141,7 @@ function InventoryCard({ asset, index }: { asset: InventoryAsset; index: number 
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.25 }}
-      className={`terminal-card ${asset.equipped ? 'border-term-green/60' : ''}`}
+      className={`terminal-card ${config.glowClass} ${asset.equipped ? 'border-term-green/60' : ''}`}
       style={asset.equipped ? { boxShadow: '0 0 12px rgba(51, 255, 51, 0.15)' } : undefined}
     >
       {/* Card Chrome Header */}
@@ -269,7 +269,7 @@ function MintSection() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4, duration: 0.3 }}
-      className="terminal-card"
+      className="terminal-card terminal-card-amber-glow"
     >
       <div className="terminal-card-header">
         <TrafficLights />
@@ -439,8 +439,8 @@ export default function InventoryPage() {
           <span className="prompt-prefix text-sm">$</span>
           <span className="text-term-amber text-sm font-terminal glow-amber">./inventory</span>
           <span className="text-term-dim text-xs font-terminal">--list --forge --manage</span>
-          {loading && <span className="text-term-amber text-[10px] font-terminal animate-pulse">[loading...]</span>}
-          <span className="cursor-blink" />
+          {loading && <span className="text-term-amber text-[10px] font-terminal animate-pulse">[fetching inventory...]</span>}
+          <span className="blink-cursor" />
         </div>
       </div>
 

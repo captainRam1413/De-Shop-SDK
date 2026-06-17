@@ -13,6 +13,7 @@ import {
   BookOpen,
   Puzzle,
   BarChart3,
+  Gamepad2,
   Github,
   MessageCircle,
   FileText,
@@ -24,7 +25,7 @@ const TerminalLayout = dynamic(() => import('@/components/TerminalLayout'), {
     <div className="min-h-screen bg-term-bg flex items-center justify-center">
       <div className="text-term-green font-terminal text-sm">
         <span className="glow-green-strong">Initializing</span>
-        <span className="cursor-blink" />
+        <span className="blink-cursor" />
       </div>
     </div>
   ),
@@ -114,7 +115,7 @@ function LandingPage({ onEnter }: { onEnter: () => void }) {
               <span className="prompt-prefix mr-2">$</span>
               <span className="text-term-green">{typedText}</span>
               {typedText.length < fullText.length && (
-                <span className="cursor-blink" />
+                <span className="blink-cursor" />
               )}
             </div>
           </div>
@@ -153,6 +154,7 @@ function LandingPage({ onEnter }: { onEnter: () => void }) {
                       { icon: BarChart3, label: 'Dashboard', desc: 'Analytics', color: 'text-term-green' },
                       { icon: BookOpen, label: 'Docs', desc: 'API reference', color: 'text-term-cyan' },
                       { icon: Puzzle, label: 'Plugins', desc: 'Extend SDK', color: 'text-term-magenta' },
+                      { icon: Gamepad2, label: 'Arcade', desc: 'Mini games', color: 'text-term-amber' },
                     ].map((feature, i) => (
                       <motion.div
                         key={feature.label}

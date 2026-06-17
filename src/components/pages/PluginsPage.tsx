@@ -273,9 +273,9 @@ function DownloadModal({
 
               {/* Progress Bar */}
               {downloading && (
-                <div className="space-y-1">
+                <div className="space-y-1 animate-slide-up-fade">
                   <div className="text-[10px] text-term-dim">Downloading...</div>
-                  <div className="font-terminal text-[11px] text-term-green">
+                  <div className="font-terminal text-[11px] text-term-green text-glow-green">
                     [{progressBar}] {progressClamped}%
                   </div>
                 </div>
@@ -364,7 +364,7 @@ function DownloadModal({
 
 function FeaturedPlugin({ plugin, onDownload }: { plugin: Plugin; onDownload: (p: Plugin) => void }) {
   return (
-    <div className="terminal-card border-term-green/30">
+    <div className="terminal-card terminal-card-glow border-term-green/30">
       <div className="terminal-card-header">
         <TrafficLights />
         <span className="terminal-title">
@@ -454,7 +454,7 @@ function PluginCard({ plugin, onDownload }: { plugin: Plugin; onDownload: (p: Pl
     <motion.div
       whileHover={{ y: -2 }}
       transition={{ duration: 0.15 }}
-      className="terminal-card h-full flex flex-col"
+      className="terminal-card terminal-card-cyan-glow h-full flex flex-col"
     >
       <div className="terminal-card-header">
         <span className="text-[11px] text-term-green font-bold flex-1 truncate">
@@ -807,7 +807,7 @@ export default function PluginsPage() {
             <Puzzle size={16} className="text-term-magenta" />
             <span className="text-sm text-term-magenta glow-magenta font-bold">Plugin Marketplace</span>
             <span className="text-term-dim text-xs">— {displayPlugins.length} plugins available</span>
-            {loading && <span className="text-term-amber text-[10px] font-terminal animate-pulse">[loading...]</span>}
+            {loading && <span className="text-term-amber text-[10px] font-terminal animate-pulse">[fetching plugins...]</span>}
           </div>
 
           {/* Featured Plugin */}

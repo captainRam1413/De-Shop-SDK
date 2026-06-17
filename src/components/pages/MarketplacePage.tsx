@@ -56,11 +56,11 @@ interface MarketplaceAsset {
 
 /* ===== RARITY CONFIG ===== */
 
-const RARITY_CONFIG: Record<Rarity, { color: string; textColor: string; borderColor: string; glow: string; bg: string; weight: number }> = {
-  Common: { color: '#888888', textColor: 'text-term-dim', borderColor: 'border-[#888888]/50', glow: '', bg: 'rgba(136, 136, 136, 0.08)', weight: 1 },
-  Rare: { color: '#00D4FF', textColor: 'text-term-cyan', borderColor: 'border-[#00D4FF]/50', glow: 'glow-cyan', bg: 'rgba(0, 212, 255, 0.08)', weight: 2 },
-  Epic: { color: '#FF00FF', textColor: 'text-term-magenta', borderColor: 'border-[#FF00FF]/50', glow: 'glow-magenta', bg: 'rgba(255, 0, 255, 0.08)', weight: 3 },
-  Legendary: { color: '#FFB800', textColor: 'text-term-amber', borderColor: 'border-[#FFB800]/50', glow: 'glow-amber', bg: 'rgba(255, 184, 0, 0.08)', weight: 4 },
+const RARITY_CONFIG: Record<Rarity, { color: string; textColor: string; borderColor: string; glow: string; glowClass: string; bg: string; weight: number }> = {
+  Common: { color: '#888888', textColor: 'text-term-dim', borderColor: 'border-[#888888]/50', glow: '', glowClass: 'terminal-card-glow', bg: 'rgba(136, 136, 136, 0.08)', weight: 1 },
+  Rare: { color: '#00D4FF', textColor: 'text-term-cyan', borderColor: 'border-[#00D4FF]/50', glow: 'glow-cyan', glowClass: 'terminal-card-cyan-glow', bg: 'rgba(0, 212, 255, 0.08)', weight: 2 },
+  Epic: { color: '#FF00FF', textColor: 'text-term-magenta', borderColor: 'border-[#FF00FF]/50', glow: 'glow-magenta', glowClass: 'terminal-card-magenta-glow', bg: 'rgba(255, 0, 255, 0.08)', weight: 3 },
+  Legendary: { color: '#FFB800', textColor: 'text-term-amber', borderColor: 'border-[#FFB800]/50', glow: 'glow-amber', glowClass: 'terminal-card-amber-glow', bg: 'rgba(255, 184, 0, 0.08)', weight: 4 },
 }
 
 /* ===== MOCK DATA ===== */
@@ -358,17 +358,8 @@ function GridCard({ asset, onClick, index }: { asset: MarketplaceAsset; onClick:
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.25 }}
-      className={`terminal-card cursor-pointer border ${config.borderColor} hover:border-[${config.color}] transition-all group`}
+      className={`terminal-card cursor-pointer border ${config.borderColor} ${config.glowClass} group`}
       onClick={onClick}
-      style={{
-        boxShadow: undefined,
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = `0 0 12px ${config.color}33`
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = undefined
-      }}
     >
       {/* Card Chrome Header */}
       <div className="terminal-card-header py-1.5 px-3">
@@ -573,8 +564,8 @@ export default function MarketplacePage() {
           <span className="prompt-prefix text-sm">$</span>
           <span className="text-term-cyan text-sm font-terminal glow-cyan">./marketplace</span>
           <span className="text-term-dim text-xs font-terminal">--browse --filter --trade</span>
-          {loading && <span className="text-term-amber text-[10px] font-terminal animate-pulse">[loading...]</span>}
-          <span className="cursor-blink" />
+          {loading && <span className="text-term-amber text-[10px] font-terminal animate-pulse">[fetching market...]</span>}
+          <span className="blink-cursor" />
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   AreaChart,
@@ -31,6 +31,8 @@ import {
   Activity,
 } from 'lucide-react'
 import { useDeShopStore } from '@/store/useDeShopStore'
+import { useRealtimeEvents, type MarketEvent } from '@/hooks/useRealtimeEvents'
+import { SkeletonStatCard, SkeletonChart, SkeletonActivityRow } from '@/components/TerminalSkeleton'
 
 /* ===== TRAFFIC LIGHT DOTS ===== */
 
@@ -109,9 +111,9 @@ const RARITY_DATA = [
 ]
 
 interface ActivityItem {
-  id: number
+  id: number | string
   time: string
-  type: 'FORGE' | 'TRADE' | 'LIST' | 'CANCEL'
+  type: 'FORGE' | 'TRADE' | 'LIST' | 'CANCEL' | 'TRANSFER' | 'BRIDGE'
   description: string
   value: string
 }
@@ -139,6 +141,35 @@ const TYPE_CONFIG: Record<ActivityItem['type'], { color: string; bg: string; bor
   TRADE: { color: 'text-term-cyan', bg: 'rgba(0, 212, 255, 0.1)', border: 'border-term-cyan/30' },
   LIST: { color: 'text-term-amber', bg: 'rgba(255, 184, 0, 0.1)', border: 'border-term-amber/30' },
   CANCEL: { color: 'text-term-red', bg: 'rgba(255, 51, 51, 0.1)', border: 'border-term-red/30' },
+  TRANSFER: { color: 'text-term-magenta', bg: 'rgba(255, 0, 255, 0.1)', border: 'border-term-magenta/30' },
+  BRIDGE: { color: 'text-term-magenta', bg: 'rgba(255, 0, 255, 0.1)', border: 'border-term-magenta/30' },
+}
+
+/** Map a realtime MarketEvent from the WebSocket service to the dashboard ActivityItem shape. */
+function marketEventToActivity(ev: MarketEvent): ActivityItem {
+  const typeMap: Record<MarketEvent['type'], ActivityItem['type']> = {
+    MINT: 'FORGE',
+    TRADE: 'TRADE',
+    LIST: 'LIST',
+    CANCEL: 'CANCEL',
+    TRANSFER: 'TRANSFER',
+    BRIDGE: 'BRIDGE',
+  }
+  const verbMap: Record<MarketEvent['type'], string> = {
+    MINT: 'minted',
+    TRADE: 'traded',
+    LIST: 'listed',
+    CANCEL: 'delisted',
+    TRANSFER: 'transferred',
+    BRIDGE: 'bridged',
+  }
+  return {
+    id: ev.id,
+    time: 'just now',
+    type: typeMap[ev.type],
+    description: `${ev.assetName} #${ev.assetId} ${verbMap[ev.type]} (${ev.rarity}) ${ev.from} → ${ev.to}`,
+    value: `${ev.amount.toFixed(3)} ALGO`,
+  }
 }
 
 const QUICK_ACTIONS = [
@@ -201,7 +232,7 @@ function StatCard({ stat, index }: { stat: typeof STATS[0]; index: number }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08, duration: 0.3 }}
-      className="terminal-card"
+      className="terminal-card terminal-card-glow"
     >
       <div className="terminal-card-header">
         <TrafficLights />
@@ -214,7 +245,11 @@ function StatCard({ stat, index }: { stat: typeof STATS[0]; index: number }) {
             <div className="text-2xl font-bold text-term-green font-terminal glow-green">
               {stat.value}
             </div>
-            <div className="flex items-center gap-1 mt-1">
+            {/* Slide-up fade animation on change indicator - re-keys on value so it re-animates */}
+            <div
+              key={stat.value}
+              className="flex items-center gap-1 mt-1 animate-slide-up-fade"
+            >
               {stat.positive ? (
                 <TrendingUp className="w-3 h-3 text-term-green" />
               ) : (
@@ -245,7 +280,7 @@ function PriceChartCard() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.3 }}
-      className="terminal-card"
+      className="terminal-card terminal-card-glow"
     >
       <div className="terminal-card-header">
         <TrafficLights />
@@ -301,7 +336,7 @@ function VolumeChartCard() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4, duration: 0.3 }}
-      className="terminal-card"
+      className="terminal-card terminal-card-cyan-glow"
     >
       <div className="terminal-card-header">
         <TrafficLights />
@@ -349,7 +384,7 @@ function RarityChartCard({ data = RARITY_DATA }: { data?: typeof RARITY_DATA }) 
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.5, duration: 0.3 }}
-      className="terminal-card"
+      className="terminal-card terminal-card-magenta-glow"
     >
       <div className="terminal-card-header">
         <TrafficLights />
@@ -404,24 +439,29 @@ function RarityChartCard({ data = RARITY_DATA }: { data?: typeof RARITY_DATA }) 
   )
 }
 
-/* ===== ACTIVITY FEED ===== */
+/* ===== ACTIVITY FEED (REALTIME via WebSocket, fallback to simulated) ===== */
 
 function ActivityFeed() {
-  const [activities, setActivities] = useState<ActivityItem[]>(INITIAL_ACTIVITY)
+  const { events: liveEvents, isConnected } = useRealtimeEvents()
+
+  // Local simulated feed - only used as a fallback when the realtime
+  // service is unreachable. Stops updating once we are connected.
+  const [simActivities, setSimActivities] = useState<ActivityItem[]>(INITIAL_ACTIVITY)
   const feedRef = useRef<HTMLDivElement>(null)
   const counterRef = useRef(INITIAL_ACTIVITY.length)
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom whenever displayed list changes
   useEffect(() => {
     if (feedRef.current) {
       feedRef.current.scrollTop = feedRef.current.scrollHeight
     }
-  }, [activities])
+  }, [liveEvents, simActivities, isConnected])
 
-  // Simulate new activity every 8s
+  // Simulate new activity every 8s ONLY when not connected to realtime
   useEffect(() => {
+    if (isConnected) return
     const interval = setInterval(() => {
-      const types: ActivityItem['type'][] = ['FORGE', 'TRADE', 'LIST', 'CANCEL']
+      const types: ActivityItem['type'][] = ['FORGE', 'TRADE', 'LIST', 'CANCEL', 'TRANSFER', 'BRIDGE']
       const descs = [
         'Obsidian Shard #888 minted',
         'Golden Apple #333 traded',
@@ -431,6 +471,8 @@ function ActivityFeed() {
         'Dragon Scale #777 sold',
         'Crystal Orb #021 listed',
         'Shadow Cloak #666 delisted',
+        'Phase Dagger #113 bridged',
+        'Cryo Ring #909 transferred',
       ]
       const values = ['15.0 ALGO', '28.5 ALGO', '42.0 ALGO', '9.8 ALGO', '33.3 ALGO', '67.0 ALGO', '11.2 ALGO', '54.0 ALGO']
 
@@ -442,30 +484,68 @@ function ActivityFeed() {
         value: values[Math.floor(Math.random() * values.length)],
       }
 
-      setActivities((prev) => [...prev.slice(-14), newActivity])
+      setSimActivities((prev) => [...prev.slice(-14), newActivity])
     }, 8000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [isConnected])
+
+  // Build the displayed list: realtime events take priority.
+  // When we have realtime events, prepend them to a (frozen) snapshot of
+  // simulated events for visual continuity. Otherwise show only simulated.
+  const displayActivities = useMemo<ActivityItem[]>(() => {
+    if (!isConnected || liveEvents.length === 0) {
+      return simActivities
+    }
+    const liveItems = liveEvents.map(marketEventToActivity)
+    // Top up with simulated items if we don't have enough live ones yet
+    const tail = simActivities.slice(0, Math.max(0, 25 - liveItems.length))
+    return [...liveItems, ...tail]
+  }, [liveEvents, simActivities, isConnected])
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.6, duration: 0.3 }}
-      className="terminal-card"
+      className="terminal-card terminal-card-glow"
     >
-      <div className="terminal-card-header">
+      <div className="terminal-card-header moving-scanline">
         <TrafficLights />
         <span className="terminal-title">activity.log</span>
-        <Activity className="w-3.5 h-3.5 text-term-green animate-pulse" />
+
+        {/* LIVE / OFFLINE indicator */}
+        <div className="ml-auto flex items-center gap-2">
+          <span
+            className={`flex items-center gap-1 px-1.5 py-0.5 rounded-sm border text-[9px] font-bold font-terminal ${
+              isConnected
+                ? 'text-term-green bg-[rgba(51,255,51,0.08)] border-term-green/40'
+                : 'text-term-red bg-[rgba(255,51,51,0.08)] border-term-red/40'
+            }`}
+            title={isConnected ? 'WebSocket connected' : 'WebSocket offline - showing simulated feed'}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                isConnected ? 'bg-term-green animate-pulse' : 'bg-term-red'
+              }`}
+            />
+            {isConnected ? 'LIVE' : 'OFFLINE'}
+          </span>
+          <span
+            className="hidden sm:inline-flex text-[9px] font-terminal text-term-dim border border-[#444] px-1.5 py-0.5 rounded-sm"
+            title="socket.io via /?XTransformPort=3003"
+          >
+            Realtime via WebSocket
+          </span>
+          <Activity className={`w-3.5 h-3.5 ${isConnected ? 'text-term-green animate-pulse' : 'text-term-dim'}`} />
+        </div>
       </div>
       <div
         ref={feedRef}
         className="terminal-card-body max-h-96 overflow-y-auto p-4 space-y-1.5"
       >
-        {activities.map((item, index) => {
-          const config = TYPE_CONFIG[item.type]
+        {displayActivities.map((item) => {
+          const config = TYPE_CONFIG[item.type] ?? TYPE_CONFIG.TRADE
           const isNew = item.time === 'just now'
           return (
             <motion.div
@@ -487,8 +567,10 @@ function ActivityFeed() {
           )
         })}
         <div className="flex items-center gap-1 pt-2">
-          <span className="cursor-blink" />
-          <span className="text-term-dim text-[10px]">listening for events...</span>
+          <span className="blink-cursor" />
+          <span className="text-term-dim text-[10px]">
+            {isConnected ? 'live events streaming...' : 'offline - showing simulated feed...'}
+          </span>
         </div>
       </div>
     </motion.div>
@@ -626,31 +708,73 @@ export default function DashboardPage() {
           <span className="prompt-prefix text-sm">$</span>
           <span className="text-term-green text-sm font-terminal glow-green">./dashboard</span>
           <span className="text-term-dim text-xs font-terminal">--load-modules analytics,activity</span>
-          {loading && <span className="text-term-amber text-[10px] font-terminal animate-pulse">[loading...]</span>}
-          <span className="cursor-blink" />
+          {loading && (
+            <span className="text-term-amber text-[10px] font-terminal animate-pulse">
+              [fetching stats...]
+            </span>
+          )}
+          <span className="blink-cursor" />
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {displayStats.map((stat, i) => (
-          <StatCard key={stat.label} stat={stat} index={i} />
-        ))}
-      </div>
+      {/* Stats Grid - show skeletons while loading */}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <SkeletonStatCard />
+          <SkeletonStatCard />
+          <SkeletonStatCard />
+          <SkeletonStatCard />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {displayStats.map((stat, i) => (
+            <StatCard key={stat.label} stat={stat} index={i} />
+          ))}
+        </div>
+      )}
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <PriceChartCard />
-        <VolumeChartCard />
-      </div>
+      {/* Charts Row - skeletons while loading */}
+      {loading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <SkeletonChart title="price_trend.log" />
+          <SkeletonChart title="volume_stats.log" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <PriceChartCard />
+          <VolumeChartCard />
+        </div>
+      )}
 
       {/* Rarity + Activity Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-1">
-          <RarityChartCard data={displayRarityData} />
+          {loading ? (
+            <SkeletonChart title="rarity_dist.log" height={220} />
+          ) : (
+            <RarityChartCard data={displayRarityData} />
+          )}
         </div>
         <div className="lg:col-span-2">
-          <ActivityFeed />
+          {loading ? (
+            <div className="skeleton-card">
+              <div className="skeleton-card-header flex items-center">
+                <div className="flex items-center gap-1.5 px-3 py-2">
+                  <span className="w-3 h-3 rounded-full bg-[#3a3a3a]" />
+                  <span className="w-3 h-3 rounded-full bg-[#3a3a3a]" />
+                  <span className="w-3 h-3 rounded-full bg-[#3a3a3a]" />
+                </div>
+                <span className="ml-2 text-[10px] font-terminal text-[#444444]">activity.log</span>
+              </div>
+              <div className="p-4 space-y-2">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <SkeletonActivityRow key={i} />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <ActivityFeed />
+          )}
         </div>
       </div>
 

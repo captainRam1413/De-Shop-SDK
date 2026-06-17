@@ -10,6 +10,7 @@ import {
   User,
   BookOpen,
   Puzzle,
+  Gamepad2,
   Bell,
   Wallet,
   ChevronLeft,
@@ -24,6 +25,7 @@ import {
   Loader2,
   LogOut,
   Home,
+  Search,
 } from 'lucide-react'
 import { useDeShopStore, type ActivePage } from '@/store/useDeShopStore'
 import DashboardPage from '@/components/pages/DashboardPage'
@@ -33,6 +35,8 @@ import TerminalPage from '@/components/pages/TerminalPage'
 import ProfilePage from '@/components/pages/ProfilePage'
 import DocsPage from '@/components/pages/DocsPage'
 import PluginsPage from '@/components/pages/PluginsPage'
+import GamePage from '@/components/pages/GamePage'
+import CommandPalette from '@/components/CommandPalette'
 
 /* ===== NAV CONFIG ===== */
 
@@ -51,6 +55,7 @@ const NAV_ITEMS: NavItem[] = [
   { page: 'profile', label: 'Profile', command: 'cd profile', icon: User },
   { page: 'docs', label: 'Docs', command: 'cd docs', icon: BookOpen },
   { page: 'plugins', label: 'Plugins', command: 'cd plugins', icon: Puzzle },
+  { page: 'game', label: 'Arcade', command: 'cd arcade', icon: Gamepad2 },
 ]
 
 const PAGE_TITLES: Record<ActivePage, string> = {
@@ -61,6 +66,7 @@ const PAGE_TITLES: Record<ActivePage, string> = {
   profile: 'Profile',
   docs: 'Documentation',
   plugins: 'Plugins',
+  game: 'Arcade',
 }
 
 /* ===== TRAFFIC LIGHT DOTS ===== */
@@ -386,6 +392,7 @@ function Header() {
   const setMobileSidebarOpen = useDeShopStore((s) => s.setMobileSidebarOpen)
   const sidebarCollapsed = useDeShopStore((s) => s.sidebarCollapsed)
   const status = useDeShopStore((s) => s.status)
+  const setCommandPaletteOpen = useDeShopStore((s) => s.setCommandPaletteOpen)
 
   const handleDisconnect = useCallback(() => {
     disconnectWallet()
@@ -428,12 +435,28 @@ function Header() {
         {/* Right side controls */}
         <div className="flex items-center gap-3">
           {/* Network badge */}
-          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-term-elevated border border-term rounded-sm">
+          <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 bg-term-elevated border border-term rounded-sm">
             <span className="status-dot status-dot-online" style={{ width: 6, height: 6 }} />
             <span className="text-term-cyan text-[10px] font-bold tracking-wider">
               ALGORAND TESTNET
             </span>
           </div>
+
+          {/* Command palette search button */}
+          <button
+            onClick={() => setCommandPaletteOpen(true)}
+            className="flex items-center gap-1.5 px-2 py-1 bg-term-elevated border border-term rounded-sm hover:border-term-green/60 hover:bg-[rgba(51,255,51,0.06)] transition-colors group"
+            aria-label="Open command palette"
+            title="Open command palette (⌘K)"
+          >
+            <Search size={11} className="text-term-dim group-hover:text-term-green transition-colors" />
+            <span className="text-[9px] font-terminal text-term-dim group-hover:text-term-green transition-colors hidden sm:inline">
+              search
+            </span>
+            <span className="hidden md:inline-flex items-center justify-center min-w-[18px] h-[14px] px-1 text-[8px] font-terminal text-term-dim bg-[#1E1E1E] border border-[#444444] rounded-sm">
+              ⌘K
+            </span>
+          </button>
 
           {/* Notification bell */}
           <button
@@ -575,6 +598,8 @@ export default function TerminalLayout() {
         return <DocsPage />
       case 'plugins':
         return <PluginsPage />
+      case 'game':
+        return <GamePage />
       default:
         return <DashboardPage />
     }
@@ -602,6 +627,7 @@ export default function TerminalLayout() {
       </div>
       <NotificationToast />
       <WalletModal />
+      <CommandPalette />
     </div>
   )
 }

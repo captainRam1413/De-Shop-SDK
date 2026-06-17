@@ -385,7 +385,7 @@ export default function ProfilePage() {
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Achievements */}
-        <div className="terminal-card lg:col-span-2">
+        <div className="terminal-card terminal-card-glow lg:col-span-2">
           <div className="terminal-card-header">
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <span className="terminal-dot terminal-dot-red" />
@@ -434,7 +434,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Transaction History */}
-        <div className="terminal-card">
+        <div className="terminal-card terminal-card-cyan-glow">
           <div className="terminal-card-header">
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <span className="terminal-dot terminal-dot-red" />
@@ -525,7 +525,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Portfolio Analytics */}
-        <div className="terminal-card">
+        <div className="terminal-card terminal-card-glow">
           <div className="terminal-card-header">
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <span className="terminal-dot terminal-dot-red" />
@@ -605,7 +605,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Connected Accounts */}
-        <div className="terminal-card lg:col-span-2">
+        <div className="terminal-card terminal-card-cyan-glow lg:col-span-2">
           <div className="terminal-card-header">
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <span className="terminal-dot terminal-dot-red" />

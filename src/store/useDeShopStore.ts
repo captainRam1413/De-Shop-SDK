@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 
-export type ActivePage = 'dashboard' | 'market' | 'inventory' | 'terminal' | 'profile' | 'docs' | 'plugins'
+export type ActivePage = 'dashboard' | 'market' | 'inventory' | 'terminal' | 'profile' | 'docs' | 'plugins' | 'game'
 
 export type NotificationType = 'info' | 'success' | 'error' | 'warning'
 
@@ -29,6 +29,8 @@ interface DeShopState {
   walletAddress: string | null
   // App status
   status: AppStatus
+  // Command palette
+  commandPaletteOpen: boolean
 
   // Actions
   setActivePage: (page: ActivePage) => void
@@ -41,6 +43,7 @@ interface DeShopState {
   connectWallet: (address: string) => void
   disconnectWallet: () => void
   setStatus: (status: AppStatus) => void
+  setCommandPaletteOpen: (open: boolean) => void
 }
 
 let notificationCounter = 0
@@ -63,6 +66,9 @@ export const useDeShopStore = create<DeShopState>((set) => ({
 
   // Status
   status: 'online',
+
+  // Command palette
+  commandPaletteOpen: false,
 
   // Actions
   setActivePage: (page) => set({ activePage: page, mobileSidebarOpen: false }),
@@ -115,4 +121,6 @@ export const useDeShopStore = create<DeShopState>((set) => ({
     }),
 
   setStatus: (status) => set({ status }),
+
+  setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
 }))

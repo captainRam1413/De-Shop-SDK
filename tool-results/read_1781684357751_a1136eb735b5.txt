@@ -1,0 +1,739 @@
+     1→'use client'
+     2→
+     3→import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+     4→import { motion } from 'framer-motion'
+     5→import {
+     6→  AreaChart,
+     7→  Area,
+     8→  BarChart,
+     9→  Bar,
+    10→  PieChart,
+    11→  Pie,
+    12→  Cell,
+    13→  XAxis,
+    14→  YAxis,
+    15→  Tooltip,
+    16→  ResponsiveContainer,
+    17→  CartesianGrid,
+    18→} from 'recharts'
+    19→import {
+    20→  TrendingUp,
+    21→  TrendingDown,
+    22→  Wallet,
+    23→  Flame,
+    24→  ArrowRightLeft,
+    25→  FileText,
+    26→  Coins,
+    27→  Users,
+    28→  Zap,
+    29→  ListPlus,
+    30→  BookOpen,
+    31→  Activity,
+    32→} from 'lucide-react'
+    33→import { useDeShopStore } from '@/store/useDeShopStore'
+    34→import { useRealtimeEvents, type MarketEvent } from '@/hooks/useRealtimeEvents'
+    35→
+    36→/* ===== TRAFFIC LIGHT DOTS ===== */
+    37→
+    38→function TrafficLights() {
+    39→  return (
+    40→    <div className="flex items-center gap-1.5 flex-shrink-0">
+    41→      <span className="terminal-dot terminal-dot-red" />
+    42→      <span className="terminal-dot terminal-dot-yellow" />
+    43→      <span className="terminal-dot terminal-dot-green" />
+    44→    </div>
+    45→  )
+    46→}
+    47→
+    48→/* ===== DATA ===== */
+    49→
+    50→const STATS = [
+    51→  {
+    52→    label: 'Total Value Locked',
+    53→    value: '$2.4M',
+    54→    change: '+12.5%',
+    55→    positive: true,
+    56→    icon: Coins,
+    57→    sparkData: [30, 45, 38, 52, 48, 60, 68],
+    58→  },
+    59→  {
+    60→    label: 'Active Wallets',
+    61→    value: '1,847',
+    62→    change: '+8.3%',
+    63→    positive: true,
+    64→    icon: Users,
+    65→    sparkData: [20, 28, 32, 35, 30, 38, 42],
+    66→  },
+    67→  {
+    68→    label: 'Gas Fees (24h)',
+    69→    value: '0.003 ALGO',
+    70→    change: '-2.1%',
+    71→    positive: false,
+    72→    icon: Zap,
+    73→    sparkData: [15, 12, 14, 10, 13, 11, 9],
+    74→  },
+    75→  {
+    76→    label: 'Cross-Chain Volume',
+    77→    value: '$890K',
+    78→    change: '+15.7%',
+    79→    positive: true,
+    80→    icon: ArrowRightLeft,
+    81→    sparkData: [40, 55, 50, 65, 58, 72, 80],
+    82→  },
+    83→]
+    84→
+    85→const PRICE_DATA = [
+    86→  { day: 'Mon', price: 1.82 },
+    87→  { day: 'Tue', price: 1.95 },
+    88→  { day: 'Wed', price: 1.88 },
+    89→  { day: 'Thu', price: 2.12 },
+    90→  { day: 'Fri', price: 2.05 },
+    91→  { day: 'Sat', price: 2.28 },
+    92→  { day: 'Sun', price: 2.41 },
+    93→]
+    94→
+    95→const VOLUME_DATA = [
+    96→  { day: 'Mon', volume: 12400 },
+    97→  { day: 'Tue', volume: 18200 },
+    98→  { day: 'Wed', volume: 14800 },
+    99→  { day: 'Thu', volume: 22100 },
+   100→  { day: 'Fri', volume: 19500 },
+   101→  { day: 'Sat', volume: 25600 },
+   102→  { day: 'Sun', volume: 21300 },
+   103→]
+   104→
+   105→const RARITY_DATA = [
+   106→  { name: 'Common', value: 4200, color: '#888888' },
+   107→  { name: 'Rare', value: 1800, color: '#00D4FF' },
+   108→  { name: 'Epic', value: 650, color: '#FF00FF' },
+   109→  { name: 'Legendary', value: 150, color: '#FFB800' },
+   110→]
+   111→
+   112→interface ActivityItem {
+   113→  id: number | string
+   114→  time: string
+   115→  type: 'FORGE' | 'TRADE' | 'LIST' | 'CANCEL' | 'TRANSFER' | 'BRIDGE'
+   116→  description: string
+   117→  value: string
+   118→}
+   119→
+   120→const INITIAL_ACTIVITY: ActivityItem[] = [
+   121→  { id: 1, time: '2m ago', type: 'FORGE', description: 'Diamond Sword #1337 minted', value: '25.0 ALGO' },
+   122→  { id: 2, time: '3m ago', type: 'TRADE', description: 'Gold Pickaxe #042 sold', value: '18.5 ALGO' },
+   123→  { id: 3, time: '5m ago', type: 'LIST', description: 'Enchanted Bow #219 listed', value: '32.0 ALGO' },
+   124→  { id: 4, time: '7m ago', type: 'FORGE', description: 'Nether Shield #088 minted', value: '12.0 ALGO' },
+   125→  { id: 5, time: '9m ago', type: 'CANCEL', description: 'Dragon Helm #001 delisted', value: '55.0 ALGO' },
+   126→  { id: 6, time: '12m ago', type: 'TRADE', description: 'Ender Pearl #305 traded', value: '8.2 ALGO' },
+   127→  { id: 7, time: '15m ago', type: 'LIST', description: 'Creeper Mask #444 listed', value: '14.5 ALGO' },
+   128→  { id: 8, time: '18m ago', type: 'FORGE', description: 'Blaze Rod #777 minted', value: '6.8 ALGO' },
+   129→  { id: 9, time: '22m ago', type: 'TRADE', description: 'Iron Golem #012 sold', value: '42.0 ALGO' },
+   130→  { id: 10, time: '25m ago', type: 'LIST', description: 'Wither Skull #666 listed', value: '99.9 ALGO' },
+   131→  { id: 11, time: '28m ago', type: 'CANCEL', description: 'Spider Eye #921 delisted', value: '3.5 ALGO' },
+   132→  { id: 12, time: '32m ago', type: 'TRADE', description: 'Ghast Tear #553 traded', value: '19.2 ALGO' },
+   133→  { id: 13, time: '35m ago', type: 'FORGE', description: 'Magma Cream #210 minted', value: '7.1 ALGO' },
+   134→  { id: 14, time: '38m ago', type: 'LIST', description: 'Elytra Wings #007 listed', value: '120.0 ALGO' },
+   135→  { id: 15, time: '42m ago', type: 'TRADE', description: 'Trident #999 sold', value: '75.0 ALGO' },
+   136→]
+   137→
+   138→const TYPE_CONFIG: Record<ActivityItem['type'], { color: string; bg: string; border: string }> = {
+   139→  FORGE: { color: 'text-term-green', bg: 'rgba(51, 255, 51, 0.1)', border: 'border-term-green/30' },
+   140→  TRADE: { color: 'text-term-cyan', bg: 'rgba(0, 212, 255, 0.1)', border: 'border-term-cyan/30' },
+   141→  LIST: { color: 'text-term-amber', bg: 'rgba(255, 184, 0, 0.1)', border: 'border-term-amber/30' },
+   142→  CANCEL: { color: 'text-term-red', bg: 'rgba(255, 51, 51, 0.1)', border: 'border-term-red/30' },
+   143→  TRANSFER: { color: 'text-term-magenta', bg: 'rgba(255, 0, 255, 0.1)', border: 'border-term-magenta/30' },
+   144→  BRIDGE: { color: 'text-term-magenta', bg: 'rgba(255, 0, 255, 0.1)', border: 'border-term-magenta/30' },
+   145→}
+   146→
+   147→/** Map a realtime MarketEvent from the WebSocket service to the dashboard ActivityItem shape. */
+   148→function marketEventToActivity(ev: MarketEvent): ActivityItem {
+   149→  const typeMap: Record<MarketEvent['type'], ActivityItem['type']> = {
+   150→    MINT: 'FORGE',
+   151→    TRADE: 'TRADE',
+   152→    LIST: 'LIST',
+   153→    CANCEL: 'CANCEL',
+   154→    TRANSFER: 'TRANSFER',
+   155→    BRIDGE: 'BRIDGE',
+   156→  }
+   157→  const verbMap: Record<MarketEvent['type'], string> = {
+   158→    MINT: 'minted',
+   159→    TRADE: 'traded',
+   160→    LIST: 'listed',
+   161→    CANCEL: 'delisted',
+   162→    TRANSFER: 'transferred',
+   163→    BRIDGE: 'bridged',
+   164→  }
+   165→  return {
+   166→    id: ev.id,
+   167→    time: 'just now',
+   168→    type: typeMap[ev.type],
+   169→    description: `${ev.assetName} #${ev.assetId} ${verbMap[ev.type]} (${ev.rarity}) ${ev.from} → ${ev.to}`,
+   170→    value: `${ev.amount.toFixed(3)} ALGO`,
+   171→  }
+   172→}
+   173→
+   174→const QUICK_ACTIONS = [
+   175→  { label: 'Mint NFT', icon: Flame, color: 'text-term-green', borderColor: 'border-term-green/50' },
+   176→  { label: 'List Item', icon: ListPlus, color: 'text-term-cyan', borderColor: 'border-term-cyan/50' },
+   177→  { label: 'Connect Wallet', icon: Wallet, color: 'text-term-amber', borderColor: 'border-term-amber/50' },
+   178→  { label: 'View Docs', icon: BookOpen, color: 'text-term-magenta', borderColor: 'border-term-magenta/50' },
+   179→]
+   180→
+   181→/* ===== CUSTOM TERMINAL TOOLTIP ===== */
+   182→
+   183→function TerminalTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string }>; label?: string }) {
+   184→  if (!active || !payload || !payload.length) return null
+   185→  return (
+   186→    <div className="bg-[#1E1E1E] border border-[#444444] p-2 rounded-sm shadow-lg font-terminal text-xs">
+   187→      <div className="text-term-dim mb-1">{label}</div>
+   188→      {payload.map((entry, i) => (
+   189→        <div key={i} className="text-term-green">
+   190→          {entry.name}: {typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
+   191→        </div>
+   192→      ))}
+   193→    </div>
+   194→  )
+   195→}
+   196→
+   197→/* ===== MINI SPARKLINE (SVG) ===== */
+   198→
+   199→function MiniSparkline({ data, color, positive }: { data: number[]; color: string; positive: boolean }) {
+   200→  const max = Math.max(...data)
+   201→  const min = Math.min(...data)
+   202→  const range = max - min || 1
+   203→  const width = 80
+   204→  const height = 28
+   205→  const points = data.map((v, i) => {
+   206→    const x = (i / (data.length - 1)) * width
+   207→    const y = height - ((v - min) / range) * height
+   208→    return `${x},${y}`
+   209→  }).join(' ')
+   210→
+   211→  return (
+   212→    <svg width={width} height={height} className="opacity-60">
+   213→      <polyline
+   214→        points={points}
+   215→        fill="none"
+   216→        stroke={positive ? '#33FF33' : '#FF3333'}
+   217→        strokeWidth="1.5"
+   218→        strokeLinecap="round"
+   219→        strokeLinejoin="round"
+   220→      />
+   221→    </svg>
+   222→  )
+   223→}
+   224→
+   225→/* ===== STAT CARD ===== */
+   226→
+   227→function StatCard({ stat, index }: { stat: typeof STATS[0]; index: number }) {
+   228→  const Icon = stat.icon
+   229→  return (
+   230→    <motion.div
+   231→      initial={{ opacity: 0, y: 12 }}
+   232→      animate={{ opacity: 1, y: 0 }}
+   233→      transition={{ delay: index * 0.08, duration: 0.3 }}
+   234→      className="terminal-card"
+   235→    >
+   236→      <div className="terminal-card-header">
+   237→        <TrafficLights />
+   238→        <span className="terminal-title">{stat.label.toLowerCase().replace(/\s/g, '_')}.log</span>
+   239→      </div>
+   240→      <div className="terminal-card-body">
+   241→        <div className="flex items-start justify-between">
+   242→          <div>
+   243→            <div className="text-term-dim text-[10px] mb-1 font-terminal">{stat.label}</div>
+   244→            <div className="text-2xl font-bold text-term-green font-terminal glow-green">
+   245→              {stat.value}
+   246→            </div>
+   247→            <div className="flex items-center gap-1 mt-1">
+   248→              {stat.positive ? (
+   249→                <TrendingUp className="w-3 h-3 text-term-green" />
+   250→              ) : (
+   251→                <TrendingDown className="w-3 h-3 text-term-red" />
+   252→              )}
+   253→              <span className={`text-[11px] font-terminal ${stat.positive ? 'text-term-green' : 'text-term-red'}`}>
+   254→                {stat.change}
+   255→              </span>
+   256→            </div>
+   257→          </div>
+   258→          <div className="flex flex-col items-end gap-2">
+   259→            <div className="w-8 h-8 flex items-center justify-center rounded-sm bg-[#1E1E1E] border border-[#444444]">
+   260→              <Icon className="w-4 h-4 text-term-dim" />
+   261→            </div>
+   262→            <MiniSparkline data={stat.sparkData} color={stat.positive ? '#33FF33' : '#FF3333'} positive={stat.positive} />
+   263→          </div>
+   264→        </div>
+   265→      </div>
+   266→    </motion.div>
+   267→  )
+   268→}
+   269→
+   270→/* ===== PRICE CHART CARD ===== */
+   271→
+   272→function PriceChartCard() {
+   273→  return (
+   274→    <motion.div
+   275→      initial={{ opacity: 0, y: 12 }}
+   276→      animate={{ opacity: 1, y: 0 }}
+   277→      transition={{ delay: 0.3, duration: 0.3 }}
+   278→      className="terminal-card"
+   279→    >
+   280→      <div className="terminal-card-header">
+   281→        <TrafficLights />
+   282→        <span className="terminal-title">price_trend.log</span>
+   283→      </div>
+   284→      <div className="terminal-card-body" style={{ background: '#1E1E1E' }}>
+   285→        <div className="flex items-center justify-between mb-3">
+   286→          <span className="text-term-dim text-[10px] font-terminal">7-Day Price Trend (ALGO)</span>
+   287→          <span className="text-term-green text-[11px] font-terminal glow-green">$2.41 ▲</span>
+   288→        </div>
+   289→        <ResponsiveContainer width="100%" height={220}>
+   290→          <AreaChart data={PRICE_DATA} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+   291→            <defs>
+   292→              <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
+   293→                <stop offset="5%" stopColor="#33FF33" stopOpacity={0.3} />
+   294→                <stop offset="95%" stopColor="#33FF33" stopOpacity={0.02} />
+   295→              </linearGradient>
+   296→            </defs>
+   297→            <CartesianGrid strokeDasharray="3 3" stroke="#333333" />
+   298→            <XAxis
+   299→              dataKey="day"
+   300→              tick={{ fill: '#888888', fontSize: 10, fontFamily: 'monospace' }}
+   301→              axisLine={{ stroke: '#444444' }}
+   302→              tickLine={{ stroke: '#444444' }}
+   303→            />
+   304→            <YAxis
+   305→              tick={{ fill: '#888888', fontSize: 10, fontFamily: 'monospace' }}
+   306→              axisLine={{ stroke: '#444444' }}
+   307→              tickLine={{ stroke: '#444444' }}
+   308→              domain={['dataMin - 0.2', 'dataMax + 0.2']}
+   309→            />
+   310→            <Tooltip content={<TerminalTooltip />} />
+   311→            <Area
+   312→              type="monotone"
+   313→              dataKey="price"
+   314→              stroke="#33FF33"
+   315→              strokeWidth={2}
+   316→              fill="url(#priceGradient)"
+   317→              name="Price"
+   318→            />
+   319→          </AreaChart>
+   320→        </ResponsiveContainer>
+   321→      </div>
+   322→    </motion.div>
+   323→  )
+   324→}
+   325→
+   326→/* ===== VOLUME CHART CARD ===== */
+   327→
+   328→function VolumeChartCard() {
+   329→  return (
+   330→    <motion.div
+   331→      initial={{ opacity: 0, y: 12 }}
+   332→      animate={{ opacity: 1, y: 0 }}
+   333→      transition={{ delay: 0.4, duration: 0.3 }}
+   334→      className="terminal-card"
+   335→    >
+   336→      <div className="terminal-card-header">
+   337→        <TrafficLights />
+   338→        <span className="terminal-title">volume_stats.log</span>
+   339→      </div>
+   340→      <div className="terminal-card-body" style={{ background: '#1E1E1E' }}>
+   341→        <div className="flex items-center justify-between mb-3">
+   342→          <span className="text-term-dim text-[10px] font-terminal">Daily Volume (ALGO)</span>
+   343→          <span className="text-term-cyan text-[11px] font-terminal glow-cyan">25.6K ▲</span>
+   344→        </div>
+   345→        <ResponsiveContainer width="100%" height={220}>
+   346→          <BarChart data={VOLUME_DATA} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+   347→            <CartesianGrid strokeDasharray="3 3" stroke="#333333" />
+   348→            <XAxis
+   349→              dataKey="day"
+   350→              tick={{ fill: '#888888', fontSize: 10, fontFamily: 'monospace' }}
+   351→              axisLine={{ stroke: '#444444' }}
+   352→              tickLine={{ stroke: '#444444' }}
+   353→            />
+   354→            <YAxis
+   355→              tick={{ fill: '#888888', fontSize: 10, fontFamily: 'monospace' }}
+   356→              axisLine={{ stroke: '#444444' }}
+   357→              tickLine={{ stroke: '#444444' }}
+   358→            />
+   359→            <Tooltip content={<TerminalTooltip />} />
+   360→            <Bar
+   361→              dataKey="volume"
+   362→              fill="#00D4FF"
+   363→              radius={[2, 2, 0, 0]}
+   364→              name="Volume"
+   365→              opacity={0.85}
+   366→            />
+   367→          </BarChart>
+   368→        </ResponsiveContainer>
+   369→      </div>
+   370→    </motion.div>
+   371→  )
+   372→}
+   373→
+   374→/* ===== RARITY PIE CHART CARD ===== */
+   375→
+   376→function RarityChartCard({ data = RARITY_DATA }: { data?: typeof RARITY_DATA }) {
+   377→  return (
+   378→    <motion.div
+   379→      initial={{ opacity: 0, y: 12 }}
+   380→      animate={{ opacity: 1, y: 0 }}
+   381→      transition={{ delay: 0.5, duration: 0.3 }}
+   382→      className="terminal-card"
+   383→    >
+   384→      <div className="terminal-card-header">
+   385→        <TrafficLights />
+   386→        <span className="terminal-title">rarity_dist.log</span>
+   387→      </div>
+   388→      <div className="terminal-card-body" style={{ background: '#1E1E1E' }}>
+   389→        <div className="flex items-center justify-between mb-3">
+   390→          <span className="text-term-dim text-[10px] font-terminal">NFT Rarity Distribution</span>
+   391→        </div>
+   392→        <ResponsiveContainer width="100%" height={220}>
+   393→          <PieChart>
+   394→            <Pie
+   395→              data={data}
+   396→              cx="50%"
+   397→              cy="50%"
+   398→              innerRadius={50}
+   399→              outerRadius={80}
+   400→              paddingAngle={3}
+   401→              dataKey="value"
+   402→              stroke="#1E1E1E"
+   403→              strokeWidth={2}
+   404→            >
+   405→              {data.map((entry, index) => (
+   406→                <Cell key={`cell-${index}`} fill={entry.color} />
+   407→              ))}
+   408→            </Pie>
+   409→            <Tooltip
+   410→              content={({ active, payload }) => {
+   411→                if (!active || !payload || !payload.length) return null
+   412→                const data = payload[0]
+   413→                return (
+   414→                  <div className="bg-[#1E1E1E] border border-[#444444] p-2 rounded-sm shadow-lg font-terminal text-xs">
+   415→                    <div className="text-term-dim">{data.name}</div>
+   416→                    <div className="text-term-green">{data.value?.toLocaleString()} items</div>
+   417→                  </div>
+   418→                )
+   419→              }}
+   420→            />
+   421→          </PieChart>
+   422→        </ResponsiveContainer>
+   423→        <div className="flex flex-wrap justify-center gap-4 mt-2">
+   424→          {data.map((item) => (
+   425→            <div key={item.name} className="flex items-center gap-1.5">
+   426→              <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: item.color }} />
+   427→              <span className="text-[10px] font-terminal text-term-dim">{item.name}</span>
+   428→              <span className="text-[10px] font-terminal text-term-text">{item.value.toLocaleString()}</span>
+   429→            </div>
+   430→          ))}
+   431→        </div>
+   432→      </div>
+   433→    </motion.div>
+   434→  )
+   435→}
+   436→
+   437→/* ===== ACTIVITY FEED (REALTIME via WebSocket, fallback to simulated) ===== */
+   438→
+   439→function ActivityFeed() {
+   440→  const { events: liveEvents, isConnected } = useRealtimeEvents()
+   441→
+   442→  // Local simulated feed - only used as a fallback when the realtime
+   443→  // service is unreachable. Stops updating once we are connected.
+   444→  const [simActivities, setSimActivities] = useState<ActivityItem[]>(INITIAL_ACTIVITY)
+   445→  const feedRef = useRef<HTMLDivElement>(null)
+   446→  const counterRef = useRef(INITIAL_ACTIVITY.length)
+   447→
+   448→  // Auto-scroll to bottom whenever displayed list changes
+   449→  useEffect(() => {
+   450→    if (feedRef.current) {
+   451→      feedRef.current.scrollTop = feedRef.current.scrollHeight
+   452→    }
+   453→  }, [liveEvents, simActivities, isConnected])
+   454→
+   455→  // Simulate new activity every 8s ONLY when not connected to realtime
+   456→  useEffect(() => {
+   457→    if (isConnected) return
+   458→    const interval = setInterval(() => {
+   459→      const types: ActivityItem['type'][] = ['FORGE', 'TRADE', 'LIST', 'CANCEL', 'TRANSFER', 'BRIDGE']
+   460→      const descs = [
+   461→        'Obsidian Shard #888 minted',
+   462→        'Golden Apple #333 traded',
+   463→        'Nether Star #100 listed',
+   464→        'Emerald Sword #055 delisted',
+   465→        'Phoenix Feather #420 minted',
+   466→        'Dragon Scale #777 sold',
+   467→        'Crystal Orb #021 listed',
+   468→        'Shadow Cloak #666 delisted',
+   469→        'Phase Dagger #113 bridged',
+   470→        'Cryo Ring #909 transferred',
+   471→      ]
+   472→      const values = ['15.0 ALGO', '28.5 ALGO', '42.0 ALGO', '9.8 ALGO', '33.3 ALGO', '67.0 ALGO', '11.2 ALGO', '54.0 ALGO']
+   473→
+   474→      const newActivity: ActivityItem = {
+   475→        id: ++counterRef.current,
+   476→        time: 'just now',
+   477→        type: types[Math.floor(Math.random() * types.length)],
+   478→        description: descs[Math.floor(Math.random() * descs.length)],
+   479→        value: values[Math.floor(Math.random() * values.length)],
+   480→      }
+   481→
+   482→      setSimActivities((prev) => [...prev.slice(-14), newActivity])
+   483→    }, 8000)
+   484→
+   485→    return () => clearInterval(interval)
+   486→  }, [isConnected])
+   487→
+   488→  // Build the displayed list: realtime events take priority.
+   489→  // When we have realtime events, prepend them to a (frozen) snapshot of
+   490→  // simulated events for visual continuity. Otherwise show only simulated.
+   491→  const displayActivities = useMemo<ActivityItem[]>(() => {
+   492→    if (!isConnected || liveEvents.length === 0) {
+   493→      return simActivities
+   494→    }
+   495→    const liveItems = liveEvents.map(marketEventToActivity)
+   496→    // Top up with simulated items if we don't have enough live ones yet
+   497→    const tail = simActivities.slice(0, Math.max(0, 25 - liveItems.length))
+   498→    return [...liveItems, ...tail]
+   499→  }, [liveEvents, simActivities, isConnected])
+   500→
+   501→  return (
+   502→    <motion.div
+   503→      initial={{ opacity: 0, y: 12 }}
+   504→      animate={{ opacity: 1, y: 0 }}
+   505→      transition={{ delay: 0.6, duration: 0.3 }}
+   506→      className="terminal-card"
+   507→    >
+   508→      <div className="terminal-card-header">
+   509→        <TrafficLights />
+   510→        <span className="terminal-title">activity.log</span>
+   511→
+   512→        {/* LIVE / OFFLINE indicator */}
+   513→        <div className="ml-auto flex items-center gap-2">
+   514→          <span
+   515→            className={`flex items-center gap-1 px-1.5 py-0.5 rounded-sm border text-[9px] font-bold font-terminal ${
+   516→              isConnected
+   517→                ? 'text-term-green bg-[rgba(51,255,51,0.08)] border-term-green/40'
+   518→                : 'text-term-red bg-[rgba(255,51,51,0.08)] border-term-red/40'
+   519→            }`}
+   520→            title={isConnected ? 'WebSocket connected' : 'WebSocket offline - showing simulated feed'}
+   521→          >
+   522→            <span
+   523→              className={`w-1.5 h-1.5 rounded-full ${
+   524→                isConnected ? 'bg-term-green animate-pulse' : 'bg-term-red'
+   525→              }`}
+   526→            />
+   527→            {isConnected ? 'LIVE' : 'OFFLINE'}
+   528→          </span>
+   529→          <span
+   530→            className="hidden sm:inline-flex text-[9px] font-terminal text-term-dim border border-[#444] px-1.5 py-0.5 rounded-sm"
+   531→            title="socket.io via /?XTransformPort=3003"
+   532→          >
+   533→            Realtime via WebSocket
+   534→          </span>
+   535→          <Activity className={`w-3.5 h-3.5 ${isConnected ? 'text-term-green animate-pulse' : 'text-term-dim'}`} />
+   536→        </div>
+   537→      </div>
+   538→      <div
+   539→        ref={feedRef}
+   540→        className="terminal-card-body max-h-96 overflow-y-auto p-4 space-y-1.5"
+   541→      >
+   542→        {displayActivities.map((item) => {
+   543→          const config = TYPE_CONFIG[item.type] ?? TYPE_CONFIG.TRADE
+   544→          const isNew = item.time === 'just now'
+   545→          return (
+   546→            <motion.div
+   547→              key={item.id}
+   548→              initial={isNew ? { opacity: 0, x: 10 } : false}
+   549→              animate={{ opacity: 1, x: 0 }}
+   550→              transition={{ duration: 0.3 }}
+   551→              className={`flex items-center gap-2 text-[11px] font-terminal py-1 px-1.5 rounded-sm hover:bg-[#1E1E1E] transition-colors ${isNew ? 'bg-term-selection/30' : ''}`}
+   552→            >
+   553→              <span className="text-term-dim flex-shrink-0 w-16">[{item.time}]</span>
+   554→              <span
+   555→                className={`px-1.5 py-0.5 rounded-sm text-[9px] font-bold ${config.color} ${config.bg} border ${config.border} flex-shrink-0`}
+   556→              >
+   557→                {item.type}
+   558→              </span>
+   559→              <span className="text-term-text truncate flex-1">{item.description}</span>
+   560→              <span className="text-term-amber flex-shrink-0">→ {item.value}</span>
+   561→            </motion.div>
+   562→          )
+   563→        })}
+   564→        <div className="flex items-center gap-1 pt-2">
+   565→          <span className="cursor-blink" />
+   566→          <span className="text-term-dim text-[10px]">
+   567→            {isConnected ? 'live events streaming...' : 'offline - showing simulated feed...'}
+   568→          </span>
+   569→        </div>
+   570→      </div>
+   571→    </motion.div>
+   572→  )
+   573→}
+   574→
+   575→/* ===== QUICK ACTIONS ===== */
+   576→
+   577→function QuickActions() {
+   578→  const { walletConnected, setShowWalletModal, setActivePage, addNotification } = useDeShopStore()
+   579→
+   580→  const handleAction = (label: string) => {
+   581→    switch (label) {
+   582→      case 'Connect Wallet':
+   583→        if (walletConnected) {
+   584→          addNotification('info', 'Wallet already connected')
+   585→        } else {
+   586→          setShowWalletModal(true)
+   587→        }
+   588→        break
+   589→      case 'View Docs':
+   590→        setActivePage('docs')
+   591→        break
+   592→      case 'Mint NFT':
+   593→        addNotification('info', 'Mint NFT module loading...')
+   594→        break
+   595→      case 'List Item':
+   596→        addNotification('info', 'List Item module loading...')
+   597→        break
+   598→    }
+   599→  }
+   600→
+   601→  return (
+   602→    <motion.div
+   603→      initial={{ opacity: 0, y: 12 }}
+   604→      animate={{ opacity: 1, y: 0 }}
+   605→      transition={{ delay: 0.7, duration: 0.3 }}
+   606→      className="flex flex-wrap gap-3"
+   607→    >
+   608→      {QUICK_ACTIONS.map((action) => {
+   609→        const Icon = action.icon
+   610→        return (
+   611→          <button
+   612→            key={action.label}
+   613→            onClick={() => handleAction(action.label)}
+   614→            className={`terminal-btn flex items-center gap-2 border ${action.borderColor} hover:bg-[#1E1E1E] transition-all group`}
+   615→          >
+   616→            <Icon className={`w-3.5 h-3.5 ${action.color} group-hover:scale-110 transition-transform`} />
+   617→            <span className={`${action.color} text-[11px]`}>{action.label}</span>
+   618→          </button>
+   619→        )
+   620→      })}
+   621→    </motion.div>
+   622→  )
+   623→}
+   624→
+   625→/* ===== API FETCH HOOK ===== */
+   626→
+   627→interface ApiStats {
+   628→  totalValueLocked: string
+   629→  activeWallets: string
+   630→  gasFees: string
+   631→  crossChainVolume: string
+   632→  totalAssets: number
+   633→  totalTransactions: number
+   634→  rarityDistribution: { common: number; rare: number; epic: number; legendary: number }
+   635→}
+   636→
+   637→function useApiStats() {
+   638→  const [apiStats, setApiStats] = useState<ApiStats | null>(null)
+   639→  const [loading, setLoading] = useState(true)
+   640→
+   641→  const fetchStats = useCallback(async () => {
+   642→    try {
+   643→      const res = await fetch('/api/stats')
+   644→      if (res.ok) {
+   645→        const data = await res.json()
+   646→        setApiStats(data)
+   647→      }
+   648→    } catch {
+   649→      // fallback to mock data
+   650→    } finally {
+   651→      setLoading(false)
+   652→    }
+   653→  }, [])
+   654→
+   655→  useEffect(() => {
+   656→    fetchStats()
+   657→  }, [fetchStats])
+   658→
+   659→  return { apiStats, loading }
+   660→}
+   661→
+   662→/* ===== MAIN DASHBOARD PAGE ===== */
+   663→
+   664→export default function DashboardPage() {
+   665→  const { apiStats, loading } = useApiStats()
+   666→
+   667→  // Merge API stats into displayed stats
+   668→  const displayStats = STATS.map((stat) => {
+   669→    if (!apiStats) return stat
+   670→    switch (stat.label) {
+   671→      case 'Total Value Locked':
+   672→        return { ...stat, value: apiStats.totalValueLocked }
+   673→      case 'Active Wallets':
+   674→        return { ...stat, value: apiStats.activeWallets }
+   675→      case 'Gas Fees (24h)':
+   676→        return { ...stat, value: apiStats.gasFees }
+   677→      case 'Cross-Chain Volume':
+   678→        return { ...stat, value: apiStats.crossChainVolume }
+   679→      default:
+   680→        return stat
+   681→    }
+   682→  })
+   683→
+   684→  // Update rarity data from API
+   685→  const displayRarityData = apiStats
+   686→    ? [
+   687→        { name: 'Common', value: apiStats.rarityDistribution.common + 4200, color: '#888888' },
+   688→        { name: 'Rare', value: apiStats.rarityDistribution.rare + 1800, color: '#00D4FF' },
+   689→        { name: 'Epic', value: apiStats.rarityDistribution.epic + 650, color: '#FF00FF' },
+   690→        { name: 'Legendary', value: apiStats.rarityDistribution.legendary + 150, color: '#FFB800' },
+   691→      ]
+   692→    : RARITY_DATA
+   693→
+   694→  return (
+   695→    <div className="space-y-6">
+   696→      {/* Terminal Window Header */}
+   697→      <div className="terminal-card">
+   698→        <div className="terminal-chrome">
+   699→          <TrafficLights />
+   700→          <span className="terminal-title font-terminal">dashboard@de-shop:~</span>
+   701→        </div>
+   702→        <div className="px-4 py-3 flex items-center gap-2 bg-[#1E1E1E]">
+   703→          <span className="prompt-prefix text-sm">$</span>
+   704→          <span className="text-term-green text-sm font-terminal glow-green">./dashboard</span>
+   705→          <span className="text-term-dim text-xs font-terminal">--load-modules analytics,activity</span>
+   706→          {loading && <span className="text-term-amber text-[10px] font-terminal animate-pulse">[loading...]</span>}
+   707→          <span className="cursor-blink" />
+   708→        </div>
+   709→      </div>
+   710→
+   711→      {/* Stats Grid */}
+   712→      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   713→        {displayStats.map((stat, i) => (
+   714→          <StatCard key={stat.label} stat={stat} index={i} />
+   715→        ))}
+   716→      </div>
+   717→
+   718→      {/* Charts Row */}
+   719→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   720→        <PriceChartCard />
+   721→        <VolumeChartCard />
+   722→      </div>
+   723→
+   724→      {/* Rarity + Activity Row */}
+   725→      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+   726→        <div className="lg:col-span-1">
+   727→          <RarityChartCard data={displayRarityData} />
+   728→        </div>
+   729→        <div className="lg:col-span-2">
+   730→          <ActivityFeed />
+   731→        </div>
+   732→      </div>
+   733→
+   734→      {/* Quick Actions */}
+   735→      <QuickActions />
+   736→    </div>
+   737→  )
+   738→}
+   739→

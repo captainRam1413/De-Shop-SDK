@@ -378,7 +378,7 @@ export default function DocsPage() {
   return (
     <div className="space-y-4">
       {/* Terminal Window Header */}
-      <div className="terminal-card">
+      <div className="terminal-card terminal-card-glow">
         <div className="terminal-card-header">
           <TrafficLights />
           <span className="terminal-title">docs@de-shop:~/documentation</span>
@@ -407,7 +407,7 @@ export default function DocsPage() {
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Table of Contents Sidebar */}
             <div className="lg:w-56 flex-shrink-0">
-              <div className="terminal-card lg:sticky lg:top-4">
+              <div className="terminal-card terminal-card-cyan-glow lg:sticky lg:top-4">
                 <div className="terminal-card-header">
                   <span className="text-[10px] text-term-dim">TABLE_OF_CONTENTS</span>
                 </div>

@@ -501,9 +501,9 @@ export default function TerminalPage() {
     switch (type) {
       case 'command': return 'text-white'
       case 'output': return 'text-[#CCCCCC]'
-      case 'error': return 'text-[#FF3333]'
-      case 'success': return 'text-[#33FF33]'
-      case 'system': return 'text-[#00D4FF]'
+      case 'error': return 'text-[#FF5555] text-glow-red'
+      case 'success': return 'text-[#33FF33] text-glow-green'
+      case 'system': return 'text-[#00D4FF] text-glow-cyan'
       default: return 'text-[#CCCCCC]'
     }
   }
@@ -511,7 +511,7 @@ export default function TerminalPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Terminal Window */}
-      <div className="terminal-card flex-1 flex flex-col overflow-hidden">
+      <div className="terminal-card flex-1 flex flex-col overflow-hidden crt-screen">
         {/* Chrome Bar */}
         <div className="terminal-chrome">
           <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -531,7 +531,7 @@ export default function TerminalPage() {
         {/* Scrollable Log Area */}
         <div
           ref={scrollRef}
-          className="flex-1 p-4 overflow-y-auto font-terminal text-xs leading-relaxed cursor-text"
+          className="flex-1 p-4 overflow-y-auto font-terminal text-xs leading-relaxed cursor-text relative z-10"
           style={{ background: '#1A1A1A' }}
           onClick={handleAreaClick}
         >
@@ -556,7 +556,7 @@ export default function TerminalPage() {
 
           {/* Input Line */}
           <div className="flex items-center mt-1">
-            <span className="text-term-green mr-2 whitespace-nowrap">user@de-shop:~$</span>
+            <span className="text-term-green mr-2 whitespace-nowrap text-glow-green">user@de-shop:~$</span>
             <input
               ref={inputRef}
               type="text"
@@ -570,7 +570,7 @@ export default function TerminalPage() {
               autoCapitalize="off"
               disabled={isProcessing}
             />
-            {!input && !isProcessing && <span className="cursor-blink" />}
+            {!input && !isProcessing && <span className="blink-cursor" />}
           </div>
         </div>
       </div>
