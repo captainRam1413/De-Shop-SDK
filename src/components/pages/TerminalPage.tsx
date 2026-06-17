@@ -101,7 +101,7 @@ function levenshtein(a: string, b: string): number {
 
 const COMMANDS = [
   'help', 'clear', 'connect', 'disconnect', 'status', 'mint', 'list', 'buy',
-  'inventory', 'price', 'bridge', 'whoami', 'ls', 'cd', 'cat', 'uname',
+  'inventory', 'price', 'bridge', 'whoami', 'ls', 'cd', 'cat', 'uname', 'macro',
 ]
 
 const MODULES = ['dashboard', 'market', 'inventory', 'profile', 'docs', 'plugins']
@@ -140,8 +140,14 @@ export default function TerminalPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const macroQueueRef = useRef<string[]>([])
+  const [macroQueueTick, setMacroQueueTick] = useState(0)
 
   const { walletConnected, walletAddress, connectWallet, disconnectWallet, setActivePage, addNotification } = useDeShopStore()
+  const terminalMacros = useDeShopStore((s) => s.terminalMacros)
+  const addMacro = useDeShopStore((s) => s.addMacro)
+  const removeMacro = useDeShopStore((s) => s.removeMacro)
+  const incrementMacroRunCount = useDeShopStore((s) => s.incrementMacroRunCount)
 
   // Banner on mount
   useEffect(() => {
@@ -216,6 +222,9 @@ export default function TerminalPage() {
           { type: 'output', text: '  cd <module>       Navigate to module' },
           { type: 'output', text: '  cat readme        Show SDK readme' },
           { type: 'output', text: '  uname             Show SDK version' },
+          { type: 'output', text: '  macro <subcmd>    Manage command macros' },
+          { type: 'output', text: '    subcmds: save <name> <cmds; ...>' },
+          { type: 'output', text: '             list | run <name> | delete <name>' },
           { type: 'system', text: '└─────────────────────────────────────────────┘' },
         ])
         break
@@ -502,6 +511,90 @@ export default function TerminalPage() {
         break
       }
 
+      case 'macro': {
+        const sub = args[0]?.toLowerCase()
+        if (!sub || !['save', 'list', 'run', 'delete'].includes(sub)) {
+          await addLogsSequential([
+            { type: 'error', text: 'usage: macro <save|list|run|delete> [args]' },
+            { type: 'output', text: '  macro save <name> <cmd1; cmd2; ...>   Save a macro' },
+            { type: 'output', text: '  macro list                            List saved macros' },
+            { type: 'output', text: '  macro run <name>                      Run a saved macro' },
+            { type: 'output', text: '  macro delete <name>                   Delete a macro' },
+          ])
+          break
+        }
+        if (sub === 'save') {
+          const name = args[1]
+          const cmds = args.slice(2).join(' ').trim()
+          if (!name || !cmds) {
+            await addLog('error', 'usage: macro save <name> <cmd1; cmd2; ...>')
+            break
+          }
+          if (terminalMacros.some((m) => m.name.toLowerCase() === name.toLowerCase())) {
+            await addLog('error', `macro "${name}" already exists. Delete it first.`)
+            break
+          }
+          addMacro(name, cmds)
+          await addLog('success', `✓ macro "${name}" saved (${cmds.split(';').filter(Boolean).length} command(s))`)
+          break
+        }
+        if (sub === 'list') {
+          if (terminalMacros.length === 0) {
+            await addLog('output', 'No saved macros. Use "macro save <name> <cmds>" to create one.')
+            break
+          }
+          await addLogsSequential([
+            { type: 'system', text: '┌──────────────────────────────────────────────────┐' },
+            { type: 'system', text: '│           SAVED MACROS                          │' },
+            { type: 'system', text: '├──────────────┬──────────┬────────────────────────┤' },
+            ...terminalMacros.map((m) => ({
+              type: 'output' as LogType,
+              text: `  ${m.name.padEnd(12).slice(0, 12)} │ ${String(m.runCount).padStart(4)}x    │ ${m.commands.slice(0, 32)}${m.commands.length > 32 ? '...' : ''}`,
+            })),
+            { type: 'system', text: '└──────────────┴──────────┴────────────────────────┘' },
+          ])
+          break
+        }
+        if (sub === 'run') {
+          const name = args[1]
+          if (!name) {
+            await addLog('error', 'usage: macro run <name>')
+            break
+          }
+          const macro = terminalMacros.find((m) => m.name.toLowerCase() === name.toLowerCase())
+          if (!macro) {
+            await addLog('error', `macro "${name}" not found. Run "macro list" to see saved macros.`)
+            break
+          }
+          const cmds = macro.commands.split(';').map((s) => s.trim()).filter(Boolean)
+          await addLog('system', `▸ queueing macro "${macro.name}" (${cmds.length} command(s))...`)
+          incrementMacroRunCount(macro.id)
+          // Push sub-commands onto the queue ref; the drain effect will execute them
+          for (const subCmd of cmds) {
+            macroQueueRef.current.push(subCmd)
+          }
+          // Bump the tick to trigger the drain effect after this command finishes
+          setMacroQueueTick((t) => t + 1)
+          break
+        }
+        if (sub === 'delete') {
+          const name = args[1]
+          if (!name) {
+            await addLog('error', 'usage: macro delete <name>')
+            break
+          }
+          const macro = terminalMacros.find((m) => m.name.toLowerCase() === name.toLowerCase())
+          if (!macro) {
+            await addLog('error', `macro "${name}" not found.`)
+            break
+          }
+          removeMacro(macro.id)
+          await addLog('success', `✓ macro "${name}" deleted`)
+          break
+        }
+        break
+      }
+
       default:
         await addLog('error', `command not found: ${command}`)
         // Suggest a similar known command
@@ -514,7 +607,31 @@ export default function TerminalPage() {
 
     await addLog('output', '')
     setIsProcessing(false)
-  }, [isProcessing, walletConnected, walletAddress, connectWallet, disconnectWallet, setActivePage, addNotification, addLog, addLogsSequential])
+  }, [isProcessing, walletConnected, walletAddress, connectWallet, disconnectWallet, setActivePage, addNotification, addLog, addLogsSequential, terminalMacros, addMacro, removeMacro, incrementMacroRunCount])
+
+  // Macro queue drain: when not processing and there are queued commands, execute the next one
+  useEffect(() => {
+    if (isProcessing) return
+    if (macroQueueRef.current.length === 0) return
+    const nextCmd = macroQueueRef.current.shift()!
+    // Small delay for readability
+    const id = window.setTimeout(() => {
+      setCommandHistory((prev) => [nextCmd, ...prev])
+      setHistoryIndex(-1)
+      processCommand(nextCmd)
+    }, 400)
+    return () => window.clearTimeout(id)
+  }, [macroQueueTick, isProcessing, processCommand])
+
+  // When the queue drains fully, log a completion message once
+  const prevQueueLenRef = useRef(0)
+  useEffect(() => {
+    const curLen = macroQueueRef.current.length
+    if (prevQueueLenRef.current > 0 && curLen === 0 && !isProcessing) {
+      // Optional: could log "macro completed" here, but each sub-command already logs its result
+    }
+    prevQueueLenRef.current = curLen
+  }, [macroQueueTick, isProcessing])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && input.trim() && !isProcessing) {

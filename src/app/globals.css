@@ -2765,3 +2765,170 @@ kbd {
     display: none;
   }
 }
+
+/* ============================================================
+   ROUND 5 — STYLE POLISH & CRT EFFECTS (additive, end of file)
+   ============================================================ */
+
+/* --- CRT Flicker Effect (toggleable via Settings) --- */
+/* Applied to <html class="crt-flicker">. Subtle brightness oscillation. */
+html.crt-flicker body {
+  animation: crt-flicker 0.15s infinite alternate;
+}
+html.crt-flicker body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%,
+    rgba(0, 0, 0, 0.08) 50%
+  );
+  background-size: 100% 3px;
+  z-index: 9999;
+  mix-blend-mode: multiply;
+  animation: crt-scanlines 8s linear infinite;
+}
+html.crt-flicker body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0) 60%,
+    rgba(0, 0, 0, 0.25) 100%
+  );
+  z-index: 9998;
+}
+
+@keyframes crt-flicker {
+  0%   { opacity: 1; }
+  5%   { opacity: 0.96; }
+  10%  { opacity: 1; }
+  15%  { opacity: 0.98; }
+  20%  { opacity: 1; }
+  50%  { opacity: 0.99; }
+  55%  { opacity: 0.95; }
+  60%  { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+@keyframes crt-scanlines {
+  0%   { background-position: 0 0; }
+  100% { background-position: 0 100%; }
+}
+
+/* --- Card hover glow polish (apply to .terminal-card:hover) --- */
+.terminal-card {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+.terminal-card:hover {
+  /* Subtle lift without breaking layout */
+  transform: translateY(-1px);
+}
+
+/* --- Page top breathing room — fixes header prompt overlap --- */
+.app-content {
+  padding-top: 4px;
+}
+.app-content > * {
+  /* Allow individual page roots to manage their own padding */
+}
+/* When a page renders a top terminal-card, give it a small top margin */
+.app-content .terminal-card:first-child {
+  margin-top: 4px;
+}
+
+/* --- Better focus-visible outline for keyboard nav (a11y polish) --- */
+*:focus-visible {
+  outline: 2px solid var(--t-green, #33FF33);
+  outline-offset: 2px;
+  border-radius: 1px;
+}
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--t-cyan, #00D4FF);
+  outline-offset: 1px;
+}
+
+/* --- Truncation utility with native tooltip hint --- */
+.truncate-term {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* --- Macro command chip in terminal (visual hint when queueing) --- */
+.macro-queue-indicator {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--t-amber, #FFB800);
+  border-radius: 50%;
+  margin-right: 6px;
+  animation: macro-pulse 1s ease-in-out infinite;
+}
+@keyframes macro-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.9); }
+  50%      { opacity: 1;   transform: scale(1.1); }
+}
+
+/* --- Recommendation card subtle hover lift --- */
+.terminal-card.recommendation-card:hover {
+  border-color: var(--t-cyan, #00D4FF);
+  box-shadow: 0 0 16px rgba(0, 212, 255, 0.15);
+}
+
+/* --- Leaderboard podium glow accents (used by LeaderboardPage) --- */
+.podium-glow-gold {
+  box-shadow: 0 0 24px rgba(255, 184, 0, 0.25), inset 0 0 12px rgba(255, 184, 0, 0.08);
+}
+.podium-glow-silver {
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.2), inset 0 0 10px rgba(0, 212, 255, 0.06);
+}
+.podium-glow-bronze {
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.18), inset 0 0 10px rgba(255, 0, 255, 0.06);
+}
+
+/* --- Tooltip-style title hover for truncated text (CSS only) --- */
+[title] {
+  cursor: help;
+}
+[title]:hover {
+  /* Subtle underline hint that a tooltip is available */
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: var(--t-dim, #888888);
+  text-underline-offset: 2px;
+}
+
+/* --- Onboarding tour spotlight z-index safety (component uses inline styles too) --- */
+.onboarding-tour-tooltip {
+  z-index: 100;
+}
+
+/* --- Sticky footer safe area for iOS (already sticky via layout) --- */
+.app-footer {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* --- Reduced motion: disable new Round 5 animations --- */
+@media (prefers-reduced-motion: reduce) {
+  html.crt-flicker body,
+  html.crt-flicker body::before,
+  html.crt-flicker body::after {
+    animation: none !important;
+  }
+  .terminal-card:hover {
+    transform: none !important;
+  }
+  .macro-queue-indicator {
+    animation: none !important;
+  }
+}

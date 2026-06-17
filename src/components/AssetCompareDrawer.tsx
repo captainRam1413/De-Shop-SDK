@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   X,
@@ -11,6 +11,10 @@ import {
   Minus,
   Trash2,
   Sparkles,
+  History,
+  RotateCcw,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react'
 import {
   AreaChart,
@@ -116,6 +120,11 @@ export default function AssetCompareDrawer({
   const toggleCompare = useDeShopStore((s) => s.toggleCompare)
   const clearCompare = useDeShopStore((s) => s.clearCompare)
   const addNotification = useDeShopStore((s) => s.addNotification)
+  const compareHistory = useDeShopStore((s) => s.compareHistory)
+  const addCompareHistory = useDeShopStore((s) => s.addCompareHistory)
+  const removeCompareHistory = useDeShopStore((s) => s.removeCompareHistory)
+  const clearCompareHistory = useDeShopStore((s) => s.clearCompareHistory)
+  const [historyOpen, setHistoryOpen] = useState(false)
 
   // Filter assets to only those in compareIds (preserve order of compareIds)
   const comparedAssets = useMemo(() => {
@@ -134,11 +143,51 @@ export default function AssetCompareDrawer({
     addNotification('info', 'Removed from comparison')
   }
 
-  const handleClose = () => setCompareDrawerOpen(false)
+  const handleClose = () => {
+    // Save current comparison set to history if it has 2+ items
+    if (comparedAssets.length >= 2) {
+      addCompareHistory(
+        comparedAssets.map((a) => a.id),
+        comparedAssets.map((a) => a.name),
+      )
+    }
+    setCompareDrawerOpen(false)
+  }
 
   const handleClearAll = () => {
+    // Save current comparison set to history before clearing (if 2+ items)
+    if (comparedAssets.length >= 2) {
+      addCompareHistory(
+        comparedAssets.map((a) => a.id),
+        comparedAssets.map((a) => a.name),
+      )
+    }
     clearCompare()
     addNotification('info', 'Comparison cleared')
+  }
+
+  const handleLoadFromHistory = (entry: typeof compareHistory[number]) => {
+    // Compute set diff once based on current snapshot
+    const currentIds = new Set(compareIds)
+    const targetIds = new Set(entry.assetIds)
+    // IDs to remove: in current but not in target
+    const toRemove = [...currentIds].filter((id) => !targetIds.has(id))
+    // IDs to add: in target but not in current
+    const toAdd = [...targetIds].filter((id) => !currentIds.has(id))
+    // Toggle each ID exactly once — order: remove first, then add
+    for (const id of toRemove) toggleCompare(id)
+    for (const id of toAdd) toggleCompare(id)
+    addNotification('success', `Loaded comparison from history (${entry.assetNames.join(', ')})`)
+  }
+
+  const handleDeleteHistory = (id: string) => {
+    removeCompareHistory(id)
+    addNotification('info', 'History entry removed')
+  }
+
+  const handleClearHistory = () => {
+    clearCompareHistory()
+    addNotification('info', 'Compare history cleared')
   }
 
   return (
@@ -425,6 +474,105 @@ export default function AssetCompareDrawer({
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Compare History (collapsible) */}
+          <div className="border-t border-[#333] bg-[#1E1E1E]">
+            <button
+              onClick={() => setHistoryOpen((v) => !v)}
+              className="w-full flex items-center gap-2 px-4 py-2 text-[10px] font-terminal text-term-dim hover:text-term-cyan transition-colors"
+              aria-expanded={historyOpen}
+              aria-label="Toggle compare history"
+            >
+              {historyOpen ? (
+                <ChevronDown className="w-3 h-3" />
+              ) : (
+                <ChevronRight className="w-3 h-3" />
+              )}
+              <History className="w-3 h-3" />
+              <span>compare_history.log</span>
+              <span className="text-term-dim ml-1">({compareHistory.length})</span>
+              {compareHistory.length > 0 && (
+                <span
+                  className="ml-auto text-[9px] text-term-dim hover:text-term-red transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleClearHistory()
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      handleClearHistory()
+                    }
+                  }}
+                >
+                  clear all
+                </span>
+              )}
+            </button>
+            <AnimatePresence initial={false}>
+              {historyOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-4 pb-3 space-y-1.5 max-h-48 overflow-y-auto">
+                    {compareHistory.length === 0 ? (
+                      <div className="text-[10px] text-term-dim font-terminal italic py-2">
+                        {'// no saved comparisons — close this drawer with 2+ assets selected to auto-save'}
+                      </div>
+                    ) : (
+                      compareHistory.map((entry) => {
+                        const date = new Date(entry.createdAt)
+                        const timeStr = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`
+                        return (
+                          <div
+                            key={entry.id}
+                            className="flex items-center gap-2 p-1.5 border border-term bg-[#252525] hover:border-term-cyan/40 transition-colors group"
+                          >
+                            <span className="text-[9px] text-term-dim font-terminal tabular-nums flex-shrink-0">
+                              [{timeStr}]
+                            </span>
+                            <div className="flex items-center gap-1 flex-1 min-w-0 overflow-hidden">
+                              {entry.assetNames.slice(0, 3).map((name, i) => (
+                                <React.Fragment key={i}>
+                                  {i > 0 && <span className="text-term-dim text-[9px]">vs</span>}
+                                  <span className="text-term-green text-[10px] font-terminal truncate">
+                                    {name}
+                                  </span>
+                                </React.Fragment>
+                              ))}
+                            </div>
+                            <button
+                              onClick={() => handleLoadFromHistory(entry)}
+                              className="opacity-0 group-hover:opacity-100 text-term-cyan hover:text-term-green transition-all flex-shrink-0"
+                              title="Load this comparison"
+                              aria-label="Load this comparison"
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteHistory(entry.id)}
+                              className="opacity-0 group-hover:opacity-100 text-term-dim hover:text-term-red transition-all flex-shrink-0"
+                              title="Delete from history"
+                              aria-label="Delete from history"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Drawer footer */}

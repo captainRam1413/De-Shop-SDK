@@ -32,6 +32,7 @@ import {
   Heart,
   GitCompareArrows,
   ZoomIn,
+  Lightbulb,
 } from 'lucide-react'
 import { useDeShopStore } from '@/store/useDeShopStore'
 import { useLivePrices } from '@/hooks/useLivePrices'
@@ -398,6 +399,127 @@ function AIPricePopover({
   )
 }
 
+/* ===== ASSET RECOMMENDATIONS ENGINE ===== */
+// Score each candidate by: rarity match (+30), price similarity (+/- based on |delta|/ref),
+// shared seller (+15), confidence similarity (+10). Return top N excluding self.
+
+function recommendAssets(
+  target: MarketplaceAsset,
+  pool: MarketplaceAsset[],
+  limit = 3,
+): { asset: MarketplaceAsset; score: number; reason: string }[] {
+  const scored = pool
+    .filter((a) => a.id !== target.id)
+    .map((a) => {
+      let score = 0
+      const reasons: string[] = []
+      // Rarity match
+      if (a.rarity === target.rarity) {
+        score += 30
+        reasons.push(`same rarity (${a.rarity})`)
+      } else {
+        // Partial credit for adjacent rarity
+        const rarityOrder: Rarity[] = ['Common', 'Rare', 'Epic', 'Legendary']
+        const dr = Math.abs(rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(target.rarity))
+        if (dr === 1) {
+          score += 12
+          reasons.push('adjacent rarity')
+        }
+      }
+      // Price similarity (closer is better)
+      const priceDelta = Math.abs(a.price - target.price) / Math.max(target.price, 1)
+      if (priceDelta < 0.15) {
+        score += 25
+        reasons.push('similar price')
+      } else if (priceDelta < 0.5) {
+        score += 12
+        reasons.push('nearby price')
+      }
+      // Same seller
+      if (a.seller === target.seller) {
+        score += 15
+        reasons.push('same seller')
+      }
+      // Confidence similarity
+      const confDelta = Math.abs(a.confidence - target.confidence)
+      if (confDelta < 5) {
+        score += 10
+        reasons.push('similar AI confidence')
+      }
+      // Slight boost for higher confidence (more "trustworthy")
+      if (a.confidence > 80) score += 4
+      return { asset: a, score, reason: reasons[0] ?? 'related asset' }
+    })
+    .sort((x, y) => y.score - x.score)
+  return scored.slice(0, limit)
+}
+
+/* ===== RECOMMENDATIONS SECTION ===== */
+
+function RecommendationsSection({
+  target,
+  pool,
+  onSelectAsset,
+}: {
+  target: MarketplaceAsset
+  pool: MarketplaceAsset[]
+  onSelectAsset: (a: MarketplaceAsset) => void
+}) {
+  const recs = useMemo(
+    () => recommendAssets(target, pool, 3),
+    [target, pool],
+  )
+  if (recs.length === 0) return null
+  return (
+    <div className="border border-term-cyan/25 bg-term-cyan/[0.02] p-3 space-y-2">
+      <div className="flex items-center gap-2">
+        <Lightbulb className="w-3 h-3 text-term-cyan" />
+        <span className="text-term-cyan text-[10px] font-terminal tracking-wider">
+          you_might_also_like.log
+        </span>
+        <span className="text-term-dim text-[9px] font-terminal ml-auto">
+          {'// scored by rarity + price + seller + confidence'}
+        </span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {recs.map(({ asset: a, reason }) => {
+          const cfg = RARITY_CONFIG[a.rarity]
+          return (
+            <button
+              key={a.id}
+              onClick={() => onSelectAsset(a)}
+              className="text-left p-2 border border-term bg-[#1E1E1E] hover:border-term-cyan/60 hover:bg-term-cyan/[0.06] transition-colors group"
+              title={`Click to view ${a.name}`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg leading-none">{a.emoji}</span>
+                <span className="text-term-green text-[11px] font-terminal font-bold truncate group-hover:underline">
+                  {a.name}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <span
+                  className="inline-block w-2 h-2 flex-shrink-0"
+                  style={{ background: cfg.color }}
+                />
+                <span className="text-term-dim text-[9px] font-terminal uppercase tracking-wider">
+                  {a.rarity}
+                </span>
+                <span className="text-term-text text-[10px] font-terminal ml-auto tabular-nums">
+                  {a.price.toLocaleString()} ALGO
+                </span>
+              </div>
+              <div className="text-term-amber/80 text-[9px] font-terminal italic truncate">
+                ▸ {reason}
+              </div>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 /* ===== DETAIL MODAL ===== */
 
 function DetailModal({
@@ -407,6 +529,8 @@ function DetailModal({
   loadingIds,
   aiErrors,
   onFetchPrice,
+  allAssets,
+  onSelectAsset,
 }: {
   asset: MarketplaceAsset
   onClose: () => void
@@ -414,6 +538,8 @@ function DetailModal({
   loadingIds: Set<string>
   aiErrors: Record<string, string>
   onFetchPrice: (a: MarketplaceAsset) => void
+  allAssets: MarketplaceAsset[]
+  onSelectAsset: (a: MarketplaceAsset) => void
 }) {
   const { walletConnected, addNotification, setShowWalletModal } = useDeShopStore()
   const isWatched = useDeShopStore((s) => s.watchlist.includes(asset.id))
@@ -796,6 +922,13 @@ function DetailModal({
               <span>Set Price Alert</span>
             </button>
           </div>
+
+          {/* Recommendations — You might also like */}
+          <RecommendationsSection
+            target={asset}
+            pool={allAssets}
+            onSelectAsset={onSelectAsset}
+          />
         </div>
       </motion.div>
 
@@ -1698,6 +1831,8 @@ export default function MarketplacePage() {
             loadingIds={loadingIds}
             aiErrors={aiErrors}
             onFetchPrice={fetchPrice}
+            allAssets={baseAssets}
+            onSelectAsset={(a) => setSelectedAsset(a)}
           />
         )}
       </AnimatePresence>

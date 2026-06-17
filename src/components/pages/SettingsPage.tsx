@@ -30,6 +30,8 @@ import {
   Cpu,
   Sparkles,
   ExternalLink,
+  GraduationCap,
+  Tv,
 } from 'lucide-react'
 import {
   useDeShopStore,
@@ -483,6 +485,11 @@ export default function SettingsPage() {
   const theme = useDeShopStore((s) => s.theme)
   const setTheme = useDeShopStore((s) => s.setTheme)
   const addNotification = useDeShopStore((s) => s.addNotification)
+  const tourSeen = useDeShopStore((s) => s.tourSeen)
+  const setTourSeen = useDeShopStore((s) => s.setTourSeen)
+  const setTourActive = useDeShopStore((s) => s.setTourActive)
+  const crtFlicker = useDeShopStore((s) => s.crtFlicker)
+  const setCrtFlicker = useDeShopStore((s) => s.setCrtFlicker)
 
   const { scores, resetScores } = useGameScores()
   const gamesPlayed = scores.gamesPlayed
@@ -795,6 +802,80 @@ export default function SettingsPage() {
           </span>
           <span className="text-term-dim mx-1">|</span>
           Stored in <span className="text-term-amber">localStorage</span>
+        </div>
+      </SectionCard>
+
+      {/* Onboarding & Effects */}
+      <SectionCard file="effects.log" icon={Sparkles} title="onboarding & visual effects" delay={0.08}>
+        {/* Replay tour */}
+        <div className="py-3 border-b border-term">
+          <div className="flex items-center gap-2 mb-2">
+            <GraduationCap size={14} className="text-term-cyan" />
+            <span className="text-xs font-terminal text-term-text font-bold">Onboarding Tour</span>
+            <span className="text-[10px] text-term-dim font-terminal">
+              {'// 6-step spotlight guide'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="text-[11px] text-term-dim font-terminal leading-relaxed flex-1 min-w-[180px]">
+              Tour status:{' '}
+              <span className={tourSeen ? 'text-term-green' : 'text-term-amber'}>
+                {tourSeen ? 'completed' : 'not started'}
+              </span>
+              <span className="mx-1">|</span>
+              Replay the interactive tour to rediscover key features: sidebar nav, command palette, marketplace, terminal macros, and more.
+            </div>
+            <button
+              onClick={() => {
+                setTourActive(true)
+                addNotification('info', 'Replaying onboarding tour...')
+              }}
+              className="terminal-btn terminal-btn-primary text-[11px] flex items-center gap-2"
+            >
+              <GraduationCap size={12} />
+              <span>Replay Tour</span>
+            </button>
+            {!tourSeen && (
+              <button
+                onClick={() => {
+                  setTourSeen(true)
+                  addNotification('info', 'Tour dismissed. You can replay it anytime.')
+                }}
+                className="terminal-btn text-[11px] flex items-center gap-2 border-term-dim/50 text-term-dim hover:text-term-text"
+              >
+                <span>Mark as seen</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* CRT Flicker effect */}
+        <div className="py-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Tv size={14} className="text-term-magenta" />
+            <span className="text-xs font-terminal text-term-text font-bold">CRT Flicker Effect</span>
+            <span className="text-[10px] text-term-dim font-terminal">
+              {'// subtle CRT screen flicker'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="text-[11px] text-term-dim font-terminal leading-relaxed flex-1 min-w-[180px]">
+              Adds a subtle, intermittent brightness flicker to simulate a vintage CRT monitor. Disabled by default. May reduce eye comfort for sensitive users.
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-[10px] font-terminal ${crtFlicker ? 'text-term-green' : 'text-term-dim'}`}>
+                {crtFlicker ? 'ON' : 'OFF'}
+              </span>
+              <Switch
+                checked={crtFlicker}
+                onCheckedChange={(checked) => {
+                  setCrtFlicker(checked)
+                  addNotification('info', `CRT flicker ${checked ? 'enabled' : 'disabled'}`)
+                }}
+                aria-label="Toggle CRT flicker effect"
+              />
+            </div>
+          </div>
         </div>
       </SectionCard>
 

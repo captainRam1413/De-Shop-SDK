@@ -2,7 +2,23 @@
 
 import { create } from 'zustand'
 
-export type ActivePage = 'dashboard' | 'market' | 'inventory' | 'terminal' | 'profile' | 'docs' | 'plugins' | 'game' | 'settings' | 'notifications'
+export type ActivePage = 'dashboard' | 'market' | 'inventory' | 'terminal' | 'profile' | 'docs' | 'plugins' | 'game' | 'settings' | 'notifications' | 'leaderboard'
+
+export interface TerminalMacro {
+  id: string
+  name: string
+  commands: string
+  createdAt: number
+  lastRunAt?: number
+  runCount: number
+}
+
+export interface CompareHistoryEntry {
+  id: string
+  assetIds: string[]
+  assetNames: string[]
+  createdAt: number
+}
 
 export type TerminalTheme = 'pro-dark' | 'light' | 'matrix' | 'phosphor' | 'amber'
 
@@ -67,6 +83,15 @@ interface DeShopState {
   compareIds: string[]
   // Compare drawer visibility
   compareDrawerOpen: boolean
+  // Compare history — last 5 compare sets (persisted)
+  compareHistory: CompareHistoryEntry[]
+  // Terminal command macros — persisted
+  terminalMacros: TerminalMacro[]
+  // Onboarding tour state — persisted
+  tourSeen: boolean
+  tourActive: boolean
+  // CRT flicker effect (visual)
+  crtFlicker: boolean
 
   // Actions
   setActivePage: (page: ActivePage) => void
@@ -97,6 +122,19 @@ interface DeShopState {
   isCompared: (assetId: string) => boolean
   clearCompare: () => void
   setCompareDrawerOpen: (open: boolean) => void
+  // Compare history actions
+  addCompareHistory: (assetIds: string[], assetNames: string[]) => void
+  removeCompareHistory: (id: string) => void
+  clearCompareHistory: () => void
+  // Terminal macro actions
+  addMacro: (name: string, commands: string) => void
+  removeMacro: (id: string) => void
+  incrementMacroRunCount: (id: string) => void
+  // Tour actions
+  setTourSeen: (seen: boolean) => void
+  setTourActive: (active: boolean) => void
+  // CRT flicker
+  setCrtFlicker: (on: boolean) => void
 }
 
 let notificationCounter = 0
@@ -106,6 +144,10 @@ const THEME_STORAGE_KEY = 'deshop-theme'
 const WATCHLIST_STORAGE_KEY = 'deshop-watchlist'
 const PRICE_ALERTS_STORAGE_KEY = 'deshop-price-alerts'
 const COMPARE_STORAGE_KEY = 'deshop-compare'
+const COMPARE_HISTORY_STORAGE_KEY = 'deshop-compare-history'
+const TERMINAL_MACROS_STORAGE_KEY = 'deshop-terminal-macros'
+const TOUR_STORAGE_KEY = 'deshop-tour-seen'
+const CRT_FLICKER_STORAGE_KEY = 'deshop-crt-flicker'
 
 function applyThemeToDocument(theme: TerminalTheme) {
   if (typeof document === 'undefined') return
@@ -198,6 +240,88 @@ function persistCompare(ids: string[]) {
   }
 }
 
+function loadInitialCompareHistory(): CompareHistoryEntry[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const stored = window.localStorage.getItem(COMPARE_HISTORY_STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      if (Array.isArray(parsed)) return parsed.slice(0, 5)
+    }
+  } catch {
+    /* ignore */
+  }
+  return []
+}
+
+function persistCompareHistory(history: CompareHistoryEntry[]) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(COMPARE_HISTORY_STORAGE_KEY, JSON.stringify(history.slice(0, 5)))
+  } catch {
+    /* ignore */
+  }
+}
+
+function loadInitialMacros(): TerminalMacro[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const stored = window.localStorage.getItem(TERMINAL_MACROS_STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      if (Array.isArray(parsed)) return parsed
+    }
+  } catch {
+    /* ignore */
+  }
+  return []
+}
+
+function persistMacros(macros: TerminalMacro[]) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(TERMINAL_MACROS_STORAGE_KEY, JSON.stringify(macros))
+  } catch {
+    /* ignore */
+  }
+}
+
+function loadInitialTourSeen(): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    return window.localStorage.getItem(TOUR_STORAGE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function persistTourSeen(seen: boolean) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(TOUR_STORAGE_KEY, seen ? '1' : '0')
+  } catch {
+    /* ignore */
+  }
+}
+
+function loadInitialCrtFlicker(): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    return window.localStorage.getItem(CRT_FLICKER_STORAGE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function persistCrtFlicker(on: boolean) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(CRT_FLICKER_STORAGE_KEY, on ? '1' : '0')
+  } catch {
+    /* ignore */
+  }
+}
+
 export const useDeShopStore = create<DeShopState>((set, get) => ({
   // Navigation
   activePage: 'dashboard',
@@ -238,6 +362,19 @@ export const useDeShopStore = create<DeShopState>((set, get) => ({
   // Compare tray (hydrated from localStorage, max 3)
   compareIds: loadInitialCompare(),
   compareDrawerOpen: false,
+
+  // Compare history (last 5 sets)
+  compareHistory: loadInitialCompareHistory(),
+
+  // Terminal macros
+  terminalMacros: loadInitialMacros(),
+
+  // Onboarding tour
+  tourSeen: loadInitialTourSeen(),
+  tourActive: false,
+
+  // CRT flicker effect
+  crtFlicker: loadInitialCrtFlicker(),
 
   // Actions
   setActivePage: (page) => set({ activePage: page, mobileSidebarOpen: false }),
@@ -382,4 +519,75 @@ export const useDeShopStore = create<DeShopState>((set, get) => ({
   },
 
   setCompareDrawerOpen: (open) => set({ compareDrawerOpen: open }),
+
+  addCompareHistory: (assetIds, assetNames) => {
+    const entry: CompareHistoryEntry = {
+      id: `cmp-hist-${Date.now()}`,
+      assetIds: assetIds.slice(0, 3),
+      assetNames: assetNames.slice(0, 3),
+      createdAt: Date.now(),
+    }
+    // Deduplicate by same set of asset IDs (regardless of order)
+    const signature = [...assetIds].sort().join('|')
+    const filtered = get().compareHistory.filter(
+      (h) => [...h.assetIds].sort().join('|') !== signature,
+    )
+    const next = [entry, ...filtered].slice(0, 5)
+    persistCompareHistory(next)
+    set({ compareHistory: next })
+  },
+
+  removeCompareHistory: (id) => {
+    const next = get().compareHistory.filter((h) => h.id !== id)
+    persistCompareHistory(next)
+    set({ compareHistory: next })
+  },
+
+  clearCompareHistory: () => {
+    persistCompareHistory([])
+    set({ compareHistory: [] })
+  },
+
+  addMacro: (name, commands) => {
+    const macro: TerminalMacro = {
+      id: `macro-${Date.now()}`,
+      name: name.trim().slice(0, 32),
+      commands: commands.trim(),
+      createdAt: Date.now(),
+      runCount: 0,
+    }
+    const next = [...get().terminalMacros, macro]
+    persistMacros(next)
+    set({ terminalMacros: next })
+  },
+
+  removeMacro: (id) => {
+    const next = get().terminalMacros.filter((m) => m.id !== id)
+    persistMacros(next)
+    set({ terminalMacros: next })
+  },
+
+  incrementMacroRunCount: (id) => {
+    const next = get().terminalMacros.map((m) =>
+      m.id === id ? { ...m, runCount: m.runCount + 1, lastRunAt: Date.now() } : m,
+    )
+    persistMacros(next)
+    set({ terminalMacros: next })
+  },
+
+  setTourSeen: (seen) => {
+    persistTourSeen(seen)
+    set({ tourSeen: seen })
+  },
+
+  setTourActive: (active) => set({ tourActive: active }),
+
+  setCrtFlicker: (on) => {
+    persistCrtFlicker(on)
+    if (typeof document !== 'undefined') {
+      if (on) document.documentElement.classList.add('crt-flicker')
+      else document.documentElement.classList.remove('crt-flicker')
+    }
+    set({ crtFlicker: on })
+  },
 }))

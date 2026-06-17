@@ -62,7 +62,7 @@ function TickerItem({ asset, onSelect }: ItemProps) {
       title={`Filter marketplace by ${asset.name}`}
       aria-label={`Filter marketplace by ${asset.name}`}
     >
-      <span className="text-term-text text-[11px] font-terminal font-bold">{asset.name}</span>
+      <span className="text-term-text text-[11px] font-terminal font-bold max-w-[120px] truncate-term" title={asset.name}>{asset.name}</span>
       <span className={`${color} text-[11px] font-terminal`} aria-hidden="true">{arrow}</span>
       <span className={`${color} text-[11px] font-terminal tabular-nums`}>{asset.price.toFixed(3)}</span>
       <span className="text-term-dim text-[10px] font-terminal">ALGO</span>

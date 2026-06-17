@@ -31,7 +31,7 @@ export default function RootLayout({
             Defaults to pro-dark; overridden by the Zustand store on hydration. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('deshop-theme');if(t==='pro-dark'||t==='light'||t==='matrix'||t==='phosphor'||t==='amber'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('deshop-theme');if(t==='pro-dark'||t==='light'||t==='matrix'||t==='phosphor'||t==='amber'){document.documentElement.setAttribute('data-theme',t);}var f=localStorage.getItem('deshop-crt-flicker');if(f==='1'){document.documentElement.classList.add('crt-flicker');}}catch(e){}})();`,
           }}
         />
       </head>

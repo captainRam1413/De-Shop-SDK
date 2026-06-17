@@ -35,6 +35,7 @@ import {
   Keyboard as KeyboardIcon,
   Star,
   BellRing,
+  Trophy,
 } from 'lucide-react'
 import { useDeShopStore, type ActivePage } from '@/store/useDeShopStore'
 import DashboardPage from '@/components/pages/DashboardPage'
@@ -47,10 +48,12 @@ import PluginsPage from '@/components/pages/PluginsPage'
 import GamePage from '@/components/pages/GamePage'
 import SettingsPage from '@/components/pages/SettingsPage'
 import NotificationsPage from '@/components/pages/NotificationsPage'
+import LeaderboardPage from '@/components/pages/LeaderboardPage'
 import CommandPalette from '@/components/CommandPalette'
 import KeyboardShortcutsOverlay from '@/components/KeyboardShortcutsOverlay'
 import PriceAlertModal from '@/components/PriceAlertModal'
 import BackgroundGrid from '@/components/BackgroundGrid'
+import OnboardingTour from '@/components/OnboardingTour'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { usePriceAlerts } from '@/hooks/usePriceAlerts'
 
@@ -69,6 +72,7 @@ const NAV_ITEMS: NavItem[] = [
   { page: 'inventory', label: 'Inventory', command: 'cd inventory', icon: Package },
   { page: 'terminal', label: 'Terminal', command: 'cd terminal', icon: Terminal },
   { page: 'profile', label: 'Profile', command: 'cd profile', icon: User },
+  { page: 'leaderboard', label: 'Leaderboard', command: 'cd leaderboard', icon: Trophy },
   { page: 'docs', label: 'Docs', command: 'cd docs', icon: BookOpen },
   { page: 'plugins', label: 'Plugins', command: 'cd plugins', icon: Puzzle },
   { page: 'game', label: 'Arcade', command: 'cd arcade', icon: Gamepad2 },
@@ -87,6 +91,7 @@ const PAGE_TITLES: Record<ActivePage, string> = {
   game: 'Arcade',
   settings: 'Settings',
   notifications: 'Activity Center',
+  leaderboard: 'Leaderboard',
 }
 
 /* ===== TRAFFIC LIGHT DOTS ===== */
@@ -783,6 +788,8 @@ export default function TerminalLayout() {
         return <SettingsPage />
       case 'notifications':
         return <NotificationsPage />
+      case 'leaderboard':
+        return <LeaderboardPage />
       default:
         return <DashboardPage />
     }
@@ -814,6 +821,7 @@ export default function TerminalLayout() {
       <CommandPalette />
       <KeyboardShortcutsOverlay />
       <PriceAlertModal />
+      <OnboardingTour />
     </div>
   )
 }
