@@ -1554,3 +1554,273 @@ After assessing the project state via agent-browser (all 11 pages functional, no
 - ✅ All API requests use relative paths (no absolute URLs)
 - ✅ Footer remains sticky (no layout changes)
 
+
+---
+
+## Round 4 — Asset Comparison, Transaction Export, Terminal CLI Polish, Animated Background
+
+**Date**: 2026-06-17
+**Agent**: Main Agent (cron-triggered review)
+**Task ID**: R4
+
+### Project Status Assessment (Round 4 Entry)
+
+Project entered Round 4 with all 11 pages rendering HTTP 200, 0 console errors, lint clean (0 errors / 0 warnings). All Round 1–3 features intact:
+- 5 terminal themes (Pro Dark, Light, Matrix, Phosphor, Amber)
+- Watchlist + price alerts (localStorage-persisted)
+- Keyboard shortcuts overlay + command palette
+- Live price ticker + market heat panel
+- AI price oracle + AI artwork generator
+- 4 arcade games (Snake, Tetris, Clicker, Typing)
+- Realtime socket.io mini-service on port 3003
+- 9 API routes + Prisma/SQLite (16 assets, 15 transactions, 6 plugins seeded)
+
+### Round 4 Goals
+
+Per the mandatory requirements ("Improve styling with more details" + "Add more features and functionality"), the focus for this round was:
+1. **Feature 1**: Asset comparison drawer — compare up to 3 assets side-by-side with stats + sparkline charts
+2. **Feature 2**: Transaction history CSV/JSON export on Profile page
+3. **Feature 3**: Terminal CLI command syntax highlighting + "did you mean" suggestion for typos
+4. **Styling Polish 1**: Animated background grid that pulses on realtime events
+5. **Styling Polish 2**: Standardize profile achievement cards + marketplace card hover
+
+### Completed Modifications
+
+#### 1. Store extensions (`src/store/useDeShopStore.ts`)
+- Added `compareIds: string[]` (max 3) and `compareDrawerOpen: boolean` state
+- Added `toggleCompare`, `isCompared`, `clearCompare`, `setCompareDrawerOpen` actions
+- New localStorage key `deshop-compare` with SSR-safe lazy hydration
+- `toggleCompare` rolls over to replace oldest when at 3-item cap
+
+#### 2. New component: `AssetCompareDrawer.tsx` (320 lines)
+- Right-side drawer (`fixed top-0 right-0 h-screen`) with spring entrance
+- Renders 1–3 asset columns side-by-side with shared CSS grid
+- For each asset: header (id + emoji + name + rarity), price, confidence, rarity rank, 7-day trend (with up/down arrow + % delta), mini AreaChart sparkline (per-asset colored gradient), seller info
+- "BEST" badges (Trophy icon) on winning values per category (cheapest price, highest confidence, rarest, best trend)
+- Verdict footer summarizing all four "best" values
+- Drawer header includes "clear all" + close (X) buttons
+- Drawer footer shows `diff --assets <ids>` prompt-style command
+- Click-outside / Esc / X to close
+
+#### 3. New component: `BackgroundGrid.tsx` (45 lines)
+- Purely decorative (`pointer-events-none fixed inset-0 -z-10`)
+- Renders 3 layered divs: static grid (slow 60s drift), pulse overlay (1.2s animation), radial vignette
+- Listens for `deshop:realtime-event` CustomEvent dispatched from `useRealtimeEvents` socket hook
+- On each event, re-mounts the pulse layer to retrigger the CSS animation
+- Status-aware: dims grid when app is offline/connecting
+- Respects `prefers-reduced-motion`
+
+#### 4. MarketplacePage integration (`src/components/pages/MarketplacePage.tsx`)
+- Added `GitCompareArrows` + `ZoomIn` to imports
+- GridCard:
+  - New compare toggle button (cyan-themed) in card header next to price alert bell
+  - Card now has `terminal-card-hover` class for lift + green border glow on hover
+  - When in compare set, card gets `compare-selected` class (cyan top accent border + cyan box-shadow)
+- DetailModal:
+  - Asset thumbnail (emoji or AI artwork) is now clickable to open fullscreen lightbox
+  - New `<ZoomIn>` icon overlay on hover
+  - Action button grid changed from 2-col to 3-col to fit the new "Compare" button
+  - Image lightbox: full terminal-card modal with the asset image/emoji, ID/rarity badge top-left, price badge bottom-right, description footer
+- New `CompareTray` component: floating bottom-right button that appears when items are in compare set (and drawer is closed) — shows emoji previews + "COMPARE (N/3)" label, click opens drawer
+- `<AssetCompareDrawer assets={baseAssets} />` rendered at page bottom
+
+#### 5. ProfilePage transaction export (`src/components/pages/ProfilePage.tsx`)
+- Added `Download`, `FileJson`, `FileSpreadsheet` icons
+- Added `triggerDownload(filename, content, mime)` helper using Blob + URL.createObjectURL
+- `exportCSV()`: builds CSV with 10 columns (id, date, type, description, amount, status, assetId, from, to, txId), proper RFC-4180 quote escaping
+- `exportJSON()`: bundles transactions with export metadata (timestamp, wallet, username, count)
+- Two export buttons added to `transactions.log` card header — CSV (green hover) + JSON (cyan hover) — both with icons and labels (labels hidden on mobile)
+- Mobile-only "Download" icon button as a fallback when labels are hidden
+
+#### 6. ProfilePage achievement uniformity
+- Achievement cards refactored to use new `.achievement-card` CSS class with consistent 120px min-height
+- New `.ach-icon-wrap` (40×40px bordered box) standardizes icon container regardless of emoji size
+- Locked achievements get grayscale icon wrap + reduced opacity
+- Lock icon moved to top-right corner instead of full overlay (less obtrusive)
+- Hover lift + green glow on unlocked cards
+- Cards now show `title={ach.description}` tooltip on hover
+
+#### 7. Terminal CLI enhancements (`src/components/pages/TerminalPage.tsx`)
+- New `tokenizeCommand(text)` helper: splits input into typed tokens (cmd / flag / arg / space)
+- Command log lines now render with syntax highlighting:
+  - Known command → green bold
+  - Unknown command → red bold
+  - Flags (`--xxx`, `-x`) → cyan
+  - Args → amber
+- New `suggestCommand(input)` helper:
+  - First tries exact prefix match
+  - Falls back to Levenshtein-distance match (≤2 edits)
+- New `levenshtein(a, b)` function (single-row DP with prev-diagonal tracking)
+- "Did you mean X?" suggestion shown in command-not-found output
+- Inline "did you mean" hint appears below the input line as the user types an unknown command — clicking the suggestion replaces the first token and refocuses input
+- Escape now also closes the compare drawer (via `useKeyboardShortcuts`)
+
+#### 8. CommandPalette extensions (`src/components/CommandPalette.tsx`)
+- Added `GitCompareArrows` icon
+- Extended `CommandContext` interface with `setCompareDrawerOpen`, `clearCompare`, `compareCount`
+- Two new commands:
+  - `view comparison` — navigates to marketplace and opens compare drawer
+  - `clear comparison` — empties the compare tray
+- All commands respect empty-state
+
+#### 9. useRealtimeEvents hook (`src/hooks/useRealtimeEvents.ts`)
+- `marketplace-event` handler now dispatches a `deshop:realtime-event` CustomEvent on `window` so any listener (e.g. `BackgroundGrid`) can react
+- Wrapped in try/catch for SSR safety
+
+#### 10. useKeyboardShortcuts hook (`src/hooks/useKeyboardShortcuts.ts`)
+- Escape handler now also closes the compare drawer (in addition to palette, shortcuts, wallet modal, price alert modal)
+
+#### 11. CSS polish (`src/app/globals.css` — ~195 lines appended)
+- **`.bg-grid-root`, `.bg-grid-layer`, `.bg-grid-pulse`, `.bg-grid-vignette`**: animated background grid system with 60s drift + 1.2s pulse on realtime events
+- **`@keyframes bg-grid-drift`**: slow 32px-precision grid drift
+- **`@keyframes bg-grid-pulse-anim`**: 0→0.85→0 opacity + 0.985→1.02 scale pulse
+- **`.compare-selected`**: cyan top accent + cyan box-shadow when a card is in compare set
+- **`.compare-selected::after`**: 2px cyan top border accent
+- **`.export-btn`**: terminal-mono font + hover lift transform
+- **`.achievement-card`**: standardized 120px min-height card with flex column layout + hover lift for unlocked
+- **`.ach-icon-wrap`**: 40×40px bordered icon container
+- **`.term-tok-cmd`, `.term-tok-cmd-err`, `.term-tok-flag`, `.term-tok-arg`**: token color classes for CLI syntax highlighting
+- **`.lightbox-modal`**: backdrop-filter blur for image lightbox
+- All animations respect `prefers-reduced-motion: reduce`
+- All new CSS is purely additive — appended at end of file, no existing rules modified
+- Theme-aware via CSS variables (`var(--t-green)`, `var(--t-cyan)`, etc.) so all 5 themes work
+
+### Files Created (Round 4)
+
+1. `src/components/AssetCompareDrawer.tsx` (320 lines)
+2. `src/components/BackgroundGrid.tsx` (45 lines)
+
+### Files Modified (Round 4)
+
+1. `src/store/useDeShopStore.ts` — added compare state, actions, localStorage persistence
+2. `src/components/pages/MarketplacePage.tsx` — added compare button to GridCard + DetailModal, image lightbox, CompareTray, AssetCompareDrawer render
+3. `src/components/pages/ProfilePage.tsx` — added CSV/JSON export buttons + helpers, achievement card uniformity
+4. `src/components/pages/TerminalPage.tsx` — added tokenizeCommand, suggestCommand, levenshtein, syntax highlighting, inline suggestion hint
+5. `src/components/CommandPalette.tsx` — added 2 new compare commands + extended context
+6. `src/hooks/useRealtimeEvents.ts` — dispatch `deshop:realtime-event` CustomEvent
+7. `src/hooks/useKeyboardShortcuts.ts` — Escape now also closes compare drawer
+8. `src/components/TerminalLayout.tsx` — added `<BackgroundGrid />` to layout
+9. `src/app/globals.css` — appended ~195 lines of Round 4 CSS
+
+### Round 4 Verification (agent-browser via Caddy gateway port 81)
+
+**Test 1: Asset Compare Drawer Flow**
+- ✅ Click compare toggle on 2 marketplace cards → cards show cyan top accent + cyan glow
+- ✅ Floating "COMPARE (2/3)" tray appears bottom-right with emoji previews
+- ✅ Click tray → drawer slides in from right with spring animation
+- ✅ Two asset columns render side-by-side with stats + sparkline charts
+- ✅ "BEST" badges (Trophy icon) appear on winning values per category
+- ✅ Verdict footer shows CHEAPEST / HIGHEST CONFIDENCE / RAREST / BEST TREND
+- ✅ Click X or press Esc → drawer slides out
+- ✅ localStorage `deshop-compare` correctly persists selected IDs
+
+**Test 2: Image Lightbox**
+- ✅ Click asset thumbnail in detail modal → lightbox opens with zoom icon
+- ✅ Lightbox shows asset image/emoji at full size with ID/rarity/price badges
+- ✅ Click outside or X → lightbox closes
+- ✅ Description shown in footer
+
+**Test 3: Transaction Export**
+- ✅ Profile page transactions.log card header shows CSV + JSON buttons
+- ✅ Click JSON → file `deshop-transactions-YYYY-MM-DD.json` downloads
+- ✅ Click CSV → file `deshop-transactions-YYYY-MM-DD.csv` downloads
+- ✅ Toast notification confirms export count
+- ✅ CSV properly escapes commas/quotes in descriptions
+
+**Test 4: Terminal CLI Syntax Highlighting + Suggestions**
+- ✅ Type `mint MythicBlade legendary --force` → input shows green cmd, amber args, cyan flag
+- ✅ Command log lines render with same color coding after Enter
+- ✅ Type `conect` + Enter → output shows "command not found: conect" + "Did you mean 'connect'? Try again with: connect" + "Type 'help' for available commands."
+- ✅ Type `hel` (live input) → inline "! did you mean help" hint appears below input with clickable suggestion
+- ✅ Click suggestion → input replaces first token, refocuses
+- ✅ Known commands render in green bold; unknown commands render in red bold
+- ✅ Timestamps `[HH:MM:SS]` present on every log line
+
+**Test 5: Animated Background Grid**
+- ✅ Subtle 32px grid visible behind all pages
+- ✅ Grid drifts slowly (60s loop) for ambient life
+- ✅ Pulse animation triggers on realtime marketplace events
+- ✅ Grid dims when app is offline (status-aware)
+- ✅ Respects prefers-reduced-motion
+
+**Test 6: Profile Achievement Uniformity**
+- ✅ All 12 achievement cards have consistent 120px min-height
+- ✅ Icons in uniform 40×40px bordered containers
+- ✅ Locked achievements show grayscale + reduced opacity + small lock icon top-right
+- ✅ Hover on unlocked cards lifts card + green glow
+- ✅ Title tooltip shows achievement description
+
+**Test 7: Command Palette Compare Commands**
+- ✅ `⌘K` opens palette
+- ✅ Search "compare" → "view comparison" + "clear comparison" commands appear
+- ✅ "view comparison" with empty tray → toast: "No assets in comparison — click the compare icon on cards to add (max 3)"
+- ✅ "view comparison" with items → navigates to marketplace + opens drawer + toast confirms count
+- ✅ "clear comparison" → empties tray + toast confirms
+
+**Test 8: No Regressions**
+- ✅ All 11 pages still render (verified via navigation + screenshots)
+- ✅ All 9 API routes return HTTP 200
+- ✅ 0 console errors across all pages
+- ✅ `bun run lint` clean (0 errors, 0 warnings)
+- ✅ Mobile (375×812) layout verified for marketplace + profile
+- ✅ Desktop (1440×900) layout verified for all pages
+- ✅ All 5 themes still work (compare drawer + background grid use CSS variables)
+- ✅ VLM before/after comparison confirms 3 polish improvements visible
+
+### Architecture (Round 4 — Final)
+
+- **11 pages** + 9 API routes + 1 mini-service (port 3003 socket.io)
+- **7 hooks** (added no new hooks; extended useRealtimeEvents + useKeyboardShortcuts)
+- **19 components** (added AssetCompareDrawer, BackgroundGrid)
+- **5 themes** (Pro Dark, Light, Matrix, Phosphor, Amber) — all new components theme-aware
+- **localStorage keys**: `deshop-theme`, `deshop-watchlist`, `deshop-price-alerts`, `deshop-compare`, `deshop-cmd-palette-recent`
+- **Realtime event bus**: `window.dispatchEvent(new CustomEvent('deshop:realtime-event'))` consumed by BackgroundGrid
+
+### Unresolved Issues / Risks
+
+1. **`suggestCommand` is O(n) per keystroke**: With 16 commands this is fine, but if the command list grows large, consider debouncing or precomputing a trie.
+
+2. **Levenshtein runs on every unknown command**: With 16 commands this is trivial. No performance concern.
+
+3. **`BackgroundGrid` re-mounts pulse layer via `key={pulseKey}`**: React reconciler handles this efficiently, but if events arrive at >10/sec, could cause excessive re-renders. The realtime service currently emits ~1 event/sec, so no issue.
+
+4. **Compare tray is hidden when drawer is open**: This is intentional UX (avoids duplicate controls), but if a user closes the drawer, the tray reappears. Could be confusing; documented in component comments.
+
+5. **CSV export uses Blob + URL.createObjectURL**: Works in all modern browsers. No streaming for very large datasets, but Profile transactions are capped at ~15 entries.
+
+6. **Image lightbox shows emoji at 180px font size**: For very long emoji names this could overflow, but tested with all 16 mock assets without issue.
+
+7. **`useRealtimeEvents` dispatches CustomEvent on `window`**: This is a global side effect. If multiple hook instances mount (e.g. in tests), events fire multiple times. For production single-mount usage this is fine.
+
+### Priority Recommendations for Next Round (Round 5)
+
+1. **User authentication**: NextAuth.js with GitHub/Google OAuth — enables cross-device watchlist/alerts/compare sync
+2. **Server-side persistence**: Move watchlist/alerts/compare from localStorage to Prisma models linked to user accounts
+3. **Real Algorand wallet integration**: Replace simulated wallet with `@txnlab/use-wallet-react`
+4. **Asset recommendations**: AI-powered "you might also like" based on watchlist + compare history
+5. **More arcade games**: Tetris, Pac-Man, Adventure (currently 4)
+6. **Multi-language support**: i18n with next-intl
+7. **PWA support**: Offline mode + add-to-home-screen
+8. **Compare history**: Remember last 5 compare sets for quick re-comparison
+9. **Export scheduler**: Schedule recurring CSV exports via email
+10. **Terminal command macros**: Save + replay command sequences
+
+### Critical Rules Compliance (Round 4)
+
+- ✅ All new code uses `'use client'` directive where needed
+- ✅ `z-ai-web-dev-sdk` NOT used in any client code (no AI in Round 4 features)
+- ✅ All new UI uses existing Mac Terminal theme classes + new additive CSS
+- ✅ New CSS purely additive (appended to end of `globals.css`)
+- ✅ Existing functionality preserved — only additive changes
+- ✅ `bun run lint` passes — 0 errors, 0 warnings
+- ✅ TypeScript strict typing throughout
+- ✅ Responsive design (compare tray hidden on small screens, modals max-w-*, export buttons collapse to icon-only on mobile)
+- ✅ Accessibility: ARIA labels, focus-visible rings, keyboard navigation, semantic HTML, role="dialog" for drawer + lightbox
+- ✅ Respects `prefers-reduced-motion` (all new animations disabled)
+- ✅ localStorage persistence SSR-safe (window typeof checks)
+- ✅ No emojis added to code (only ASCII symbols ◆ ▲ ▼)
+- ✅ All API requests use relative paths (no absolute URLs)
+- ✅ Footer remains sticky (no layout changes)
+- ✅ Background grid uses `pointer-events: none` so it never intercepts clicks
+- ✅ Compare drawer uses `z-40`, lightbox uses `z-[60]` — proper stacking
+

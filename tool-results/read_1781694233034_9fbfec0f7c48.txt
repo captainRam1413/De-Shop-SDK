@@ -1,0 +1,707 @@
+     1→'use client'
+     2→
+     3→import React, { useState, useCallback, useEffect } from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import {
+     6→  Copy,
+     7→  Check,
+     8→  Edit3,
+     9→  Save,
+    10→  X,
+    11→  ChevronDown,
+    12→  ChevronUp,
+    13→  ExternalLink,
+    14→  Link2,
+    15→  Gamepad2,
+    16→  Monitor,
+    17→} from 'lucide-react'
+    18→import { useDeShopStore } from '@/store/useDeShopStore'
+    19→import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+    20→
+    21→/* ===== TYPES ===== */
+    22→
+    23→interface Achievement {
+    24→  id: string
+    25→  emoji: string
+    26→  name: string
+    27→  unlockDate: string | null
+    28→  unlocked: boolean
+    29→  description: string
+    30→}
+    31→
+    32→interface Transaction {
+    33→  id: string
+    34→  date: string
+    35→  type: 'MINT' | 'BUY' | 'SELL' | 'TRANSFER' | 'LIST'
+    36→  description: string
+    37→  amount: string
+    38→  status: 'confirmed' | 'pending'
+    39→  details: {
+    40→    assetId: string
+    41→    from?: string
+    42→    to?: string
+    43→    txId: string
+    44→  }
+    45→}
+    46→
+    47→interface Holding {
+    48→  name: string
+    49→  rarity: string
+    50→  value: string
+    51→  quantity: number
+    52→}
+    53→
+    54→/* ===== MOCK DATA ===== */
+    55→
+    56→const ACHIEVEMENTS: Achievement[] = [
+    57→  { id: '1', emoji: '🎨', name: 'First Mint', unlockDate: '2024-01-20', unlocked: true, description: 'Mint your first NFT on the platform' },
+    58→  { id: '2', emoji: '💰', name: 'Trader', unlockDate: '2024-02-14', unlocked: true, description: 'Complete 10 trades on the marketplace' },
+    59→  { id: '3', emoji: '📦', name: 'Collector', unlockDate: '2024-03-05', unlocked: true, description: 'Own 5 or more NFTs simultaneously' },
+    60→  { id: '4', emoji: '🐋', name: 'Whale Watcher', unlockDate: '2024-04-12', unlocked: true, description: 'Execute a trade over 50 ALGO' },
+    61→  { id: '5', emoji: '🌟', name: 'Early Adopter', unlockDate: '2024-01-15', unlocked: true, description: 'Join the platform in its first month' },
+    62→  { id: '6', emoji: '💎', name: 'Diamond Hands', unlockDate: '2024-05-22', unlocked: true, description: 'Hold an NFT for 90+ days without selling' },
+    63→  { id: '7', emoji: '🌉', name: 'Bridge Builder', unlockDate: null, unlocked: false, description: 'Complete a cross-chain bridge transfer' },
+    64→  { id: '8', emoji: '📊', name: 'Market Maker', unlockDate: null, unlocked: false, description: 'List 20+ items on the marketplace' },
+    65→  { id: '9', emoji: '⚡', name: 'Speed Demon', unlockDate: null, unlocked: false, description: 'Execute 5 trades in under 1 minute' },
+    66→  { id: '10', emoji: '🏆', name: 'Champion', unlockDate: null, unlocked: false, description: 'Win a community vote or contest' },
+    67→  { id: '11', emoji: '🔮', name: 'Oracle Eye', unlockDate: null, unlocked: false, description: 'Use AI pricing for 50+ assets' },
+    68→  { id: '12', emoji: '🛡️', name: 'Guardian', unlockDate: null, unlocked: false, description: 'Verify all transactions for 30 days' },
+    69→]
+    70→
+    71→const TRANSACTIONS: Transaction[] = [
+    72→  { id: '1', date: '2024-06-15', type: 'MINT', description: 'Minted Neon Blade #44721', amount: '+1 NFT', status: 'confirmed', details: { assetId: '#44721', txId: 'TX8F3K...M2P9' } },
+    73→  { id: '2', date: '2024-06-14', type: 'BUY', description: 'Bought Quantum Helm from ALGO1C...Q8W3', amount: '-7.8 ALGO', status: 'confirmed', details: { assetId: '#33102', from: 'ALGO1C...Q8W3', txId: 'TX2A7B...N5K1' } },
+    74→  { id: '3', date: '2024-06-13', type: 'SELL', description: 'Sold Pixel Sword to ALGO9D...R2T5', amount: '+4.2 ALGO', status: 'confirmed', details: { assetId: '#22098', to: 'ALGO9D...R2T5', txId: 'TX5C9D...Q7W3' } },
+    75→  { id: '4', date: '2024-06-12', type: 'LIST', description: 'Listed Shadow Dagger for 3.5 ALGO', amount: '3.5 ALGO', status: 'confirmed', details: { assetId: '#18456', txId: 'TX1E4F...L8R2' } },
+    76→  { id: '5', date: '2024-06-11', type: 'TRANSFER', description: 'Sent Chain Mail to ALGO7B...M4P1', amount: '-1 NFT', status: 'confirmed', details: { assetId: '#29301', to: 'ALGO7B...M4P1', txId: 'TX3G6H...J9S4' } },
+    77→  { id: '6', date: '2024-06-10', type: 'MINT', description: 'Minted Storm Ring #52891', amount: '+1 NFT', status: 'confirmed', details: { assetId: '#52891', txId: 'TX7I8J...K1T6' } },
+    78→  { id: '7', date: '2024-06-09', type: 'BUY', description: 'Bought Titan Armor from ALGO5E...N6Y7', amount: '-9.2 ALGO', status: 'confirmed', details: { assetId: '#41203', from: 'ALGO5E...N6Y7', txId: 'TX9K2L...M3U8' } },
+    79→  { id: '8', date: '2024-06-08', type: 'SELL', description: 'Sold Crystal Shard to ALGO2F...J1H9', amount: '+2.1 ALGO', status: 'confirmed', details: { assetId: '#15678', to: 'ALGO2F...J1H9', txId: 'TX4M5N...O6V1' } },
+    80→  { id: '9', date: '2024-06-07', type: 'LIST', description: 'Listed Iron Gauntlet for 5.0 ALGO', amount: '5.0 ALGO', status: 'pending', details: { assetId: '#38762', txId: 'TX6P7Q...R8W2' } },
+    81→  { id: '10', date: '2024-06-06', type: 'MINT', description: 'Minted Void Cape #61024', amount: '+1 NFT', status: 'confirmed', details: { assetId: '#61024', txId: 'TX8R9S...T1X4' } },
+    82→  { id: '11', date: '2024-06-05', type: 'BUY', description: 'Bought Digital Crown from ALGO9D...R2T5', amount: '-25.0 ALGO', status: 'confirmed', details: { assetId: '#44155', from: 'ALGO9D...R2T5', txId: 'TX2S3T...U5Y6' } },
+    83→  { id: '12', date: '2024-06-04', type: 'TRANSFER', description: 'Received Plasma Rifle from ALGO3F...X9K2', amount: '+1 NFT', status: 'confirmed', details: { assetId: '#47890', from: 'ALGO3F...X9K2', txId: 'TX6U7V...W8Z1' } },
+    84→  { id: '13', date: '2024-06-03', type: 'SELL', description: 'Sold Bronze Shield to ALGO7B...M4P1', amount: '+1.8 ALGO', status: 'confirmed', details: { assetId: '#23456', to: 'ALGO7B...M4P1', txId: 'TX9V0W...X2A3' } },
+    85→  { id: '14', date: '2024-06-02', type: 'LIST', description: 'Listed Pixel Potion for 0.8 ALGO', amount: '0.8 ALGO', status: 'pending', details: { assetId: '#56789', txId: 'TX3W4X...Y5B6' } },
+    86→  { id: '15', date: '2024-06-01', type: 'MINT', description: 'Minted Cyber Shield #73102', amount: '+1 NFT', status: 'confirmed', details: { assetId: '#73102', txId: 'TX7Y8Z...A9C0' } },
+    87→]
+    88→
+    89→const PORTFOLIO_DATA = [
+    90→  { day: 'Day 1', value: 45 },
+    91→  { day: 'Day 2', value: 52 },
+    92→  { day: 'Day 3', value: 48 },
+    93→  { day: 'Day 4', value: 61 },
+    94→  { day: 'Day 5', value: 58 },
+    95→  { day: 'Day 6', value: 67 },
+    96→  { day: 'Day 7', value: 72 },
+    97→  { day: 'Day 8', value: 69 },
+    98→  { day: 'Day 9', value: 78 },
+    99→  { day: 'Day 10', value: 85 },
+   100→  { day: 'Day 11', value: 82 },
+   101→  { day: 'Day 12', value: 91 },
+   102→  { day: 'Day 13', value: 88 },
+   103→  { day: 'Day 14', value: 95 },
+   104→]
+   105→
+   106→const RARITY_DISTRIBUTION = [
+   107→  { rarity: 'Common', count: 5, max: 10, color: '#888888' },
+   108→  { rarity: 'Rare', count: 7, max: 10, color: '#00D4FF' },
+   109→  { rarity: 'Epic', count: 4, max: 10, color: '#FF00FF' },
+   110→  { rarity: 'Legendary', count: 3, max: 10, color: '#FFB800' },
+   111→]
+   112→
+   113→const TOP_HOLDINGS: Holding[] = [
+   114→  { name: 'Digital Crown', rarity: 'Legendary', value: '25.0 ALGO', quantity: 1 },
+   115→  { name: 'Titan Armor', rarity: 'Epic', value: '9.2 ALGO', quantity: 1 },
+   116→  { name: 'Void Cape', rarity: 'Epic', value: '8.9 ALGO', quantity: 1 },
+   117→  { name: 'Quantum Helm', rarity: 'Epic', value: '7.8 ALGO', quantity: 1 },
+   118→  { name: 'Plasma Rifle', rarity: 'Rare', value: '4.1 ALGO', quantity: 1 },
+   119→]
+   120→
+   121→const RARITY_COLOR: Record<string, string> = {
+   122→  Common: '#888888',
+   123→  Rare: '#00D4FF',
+   124→  Epic: '#FF00FF',
+   125→  Legendary: '#FFB800',
+   126→}
+   127→
+   128→/* ===== CUSTOM TOOLTIP ===== */
+   129→
+   130→function PortfolioTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
+   131→  if (!active || !payload?.length) return null
+   132→  return (
+   133→    <div className="bg-[#2D2D2D] border border-[#444] p-2 text-xs font-terminal">
+   134→      <div className="text-term-dim">{label}</div>
+   135→      <div className="text-term-green">{payload[0].value.toFixed(1)} ALGO</div>
+   136→    </div>
+   137→  )
+   138→}
+   139→
+   140→/* ===== API FETCH HELPERS ===== */
+   141→
+   142→interface ApiTransaction {
+   143→  id: string
+   144→  type: string
+   145→  assetId: number
+   146→  assetName: string
+   147→  from: string
+   148→  to: string
+   149→  amount: number
+   150→  status: string
+   151→  txHash: string
+   152→  createdAt: string
+   153→}
+   154→
+   155→function mapApiTransaction(tx: ApiTransaction, index: number): Transaction {
+   156→  const typeMap: Record<string, Transaction['type']> = {
+   157→    mint: 'MINT', buy: 'BUY', sell: 'SELL', transfer: 'TRANSFER', list: 'LIST', cancel: 'LIST',
+   158→  }
+   159→  const txType = typeMap[tx.type.toLowerCase()] || 'MINT'
+   160→  const isPositive = tx.type === 'mint' || tx.type === 'sell' || (tx.type === 'buy' && false)
+   161→  let amountStr = ''
+   162→  if (tx.type === 'mint') amountStr = '+1 NFT'
+   163→  else if (tx.type === 'sell') amountStr = `+${tx.amount} ALGO`
+   164→  else if (tx.type === 'buy') amountStr = `-${tx.amount} ALGO`
+   165→  else if (tx.type === 'list') amountStr = `${tx.amount} ALGO`
+   166→  else if (tx.type === 'transfer') amountStr = '-1 NFT'
+   167→  else amountStr = `${tx.amount} ALGO`
+   168→
+   169→  const description = (() => {
+   170→    switch (tx.type.toLowerCase()) {
+   171→      case 'mint': return `Minted ${tx.assetName} #${tx.assetId}`
+   172→      case 'buy': return `Bought ${tx.assetName} from ${tx.from || 'market'}`
+   173→      case 'sell': return `Sold ${tx.assetName} to ${tx.to || 'buyer'}`
+   174→      case 'list': return `Listed ${tx.assetName} for ${tx.amount} ALGO`
+   175→      case 'transfer': return `Sent ${tx.assetName} to ${tx.to || 'receiver'}`
+   176→      default: return `${tx.type} ${tx.assetName}`
+   177→    }
+   178→  })()
+   179→
+   180→  return {
+   181→    id: tx.id || String(index + 1),
+   182→    date: tx.createdAt ? tx.createdAt.split('T')[0] : '',
+   183→    type: txType,
+   184→    description,
+   185→    amount: amountStr,
+   186→    status: tx.status as 'confirmed' | 'pending',
+   187→    details: {
+   188→      assetId: `#${tx.assetId}`,
+   189→      from: tx.from || undefined,
+   190→      to: tx.to || undefined,
+   191→      txId: tx.txHash,
+   192→    },
+   193→  }
+   194→}
+   195→
+   196→/* ===== COMPONENT ===== */
+   197→
+   198→export default function ProfilePage() {
+   199→  const { walletConnected, walletAddress, setShowWalletModal } = useDeShopStore()
+   200→
+   201→  const [username, setUsername] = useState('anon_user')
+   202→  const [isEditing, setIsEditing] = useState(false)
+   203→  const [editValue, setEditValue] = useState(username)
+   204→  const [copied, setCopied] = useState(false)
+   205→  const [expandedTx, setExpandedTx] = useState<string | null>(null)
+   206→  const [steamConnected, setSteamConnected] = useState(false)
+   207→  const [minecraftConnected, setMinecraftConnected] = useState(true)
+   208→  const [apiTransactions, setApiTransactions] = useState<Transaction[]>([])
+   209→  const [loading, setLoading] = useState(true)
+   210→
+   211→  const fetchTransactions = useCallback(async () => {
+   212→    try {
+   213→      const res = await fetch('/api/transactions')
+   214→      if (res.ok) {
+   215→        const data = await res.json()
+   216→        if (data && data.length > 0) {
+   217→          setApiTransactions(data.map(mapApiTransaction))
+   218→        }
+   219→      }
+   220→    } catch {
+   221→      // fallback to mock data
+   222→    } finally {
+   223→      setLoading(false)
+   224→    }
+   225→  }, [])
+   226→
+   227→  useEffect(() => {
+   228→    fetchTransactions()
+   229→  }, [fetchTransactions])
+   230→
+   231→  const displayTransactions = apiTransactions.length > 0 ? apiTransactions : TRANSACTIONS
+   232→
+   233→  const displayAddress = walletAddress || 'NOT_CONNECTED___________________________'
+   234→
+   235→  const handleCopy = useCallback(() => {
+   236→    if (walletAddress) {
+   237→      navigator.clipboard.writeText(walletAddress)
+   238→      setCopied(true)
+   239→      setTimeout(() => setCopied(false), 2000)
+   240→    }
+   241→  }, [walletAddress])
+   242→
+   243→  const handleSaveUsername = useCallback(() => {
+   244→    if (editValue.trim()) {
+   245→      setUsername(editValue.trim())
+   246→    }
+   247→    setIsEditing(false)
+   248→  }, [editValue])
+   249→
+   250→  const toggleExpand = useCallback((id: string) => {
+   251→    setExpandedTx((prev) => (prev === id ? null : id))
+   252→  }, [])
+   253→
+   254→  const txTypeColor = (type: Transaction['type']): string => {
+   255→    switch (type) {
+   256→      case 'MINT': return 'text-[#33FF33]'
+   257→      case 'BUY': return 'text-[#00D4FF]'
+   258→      case 'SELL': return 'text-[#FFB800]'
+   259→      case 'TRANSFER': return 'text-[#FF00FF]'
+   260→      case 'LIST': return 'text-[#FFB800]'
+   261→      default: return 'text-[#CCCCCC]'
+   262→    }
+   263→  }
+   264→
+   265→  const txTypeBg = (type: Transaction['type']): string => {
+   266→    switch (type) {
+   267→      case 'MINT': return 'bg-[#33FF33]/10 border-[#33FF33]/30'
+   268→      case 'BUY': return 'bg-[#00D4FF]/10 border-[#00D4FF]/30'
+   269→      case 'SELL': return 'bg-[#FFB800]/10 border-[#FFB800]/30'
+   270→      case 'TRANSFER': return 'bg-[#FF00FF]/10 border-[#FF00FF]/30'
+   271→      case 'LIST': return 'bg-[#FFB800]/10 border-[#FFB800]/30'
+   272→      default: return 'bg-[#3D3D3D] border-[#444]'
+   273→    }
+   274→  }
+   275→
+   276→  const barChar = (count: number, max: number): string => {
+   277→    const total = 20
+   278→    const filled = Math.round((count / max) * total)
+   279→    return '█'.repeat(filled) + '░'.repeat(total - filled)
+   280→  }
+   281→
+   282→  return (
+   283→    <div className="space-y-4">
+   284→      {/* Terminal Window Header */}
+   285→      <div className="terminal-card">
+   286→        <div className="terminal-chrome">
+   287→          <div className="flex items-center gap-1.5 flex-shrink-0">
+   288→            <span className="terminal-dot terminal-dot-red" />
+   289→            <span className="terminal-dot terminal-dot-yellow" />
+   290→            <span className="terminal-dot terminal-dot-green" />
+   291→          </div>
+   292→          <span className="terminal-title">profile@de-shop:~/profile</span>
+   293→        </div>
+   294→        <div className="terminal-card-body">
+   295→          {/* Profile Header */}
+   296→          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+   297→            {/* ASCII Avatar */}
+   298→            <div className="flex-shrink-0 bg-[#1A1A1A] border border-[#444] p-3 text-term-green text-[10px] leading-tight font-terminal select-none">
+   299→              <pre className="ascii-art text-[9px]">{`
+   300→  ┌──────┐
+   301→  │ ◉  ◉ │
+   302→  │ ╰──╯ │
+   303→  │ └──┘ │
+   304→  └──────┘
+   305→`}</pre>
+   306→            </div>
+   307→
+   308→            {/* User Info */}
+   309→            <div className="flex-1 space-y-2">
+   310→              <div className="flex items-center gap-2">
+   311→                {isEditing ? (
+   312→                  <div className="flex items-center gap-2">
+   313→                    <input
+   314→                      type="text"
+   315→                      value={editValue}
+   316→                      onChange={(e) => setEditValue(e.target.value)}
+   317→                      onKeyDown={(e) => e.key === 'Enter' && handleSaveUsername()}
+   318→                      className="terminal-input text-sm w-48"
+   319→                      autoFocus
+   320→                      maxLength={20}
+   321→                    />
+   322→                    <button onClick={handleSaveUsername} className="terminal-btn-primary terminal-btn p-1.5">
+   323→                      <Save className="w-3 h-3" />
+   324→                    </button>
+   325→                    <button onClick={() => { setIsEditing(false); setEditValue(username) }} className="terminal-btn-danger terminal-btn p-1.5">
+   326→                      <X className="w-3 h-3" />
+   327→                    </button>
+   328→                  </div>
+   329→                ) : (
+   330→                  <div className="flex items-center gap-2">
+   331→                    <span className="text-term-green text-lg font-bold font-terminal glow-green">{username}</span>
+   332→                    <button
+   333→                      onClick={() => { setIsEditing(true); setEditValue(username) }}
+   334→                      className="terminal-btn p-1 opacity-50 hover:opacity-100"
+   335→                    >
+   336→                      <Edit3 className="w-3 h-3" />
+   337→                    </button>
+   338→                  </div>
+   339→                )}
+   340→              </div>
+   341→
+   342→              {/* Wallet Address */}
+   343→              <div className="flex items-center gap-2">
+   344→                <span className="text-term-dim text-xs font-terminal">addr:</span>
+   345→                <span className="text-term-cyan text-xs font-terminal truncate max-w-[280px]">
+   346→                  {walletConnected ? displayAddress : 'NOT CONNECTED'}
+   347→                </span>
+   348→                {walletConnected && (
+   349→                  <button
+   350→                    onClick={handleCopy}
+   351→                    className="terminal-btn p-1 text-[10px]"
+   352→                    title="Copy address"
+   353→                  >
+   354→                    {copied ? <Check className="w-3 h-3 text-term-green" /> : <Copy className="w-3 h-3" />}
+   355→                  </button>
+   356→                )}
+   357→              </div>
+   358→
+   359→              {/* Member Since & Status */}
+   360→              <div className="flex items-center gap-4 text-xs font-terminal">
+   361→                <span className="text-term-dim">
+   362→                  joined: <span className="text-term-text">2024-01-15</span>
+   363→                </span>
+   364→                <span className="flex items-center gap-1.5">
+   365→                  <span className={`status-dot ${walletConnected ? 'status-dot-online' : 'status-dot-offline'}`} />
+   366→                  <span className={walletConnected ? 'text-term-green' : 'text-term-red'}>
+   367→                    {walletConnected ? 'ONLINE' : 'OFFLINE'}
+   368→                  </span>
+   369→                </span>
+   370→              </div>
+   371→
+   372→              {!walletConnected && (
+   373→                <button
+   374→                  onClick={() => setShowWalletModal(true)}
+   375→                  className="terminal-btn terminal-btn-primary text-xs mt-1"
+   376→                >
+   377→                  <span className="prompt-prefix mr-1">$</span> connect wallet
+   378→                </button>
+   379→              )}
+   380→            </div>
+   381→          </div>
+   382→        </div>
+   383→      </div>
+   384→
+   385→      {/* Main Grid */}
+   386→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   387→        {/* Achievements */}
+   388→        <div className="terminal-card terminal-card-glow lg:col-span-2">
+   389→          <div className="terminal-card-header">
+   390→            <div className="flex items-center gap-1.5 flex-shrink-0">
+   391→              <span className="terminal-dot terminal-dot-red" />
+   392→              <span className="terminal-dot terminal-dot-yellow" />
+   393→              <span className="terminal-dot terminal-dot-green" />
+   394→            </div>
+   395→            <span className="terminal-title">achievements.log</span>
+   396→            <span className="text-[10px] text-term-dim font-terminal">
+   397→              {ACHIEVEMENTS.filter((a) => a.unlocked).length}/{ACHIEVEMENTS.length}
+   398→            </span>
+   399→          </div>
+   400→          <div className="terminal-card-body">
+   401→            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+   402→              {ACHIEVEMENTS.map((ach) => (
+   403→                <motion.div
+   404→                  key={ach.id}
+   405→                  initial={{ opacity: 0, scale: 0.95 }}
+   406→                  animate={{ opacity: 1, scale: 1 }}
+   407→                  transition={{ delay: parseInt(ach.id) * 0.03 }}
+   408→                  className={`
+   409→                    relative border p-3 text-center font-terminal transition-all
+   410→                    ${ach.unlocked
+   411→                      ? 'border-[#33FF33]/40 bg-[#33FF33]/5'
+   412→                      : 'border-[#444] bg-[#1A1A1A] opacity-50'
+   413→                    }
+   414→                  `}
+   415→                  style={ach.unlocked ? { boxShadow: '0 0 8px rgba(51, 255, 51, 0.1)' } : {}}
+   416→                >
+   417→                  {/* Lock overlay for locked achievements */}
+   418→                  {!ach.unlocked && (
+   419→                    <div className="absolute inset-0 flex items-center justify-center bg-[#1A1A1A]/60 z-10">
+   420→                      <span className="text-term-dim text-lg">🔒</span>
+   421→                    </div>
+   422→                  )}
+   423→                  <div className="text-2xl mb-1">{ach.emoji}</div>
+   424→                  <div className={`text-[11px] font-bold ${ach.unlocked ? 'text-term-green glow-green' : 'text-term-dim'}`}>
+   425→                    {ach.name}
+   426→                  </div>
+   427→                  <div className="text-[9px] text-term-dim mt-1">
+   428→                    {ach.unlockDate || 'LOCKED'}
+   429→                  </div>
+   430→                </motion.div>
+   431→              ))}
+   432→            </div>
+   433→          </div>
+   434→        </div>
+   435→
+   436→        {/* Transaction History */}
+   437→        <div className="terminal-card terminal-card-cyan-glow">
+   438→          <div className="terminal-card-header">
+   439→            <div className="flex items-center gap-1.5 flex-shrink-0">
+   440→              <span className="terminal-dot terminal-dot-red" />
+   441→              <span className="terminal-dot terminal-dot-yellow" />
+   442→              <span className="terminal-dot terminal-dot-green" />
+   443→            </div>
+   444→            <span className="terminal-title">transactions.log</span>
+   445→            <span className="text-[10px] text-term-dim font-terminal">{displayTransactions.length} entries</span>
+   446→          </div>
+   447→          <div className="terminal-card-body p-0">
+   448→            <div className="max-h-96 overflow-y-auto">
+   449→              {displayTransactions.map((tx) => (
+   450→                <div key={tx.id}>
+   451→                  <button
+   452→                    onClick={() => toggleExpand(tx.id)}
+   453→                    className="w-full text-left px-4 py-2.5 border-b border-[#333] hover:bg-[#333]/50 transition-colors font-terminal text-[11px]"
+   454→                  >
+   455→                    <div className="flex items-center justify-between gap-2">
+   456→                      <div className="flex items-center gap-2 min-w-0">
+   457→                        <span className={`text-[9px] px-1.5 py-0.5 border ${txTypeBg(tx.type)} ${txTypeColor(tx.type)} whitespace-nowrap`}>
+   458→                          {tx.type}
+   459→                        </span>
+   460→                        <span className="text-term-text truncate">{tx.description}</span>
+   461→                      </div>
+   462→                      <div className="flex items-center gap-2 flex-shrink-0">
+   463→                        <span className={tx.amount.startsWith('+') ? 'text-term-green' : tx.amount.startsWith('-') ? 'text-term-red' : 'text-term-amber'}>
+   464→                          {tx.amount}
+   465→                        </span>
+   466→                        <span className="text-[10px]">
+   467→                          {tx.status === 'confirmed' ? '✓' : '⏳'}
+   468→                        </span>
+   469→                        {expandedTx === tx.id ? (
+   470→                          <ChevronUp className="w-3 h-3 text-term-dim" />
+   471→                        ) : (
+   472→                          <ChevronDown className="w-3 h-3 text-term-dim" />
+   473→                        )}
+   474→                      </div>
+   475→                    </div>
+   476→                    <div className="text-term-dim text-[9px] mt-0.5">
+   477→                      [{tx.date}]
+   478→                    </div>
+   479→                  </button>
+   480→
+   481→                  <AnimatePresence>
+   482→                    {expandedTx === tx.id && (
+   483→                      <motion.div
+   484→                        initial={{ height: 0, opacity: 0 }}
+   485→                        animate={{ height: 'auto', opacity: 1 }}
+   486→                        exit={{ height: 0, opacity: 0 }}
+   487→                        transition={{ duration: 0.15 }}
+   488→                        className="overflow-hidden bg-[#1A1A1A]"
+   489→                      >
+   490→                        <div className="px-4 py-3 font-terminal text-[11px] space-y-1.5">
+   491→                          <div className="flex items-center gap-2">
+   492→                            <span className="text-term-dim">Asset:</span>
+   493→                            <span className="text-term-cyan">{tx.details.assetId}</span>
+   494→                          </div>
+   495→                          {tx.details.from && (
+   496→                            <div className="flex items-center gap-2">
+   497→                              <span className="text-term-dim">From:</span>
+   498→                              <span className="text-term-text">{tx.details.from}</span>
+   499→                            </div>
+   500→                          )}
+   501→                          {tx.details.to && (
+   502→                            <div className="flex items-center gap-2">
+   503→                              <span className="text-term-dim">To:</span>
+   504→                              <span className="text-term-text">{tx.details.to}</span>
+   505→                            </div>
+   506→                          )}
+   507→                          <div className="flex items-center gap-2">
+   508→                            <span className="text-term-dim">TxID:</span>
+   509→                            <span className="text-term-amber">{tx.details.txId}</span>
+   510→                          </div>
+   511→                          <div className="flex items-center gap-2">
+   512→                            <span className="text-term-dim">Status:</span>
+   513→                            <span className={tx.status === 'confirmed' ? 'text-term-green' : 'text-term-amber'}>
+   514→                              {tx.status === 'confirmed' ? '✓ Confirmed' : '⏳ Pending'}
+   515→                            </span>
+   516→                          </div>
+   517→                        </div>
+   518→                      </motion.div>
+   519→                    )}
+   520→                  </AnimatePresence>
+   521→                </div>
+   522→              ))}
+   523→            </div>
+   524→          </div>
+   525→        </div>
+   526→
+   527→        {/* Portfolio Analytics */}
+   528→        <div className="terminal-card terminal-card-glow">
+   529→          <div className="terminal-card-header">
+   530→            <div className="flex items-center gap-1.5 flex-shrink-0">
+   531→              <span className="terminal-dot terminal-dot-red" />
+   532→              <span className="terminal-dot terminal-dot-yellow" />
+   533→              <span className="terminal-dot terminal-dot-green" />
+   534→            </div>
+   535→            <span className="terminal-title">portfolio.log</span>
+   536→          </div>
+   537→          <div className="terminal-card-body space-y-4">
+   538→            {/* Total Value */}
+   539→            <div className="flex items-baseline gap-2">
+   540→              <span className="text-term-dim text-xs font-terminal">total_value:</span>
+   541→              <span className="text-term-green text-xl font-bold font-terminal glow-green">95.4 ALGO</span>
+   542→              <span className="text-term-green text-xs font-terminal">(+12.3%)</span>
+   543→            </div>
+   544→
+   545→            {/* Area Chart */}
+   546→            <div className="h-32 w-full">
+   547→              <ResponsiveContainer width="100%" height="100%">
+   548→                <AreaChart data={PORTFOLIO_DATA}>
+   549→                  <defs>
+   550→                    <linearGradient id="portfolioGrad" x1="0" y1="0" x2="0" y2="1">
+   551→                      <stop offset="0%" stopColor="#33FF33" stopOpacity={0.3} />
+   552→                      <stop offset="100%" stopColor="#33FF33" stopOpacity={0.02} />
+   553→                    </linearGradient>
+   554→                  </defs>
+   555→                  <XAxis dataKey="day" hide />
+   556→                  <YAxis hide />
+   557→                  <Tooltip content={<PortfolioTooltip />} />
+   558→                  <Area
+   559→                    type="monotone"
+   560→                    dataKey="value"
+   561→                    stroke="#33FF33"
+   562→                    strokeWidth={1.5}
+   563→                    fill="url(#portfolioGrad)"
+   564→                  />
+   565→                </AreaChart>
+   566→              </ResponsiveContainer>
+   567→            </div>
+   568→
+   569→            {/* Rarity Distribution (ASCII bar chart) */}
+   570→            <div>
+   571→              <div className="text-term-dim text-[10px] font-terminal mb-2">{'// rarity_distribution'}</div>
+   572→              <div className="space-y-1.5 font-terminal text-[10px]">
+   573→                {RARITY_DISTRIBUTION.map((r) => (
+   574→                  <div key={r.rarity} className="flex items-center gap-2">
+   575→                    <span className="w-20 text-right" style={{ color: r.color }}>{r.rarity}</span>
+   576→                    <span style={{ color: r.color }}>{barChar(r.count, r.max)}</span>
+   577→                    <span className="text-term-dim">{r.count}</span>
+   578→                  </div>
+   579→                ))}
+   580→              </div>
+   581→            </div>
+   582→
+   583→            {/* Top Holdings */}
+   584→            <div>
+   585→              <div className="text-term-dim text-[10px] font-terminal mb-2">{'// top_holdings'}</div>
+   586→              <div className="space-y-1.5 font-terminal text-[11px]">
+   587→                {TOP_HOLDINGS.map((h, i) => (
+   588→                  <div key={h.name} className="flex items-center justify-between">
+   589→                    <div className="flex items-center gap-2">
+   590→                      <span className="text-term-dim w-4">{i + 1}.</span>
+   591→                      <span className="text-term-text">{h.name}</span>
+   592→                      <span
+   593→                        className="text-[9px] px-1 border"
+   594→                        style={{ color: RARITY_COLOR[h.rarity], borderColor: RARITY_COLOR[h.rarity] + '66' }}
+   595→                      >
+   596→                        {h.rarity}
+   597→                      </span>
+   598→                    </div>
+   599→                    <span className="text-term-green">{h.value}</span>
+   600→                  </div>
+   601→                ))}
+   602→              </div>
+   603→            </div>
+   604→          </div>
+   605→        </div>
+   606→
+   607→        {/* Connected Accounts */}
+   608→        <div className="terminal-card terminal-card-cyan-glow lg:col-span-2">
+   609→          <div className="terminal-card-header">
+   610→            <div className="flex items-center gap-1.5 flex-shrink-0">
+   611→              <span className="terminal-dot terminal-dot-red" />
+   612→              <span className="terminal-dot terminal-dot-yellow" />
+   613→              <span className="terminal-dot terminal-dot-green" />
+   614→            </div>
+   615→            <span className="terminal-title">accounts.log</span>
+   616→          </div>
+   617→          <div className="terminal-card-body">
+   618→            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+   619→              {/* Wallet Connection */}
+   620→              <div className="border border-[#444] p-4 font-terminal">
+   621→                <div className="flex items-center justify-between mb-3">
+   622→                  <div className="flex items-center gap-2">
+   623→                    <Link2 className="w-4 h-4 text-term-cyan" />
+   624→                    <span className="text-term-text text-sm">Algorand Wallet</span>
+   625→                  </div>
+   626→                  <span className={`status-dot ${walletConnected ? 'status-dot-online' : 'status-dot-offline'}`} />
+   627→                </div>
+   628→                <div className="text-[10px] text-term-dim mb-2">
+   629→                  {walletConnected
+   630→                    ? `Connected: ${walletAddress?.substring(0, 16)}...`
+   631→                    : 'Not connected'
+   632→                  }
+   633→                </div>
+   634→                {!walletConnected && (
+   635→                  <button
+   636→                    onClick={() => setShowWalletModal(true)}
+   637→                    className="terminal-btn terminal-btn-primary text-[10px] w-full"
+   638→                  >
+   639→                    Connect Wallet
+   640→                  </button>
+   641→                )}
+   642→                {walletConnected && (
+   643→                  <div className="text-[10px] text-term-green">✓ Active</div>
+   644→                )}
+   645→              </div>
+   646→
+   647→              {/* Steam Integration */}
+   648→              <div className="border border-[#444] p-4 font-terminal">
+   649→                <div className="flex items-center justify-between mb-3">
+   650→                  <div className="flex items-center gap-2">
+   651→                    <Monitor className="w-4 h-4 text-term-amber" />
+   652→                    <span className="text-term-text text-sm">Steam</span>
+   653→                  </div>
+   654→                  <span className={`status-dot ${steamConnected ? 'status-dot-online' : 'status-dot-offline'}`} />
+   655→                </div>
+   656→                <div className="text-[10px] text-term-dim mb-2">
+   657→                  {steamConnected
+   658→                    ? 'Steam ID: 76561198052348'
+   659→                    : 'Not connected'
+   660→                  }
+   661→                </div>
+   662→                {!steamConnected ? (
+   663→                  <button
+   664→                    onClick={() => setSteamConnected(true)}
+   665→                    className="terminal-btn terminal-btn-primary text-[10px] w-full"
+   666→                  >
+   667→                    Connect Steam
+   668→                  </button>
+   669→                ) : (
+   670→                  <div className="text-[10px] text-term-green">✓ Synced — 12 items</div>
+   671→                )}
+   672→              </div>
+   673→
+   674→              {/* Minecraft Integration */}
+   675→              <div className="border border-[#444] p-4 font-terminal">
+   676→                <div className="flex items-center justify-between mb-3">
+   677→                  <div className="flex items-center gap-2">
+   678→                    <Gamepad2 className="w-4 h-4 text-term-magenta" />
+   679→                    <span className="text-term-text text-sm">Minecraft</span>
+   680→                  </div>
+   681→                  <span className={`status-dot ${minecraftConnected ? 'status-dot-online' : 'status-dot-offline'}`} />
+   682→                </div>
+   683→                <div className="text-[10px] text-term-dim mb-2">
+   684→                  {minecraftConnected
+   685→                    ? 'IGN: pixel_crafter_42'
+   686→                    : 'Not connected'
+   687→                  }
+   688→                </div>
+   689→                {!minecraftConnected ? (
+   690→                  <button
+   691→                    onClick={() => setMinecraftConnected(true)}
+   692→                    className="terminal-btn terminal-btn-primary text-[10px] w-full"
+   693→                  >
+   694→                    Connect Minecraft
+   695→                  </button>
+   696→                ) : (
+   697→                  <div className="text-[10px] text-term-green">✓ Bridge Active — 142 assets synced</div>
+   698→                )}
+   699→              </div>
+   700→            </div>
+   701→          </div>
+   702→        </div>
+   703→      </div>
+   704→    </div>
+   705→  )
+   706→}
+   707→

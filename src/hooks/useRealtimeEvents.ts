@@ -100,6 +100,12 @@ export function useRealtimeEvents(): RealtimeState {
         // Keep only the most recent MAX_EVENTS
         return next.length > MAX_EVENTS ? next.slice(0, MAX_EVENTS) : next
       })
+      // Notify any listeners (e.g. BackgroundGrid) that a new event arrived.
+      try {
+        window.dispatchEvent(new CustomEvent('deshop:realtime-event', { detail: { event } }))
+      } catch {
+        // ignore — window may not be available during SSR
+      }
     })
 
     socket.on('stats', (s: LiveStats) => {

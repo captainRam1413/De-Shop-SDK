@@ -72,6 +72,10 @@ export function useKeyboardShortcuts() {
           useDeShopStore.getState().setPriceAlertAsset(null)
           return
         }
+        if (st.compareDrawerOpen) {
+          useDeShopStore.getState().setCompareDrawerOpen(false)
+          return
+        }
         return
       }
 

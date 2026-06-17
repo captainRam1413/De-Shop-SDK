@@ -63,6 +63,10 @@ interface DeShopState {
   watchlist: string[]
   // Price alerts — persisted to localStorage
   priceAlerts: PriceAlert[]
+  // Asset comparison tray — array of asset IDs (max 3) — persisted to localStorage
+  compareIds: string[]
+  // Compare drawer visibility
+  compareDrawerOpen: boolean
 
   // Actions
   setActivePage: (page: ActivePage) => void
@@ -88,6 +92,11 @@ interface DeShopState {
   removePriceAlert: (id: string) => void
   markPriceAlertTriggered: (id: string, lastPrice: number) => void
   clearPriceAlerts: () => void
+  // Compare actions
+  toggleCompare: (assetId: string) => void
+  isCompared: (assetId: string) => boolean
+  clearCompare: () => void
+  setCompareDrawerOpen: (open: boolean) => void
 }
 
 let notificationCounter = 0
@@ -96,6 +105,7 @@ let priceAlertCounter = 0
 const THEME_STORAGE_KEY = 'deshop-theme'
 const WATCHLIST_STORAGE_KEY = 'deshop-watchlist'
 const PRICE_ALERTS_STORAGE_KEY = 'deshop-price-alerts'
+const COMPARE_STORAGE_KEY = 'deshop-compare'
 
 function applyThemeToDocument(theme: TerminalTheme) {
   if (typeof document === 'undefined') return
@@ -163,6 +173,31 @@ function persistPriceAlerts(alerts: PriceAlert[]) {
   }
 }
 
+function loadInitialCompare(): string[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const stored = window.localStorage.getItem(COMPARE_STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      if (Array.isArray(parsed)) {
+        return parsed.filter((x) => typeof x === 'string').slice(0, 3)
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return []
+}
+
+function persistCompare(ids: string[]) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(COMPARE_STORAGE_KEY, JSON.stringify(ids.slice(0, 3)))
+  } catch {
+    /* ignore */
+  }
+}
+
 export const useDeShopStore = create<DeShopState>((set, get) => ({
   // Navigation
   activePage: 'dashboard',
@@ -199,6 +234,10 @@ export const useDeShopStore = create<DeShopState>((set, get) => ({
 
   // Price alerts (hydrated from localStorage)
   priceAlerts: loadInitialPriceAlerts(),
+
+  // Compare tray (hydrated from localStorage, max 3)
+  compareIds: loadInitialCompare(),
+  compareDrawerOpen: false,
 
   // Actions
   setActivePage: (page) => set({ activePage: page, mobileSidebarOpen: false }),
@@ -317,4 +356,30 @@ export const useDeShopStore = create<DeShopState>((set, get) => ({
     persistPriceAlerts([])
     set({ priceAlerts: [] })
   },
+
+  toggleCompare: (assetId) => {
+    const current = get().compareIds
+    let next: string[]
+    if (current.includes(assetId)) {
+      next = current.filter((id) => id !== assetId)
+    } else {
+      if (current.length >= 3) {
+        // Replace oldest
+        next = [...current.slice(1), assetId]
+      } else {
+        next = [...current, assetId]
+      }
+    }
+    persistCompare(next)
+    set({ compareIds: next, compareDrawerOpen: next.length > 0 ? get().compareDrawerOpen : false })
+  },
+
+  isCompared: (assetId) => get().compareIds.includes(assetId),
+
+  clearCompare: () => {
+    persistCompare([])
+    set({ compareIds: [], compareDrawerOpen: false })
+  },
+
+  setCompareDrawerOpen: (open) => set({ compareDrawerOpen: open }),
 }))

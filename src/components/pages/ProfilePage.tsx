@@ -14,6 +14,9 @@ import {
   Link2,
   Gamepad2,
   Monitor,
+  Download,
+  FileJson,
+  FileSpreadsheet,
 } from 'lucide-react'
 import { useDeShopStore } from '@/store/useDeShopStore'
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
@@ -196,7 +199,7 @@ function mapApiTransaction(tx: ApiTransaction, index: number): Transaction {
 /* ===== COMPONENT ===== */
 
 export default function ProfilePage() {
-  const { walletConnected, walletAddress, setShowWalletModal } = useDeShopStore()
+  const { walletConnected, walletAddress, setShowWalletModal, addNotification } = useDeShopStore()
 
   const [username, setUsername] = useState('anon_user')
   const [isEditing, setIsEditing] = useState(false)
@@ -278,6 +281,73 @@ export default function ProfilePage() {
     const filled = Math.round((count / max) * total)
     return '█'.repeat(filled) + '░'.repeat(total - filled)
   }
+
+  /* ===== Export helpers ===== */
+
+  const triggerDownload = (filename: string, content: string, mime: string) => {
+    try {
+      const blob = new Blob([content], { type: mime })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 100)
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  const exportCSV = useCallback(() => {
+    const rows = displayTransactions.map((tx) => ({
+      id: tx.id,
+      date: tx.date,
+      type: tx.type,
+      description: tx.description,
+      amount: tx.amount,
+      status: tx.status,
+      assetId: tx.details.assetId,
+      from: tx.details.from || '',
+      to: tx.details.to || '',
+      txId: tx.details.txId,
+    }))
+    const headers = ['id', 'date', 'type', 'description', 'amount', 'status', 'assetId', 'from', 'to', 'txId']
+    const csv = [
+      headers.join(','),
+      ...rows.map((r) =>
+        headers
+          .map((h) => {
+            const val = String((r as Record<string, string>)[h] ?? '')
+            // Escape quotes and wrap in quotes if needed
+            if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+              return `"${val.replace(/"/g, '""')}"`
+            }
+            return val
+          })
+          .join(','),
+      ),
+    ].join('\n')
+    triggerDownload(`deshop-transactions-${new Date().toISOString().split('T')[0]}.csv`, csv, 'text/csv;charset=utf-8;')
+    addNotification('success', `Exported ${displayTransactions.length} transactions to CSV`)
+  }, [displayTransactions, addNotification])
+
+  const exportJSON = useCallback(() => {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      wallet: walletAddress || 'NOT_CONNECTED',
+      username,
+      count: displayTransactions.length,
+      transactions: displayTransactions,
+    }
+    triggerDownload(
+      `deshop-transactions-${new Date().toISOString().split('T')[0]}.json`,
+      JSON.stringify(payload, null, 2),
+      'application/json;charset=utf-8;',
+    )
+    addNotification('success', `Exported ${displayTransactions.length} transactions to JSON`)
+  }, [displayTransactions, walletAddress, username, addNotification])
 
   return (
     <div className="space-y-4">
@@ -406,25 +476,28 @@ export default function ProfilePage() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: parseInt(ach.id) * 0.03 }}
                   className={`
-                    relative border p-3 text-center font-terminal transition-all
+                    achievement-card relative border p-3 font-terminal
                     ${ach.unlocked
-                      ? 'border-[#33FF33]/40 bg-[#33FF33]/5'
-                      : 'border-[#444] bg-[#1A1A1A] opacity-50'
+                      ? 'unlocked border-[#33FF33]/40 bg-[#33FF33]/5'
+                      : 'locked border-[#444] bg-[#1A1A1A] opacity-60'
                     }
                   `}
                   style={ach.unlocked ? { boxShadow: '0 0 8px rgba(51, 255, 51, 0.1)' } : {}}
+                  title={ach.description}
                 >
-                  {/* Lock overlay for locked achievements */}
+                  {/* Lock icon overlay for locked achievements */}
                   {!ach.unlocked && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-[#1A1A1A]/60 z-10">
-                      <span className="text-term-dim text-lg">🔒</span>
+                    <div className="absolute top-1.5 right-1.5 z-10 text-term-dim text-[10px]" aria-label="locked">
+                      🔒
                     </div>
                   )}
-                  <div className="text-2xl mb-1">{ach.emoji}</div>
-                  <div className={`text-[11px] font-bold ${ach.unlocked ? 'text-term-green glow-green' : 'text-term-dim'}`}>
+                  <div className="ach-icon-wrap">
+                    {ach.emoji}
+                  </div>
+                  <div className={`ach-name ${ach.unlocked ? 'text-term-green glow-green' : 'text-term-dim'}`}>
                     {ach.name}
                   </div>
-                  <div className="text-[9px] text-term-dim mt-1">
+                  <div className="ach-date text-term-dim">
                     {ach.unlockDate || 'LOCKED'}
                   </div>
                 </motion.div>
@@ -443,6 +516,36 @@ export default function ProfilePage() {
             </div>
             <span className="terminal-title">transactions.log</span>
             <span className="text-[10px] text-term-dim font-terminal">{displayTransactions.length} entries</span>
+
+            {/* Export buttons */}
+            <div className="ml-auto flex items-center gap-1">
+              <button
+                onClick={exportCSV}
+                className="export-btn flex items-center gap-1 text-[9px] font-terminal text-term-dim hover:text-term-green border border-[#444] hover:border-term-green/50 px-1.5 py-0.5 transition-colors"
+                title="Download as CSV"
+                aria-label="Export transactions as CSV"
+              >
+                <FileSpreadsheet className="w-2.5 h-2.5" />
+                <span className="hidden sm:inline">CSV</span>
+              </button>
+              <button
+                onClick={exportJSON}
+                className="export-btn flex items-center gap-1 text-[9px] font-terminal text-term-dim hover:text-term-cyan border border-[#444] hover:border-term-cyan/50 px-1.5 py-0.5 transition-colors"
+                title="Download as JSON"
+                aria-label="Export transactions as JSON"
+              >
+                <FileJson className="w-2.5 h-2.5" />
+                <span className="hidden sm:inline">JSON</span>
+              </button>
+              <button
+                onClick={() => { exportCSV() }}
+                className="export-btn flex items-center gap-1 text-[9px] font-terminal text-term-dim hover:text-term-amber border border-[#444] hover:border-term-amber/50 px-1.5 py-0.5 transition-colors sm:hidden"
+                title="Download"
+                aria-label="Download transactions"
+              >
+                <Download className="w-2.5 h-2.5" />
+              </button>
+            </div>
           </div>
           <div className="terminal-card-body p-0">
             <div className="max-h-96 overflow-y-auto">

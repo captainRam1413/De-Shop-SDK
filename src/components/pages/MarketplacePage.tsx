@@ -30,10 +30,13 @@ import {
   Star,
   BellRing,
   Heart,
+  GitCompareArrows,
+  ZoomIn,
 } from 'lucide-react'
 import { useDeShopStore } from '@/store/useDeShopStore'
 import { useLivePrices } from '@/hooks/useLivePrices'
 import LivePriceTicker from '@/components/LivePriceTicker'
+import AssetCompareDrawer from '@/components/AssetCompareDrawer'
 
 /* ===== TRAFFIC LIGHT DOTS ===== */
 
@@ -416,6 +419,10 @@ function DetailModal({
   const isWatched = useDeShopStore((s) => s.watchlist.includes(asset.id))
   const toggleWatchlist = useDeShopStore((s) => s.toggleWatchlist)
   const setPriceAlertAsset = useDeShopStore((s) => s.setPriceAlertAsset)
+  const isCompared = useDeShopStore((s) => s.compareIds.includes(asset.id))
+  const toggleCompare = useDeShopStore((s) => s.toggleCompare)
+  const setCompareDrawerOpen = useDeShopStore((s) => s.setCompareDrawerOpen)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
   const config = RARITY_CONFIG[asset.rarity]
   const rarityScore = config.weight * 25
 
@@ -449,6 +456,20 @@ function DetailModal({
     setPriceAlertAsset({ name: asset.name, id: asset.id, price: asset.price })
     onClose()
   }
+
+  const handleCompareToggle = () => {
+    toggleCompare(asset.id)
+    setCompareDrawerOpen(true)
+    addNotification(
+      'info',
+      isCompared
+        ? `Removed ${asset.name} from comparison`
+        : `Added ${asset.name} to comparison`,
+    )
+  }
+
+  const handleOpenLightbox = () => setLightboxOpen(true)
+  const handleCloseLightbox = () => setLightboxOpen(false)
 
   const handleGenerateArt = async () => {
     setArtLoading(true)
@@ -512,7 +533,7 @@ function DetailModal({
           {/* Asset Header */}
           <div className="flex items-start gap-4">
             {artUrl ? (
-              <div className="relative flex-shrink-0 w-16 h-16 overflow-hidden border border-[#444444] rounded-sm">
+              <div className="relative flex-shrink-0 w-16 h-16 overflow-hidden border border-[#444444] rounded-sm group/thumb">
                 <img src={artUrl} alt={asset.name} className="w-full h-full object-cover" />
                 {artSource && (
                   <span
@@ -523,11 +544,27 @@ function DetailModal({
                     {artSource === 'ai' ? 'AI' : 'PLACEHOLDER'}
                   </span>
                 )}
+                <button
+                  onClick={handleOpenLightbox}
+                  className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover/thumb:opacity-100 transition-opacity"
+                  aria-label="Zoom image"
+                  title="Zoom image"
+                >
+                  <ZoomIn className="w-5 h-5 text-term-green" />
+                </button>
               </div>
             ) : (
-              <div className="text-5xl flex-shrink-0 w-16 h-16 flex items-center justify-center bg-[#2D2D2D] border border-[#444444] rounded-sm">
+              <button
+                onClick={handleOpenLightbox}
+                className="text-5xl flex-shrink-0 w-16 h-16 flex items-center justify-center bg-[#2D2D2D] border border-[#444444] rounded-sm hover:border-term-green/60 hover:bg-[#252525] transition-colors relative group/thumb"
+                aria-label="Zoom image"
+                title="Zoom image"
+              >
                 {asset.emoji}
-              </div>
+                <span className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover/thumb:opacity-100 transition-opacity">
+                  <ZoomIn className="w-5 h-5 text-term-green" />
+                </span>
+              </button>
             )}
             <div className="flex-1 min-w-0">
               <div className="text-xs text-term-dim font-terminal mb-1">ID: {asset.id}</div>
@@ -714,10 +751,10 @@ function DetailModal({
           </div>
 
           {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-2 pt-2">
+          <div className="grid grid-cols-3 gap-2 pt-2">
             <button
               onClick={handleBuy}
-              className="terminal-btn terminal-btn-primary flex items-center justify-center gap-2 col-span-2"
+              className="terminal-btn terminal-btn-primary flex items-center justify-center gap-2 col-span-3"
             >
               <ShoppingCart className="w-3.5 h-3.5" />
               <span>Buy for {asset.price} ALGO</span>
@@ -741,8 +778,19 @@ function DetailModal({
               <span>{isWatched ? 'Watching' : 'Watch'}</span>
             </button>
             <button
+              onClick={handleCompareToggle}
+              className={`terminal-btn flex items-center justify-center gap-2 ${
+                isCompared
+                  ? 'border-term-cyan/60 text-term-cyan bg-term-cyan/10'
+                  : 'border-term-cyan/50 text-term-cyan hover:bg-term-cyan/10'
+              }`}
+            >
+              <GitCompareArrows className="w-3.5 h-3.5" />
+              <span>{isCompared ? 'In Compare' : 'Compare'}</span>
+            </button>
+            <button
               onClick={handleSetAlert}
-              className="terminal-btn flex items-center justify-center gap-2 border-term-magenta/50 text-term-magenta hover:bg-term-magenta/10 col-span-2"
+              className="terminal-btn flex items-center justify-center gap-2 border-term-magenta/50 text-term-magenta hover:bg-term-magenta/10 col-span-3"
             >
               <BellRing className="w-3.5 h-3.5" />
               <span>Set Price Alert</span>
@@ -750,6 +798,57 @@ function DetailModal({
           </div>
         </div>
       </motion.div>
+
+      {/* Image Lightbox */}
+      <AnimatePresence>
+        {lightboxOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-8"
+            onClick={handleCloseLightbox}
+          >
+            <div className="absolute inset-0 bg-black/90" />
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.85, opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="relative z-10 max-w-md w-full terminal-card"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="terminal-card-header">
+                <TrafficLights />
+                <span className="terminal-title">{asset.name}.img</span>
+                <button
+                  onClick={handleCloseLightbox}
+                  className="ml-auto text-term-dim hover:text-term-red transition-colors"
+                  aria-label="Close lightbox"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="bg-[#0A0A0A] aspect-square flex items-center justify-center relative overflow-hidden">
+                {artUrl ? (
+                  <img src={artUrl} alt={asset.name} className="w-full h-full object-contain" />
+                ) : (
+                  <div className="text-[180px] leading-none">{asset.emoji}</div>
+                )}
+                <div className="absolute top-2 left-2 text-[10px] font-terminal text-term-dim bg-black/60 px-2 py-0.5 border border-[#444]">
+                  {asset.id} • {asset.rarity.toUpperCase()}
+                </div>
+                <div className="absolute bottom-2 right-2 text-[10px] font-terminal text-term-green bg-black/60 px-2 py-0.5 border border-term-green/40">
+                  ◆ {asset.price} ALGO
+                </div>
+              </div>
+              <div className="p-3 bg-[#1E1E1E] text-[10px] font-terminal text-term-dim border-t border-[#333]">
+                {asset.description}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
@@ -789,11 +888,14 @@ function GridCard({
   const config = RARITY_CONFIG[asset.rarity]
   const [popoverOpen, setPopoverOpen] = useState(false)
 
-  // Watchlist + price alert state from global store
+  // Watchlist + price alert + compare state from global store
   const isWatched = useDeShopStore((s) => s.watchlist.includes(asset.id))
   const toggleWatchlist = useDeShopStore((s) => s.toggleWatchlist)
   const setPriceAlertAsset = useDeShopStore((s) => s.setPriceAlertAsset)
   const addNotification = useDeShopStore((s) => s.addNotification)
+  const isCompared = useDeShopStore((s) => s.compareIds.includes(asset.id))
+  const toggleCompare = useDeShopStore((s) => s.toggleCompare)
+  const setCompareDrawerOpen = useDeShopStore((s) => s.setCompareDrawerOpen)
 
   const handleAIClick = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -817,14 +919,26 @@ function GridCard({
     setPriceAlertAsset({ name: asset.name, id: asset.id, price: asset.price })
   }
 
+  const handleCompareToggle = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    toggleCompare(asset.id)
+    setCompareDrawerOpen(true)
+    addNotification(
+      'info',
+      isCompared
+        ? `Removed ${asset.name} from comparison`
+        : `Added ${asset.name} to comparison`,
+    )
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.25 }}
-      className={`terminal-card cursor-pointer border ${config.borderColor} ${config.glowClass} group relative ${
+      className={`terminal-card cursor-pointer border ${config.borderColor} ${config.glowClass} group relative terminal-card-hover ${
         isPulsing ? 'trade-pulse' : ''
-      }`}
+      } ${isCompared ? 'compare-selected' : ''}`}
       onClick={onClick}
     >
       {/* Card Chrome Header */}
@@ -893,6 +1007,20 @@ function GridCard({
           title="Set price alert"
         >
           <BellRing className="w-2.5 h-2.5" />
+        </button>
+
+        {/* Compare toggle */}
+        <button
+          onClick={handleCompareToggle}
+          className={`flex items-center justify-center w-5 h-5 border text-[9px] font-terminal transition-all ${
+            isCompared
+              ? 'border-term-cyan/60 text-term-cyan bg-term-cyan/10'
+              : 'border-term-dim/40 text-term-dim hover:text-term-cyan hover:border-term-cyan/60'
+          }`}
+          aria-label={isCompared ? 'Remove from comparison' : 'Add to comparison'}
+          title={isCompared ? 'Remove from comparison' : 'Add to comparison (max 3)'}
+        >
+          <GitCompareArrows className="w-2.5 h-2.5" />
         </button>
       </div>
 
@@ -1573,6 +1701,57 @@ export default function MarketplacePage() {
           />
         )}
       </AnimatePresence>
+
+      {/* Compare Tray (floating, only when items selected) */}
+      <CompareTray assets={baseAssets} />
+
+      {/* Compare Drawer */}
+      <AssetCompareDrawer assets={baseAssets} />
     </div>
+  )
+}
+
+/* ===== COMPARE TRAY (floating bottom-right button) ===== */
+
+function CompareTray({ assets }: { assets: MarketplaceAsset[] }) {
+  const compareIds = useDeShopStore((s) => s.compareIds)
+  const setCompareDrawerOpen = useDeShopStore((s) => s.setCompareDrawerOpen)
+  const compareDrawerOpen = useDeShopStore((s) => s.compareDrawerOpen)
+
+  if (compareIds.length === 0 || compareDrawerOpen) return null
+
+  // Find previews for the first 3 selected
+  const previews = compareIds
+    .slice(0, 3)
+    .map((id) => assets.find((a) => a.id === id))
+    .filter((a): a is MarketplaceAsset => Boolean(a))
+
+  return (
+    <motion.button
+      initial={{ y: 60, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 60, opacity: 0 }}
+      onClick={() => setCompareDrawerOpen(true)}
+      className="fixed bottom-6 right-6 z-30 terminal-card terminal-card-cyan-glow group flex items-center gap-3 px-4 py-2.5 hover:border-term-cyan/60 transition-colors"
+      aria-label="Open compare drawer"
+      title="View comparison"
+    >
+      <div className="flex items-center gap-1.5">
+        {previews.map((a) => (
+          <span key={a.id} className="text-xl" title={a.name}>
+            {a.emoji}
+          </span>
+        ))}
+      </div>
+      <div className="flex items-center gap-1.5 border-l border-[#444] pl-3">
+        <GitCompareArrows className="w-4 h-4 text-term-cyan" />
+        <span className="text-[11px] font-terminal text-term-cyan font-bold">
+          COMPARE ({compareIds.length}/3)
+        </span>
+      </div>
+      <span className="text-[10px] font-terminal text-term-dim group-hover:text-term-cyan transition-colors hidden sm:inline">
+        click to view →
+      </span>
+    </motion.button>
   )
 }

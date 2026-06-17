@@ -27,6 +27,7 @@ import {
   BellRing,
   Keyboard,
   Trash2,
+  GitCompareArrows,
   type LucideIcon,
 } from 'lucide-react'
 import { useDeShopStore, type ActivePage } from '@/store/useDeShopStore'
@@ -70,6 +71,9 @@ interface CommandContext {
   clearPriceAlerts: () => void
   watchlistCount: number
   alertsCount: number
+  setCompareDrawerOpen: (open: boolean) => void
+  clearCompare: () => void
+  compareCount: number
 }
 
 const COMMANDS: Command[] = [
@@ -289,6 +293,39 @@ const COMMANDS: Command[] = [
       ctx.addNotification('info', `Cleared ${ctx.alertsCount} price alert(s)`)
     },
   },
+  {
+    id: 'act-view-compare',
+    name: 'view comparison',
+    description: 'Open the asset comparison drawer',
+    icon: GitCompareArrows,
+    category: 'Action',
+    keywords: ['diff', 'compare', 'side by side', 'versus', 'vs'],
+    run: (ctx) => {
+      ctx.setActivePage('market')
+      if (ctx.compareCount === 0) {
+        ctx.addNotification('info', 'No assets in comparison — click the compare icon on cards to add (max 3)')
+        return
+      }
+      ctx.setCompareDrawerOpen(true)
+      ctx.addNotification('info', `Showing ${ctx.compareCount} asset(s) in comparison`)
+    },
+  },
+  {
+    id: 'act-clear-compare',
+    name: 'clear comparison',
+    description: 'Remove all assets from the comparison tray',
+    icon: Trash2,
+    category: 'Action',
+    keywords: ['reset', 'empty', 'remove', 'diff'],
+    run: (ctx) => {
+      if (ctx.compareCount === 0) {
+        ctx.addNotification('info', 'Comparison tray is already empty')
+        return
+      }
+      ctx.clearCompare()
+      ctx.addNotification('info', `Cleared ${ctx.compareCount} asset(s) from comparison`)
+    },
+  },
 
   // ----- Quick Links -----
   {
@@ -434,6 +471,9 @@ export default function CommandPalette() {
   const alertsCount = useDeShopStore(
     (s) => s.priceAlerts.filter((a) => !a.triggered).length,
   )
+  const setCompareDrawerOpen = useDeShopStore((s) => s.setCompareDrawerOpen)
+  const clearCompare = useDeShopStore((s) => s.clearCompare)
+  const compareCount = useDeShopStore((s) => s.compareIds.length)
 
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -454,6 +494,9 @@ export default function CommandPalette() {
       clearPriceAlerts,
       watchlistCount,
       alertsCount,
+      setCompareDrawerOpen,
+      clearCompare,
+      compareCount,
     }),
     [
       setActivePage,
@@ -467,6 +510,9 @@ export default function CommandPalette() {
       clearPriceAlerts,
       watchlistCount,
       alertsCount,
+      setCompareDrawerOpen,
+      clearCompare,
+      compareCount,
     ],
   )
 

@@ -50,6 +50,7 @@ import NotificationsPage from '@/components/pages/NotificationsPage'
 import CommandPalette from '@/components/CommandPalette'
 import KeyboardShortcutsOverlay from '@/components/KeyboardShortcutsOverlay'
 import PriceAlertModal from '@/components/PriceAlertModal'
+import BackgroundGrid from '@/components/BackgroundGrid'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { usePriceAlerts } from '@/hooks/usePriceAlerts'
 
@@ -789,6 +790,7 @@ export default function TerminalLayout() {
 
   return (
     <div className="app-layout scanline-overlay min-h-screen">
+      <BackgroundGrid />
       <Sidebar />
       <div className="app-main min-h-screen flex flex-col">
         <Header />

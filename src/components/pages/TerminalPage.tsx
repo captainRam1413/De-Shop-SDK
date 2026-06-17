@@ -30,6 +30,73 @@ function generateAddress(): string {
   return addr
 }
 
+/**
+ * Tokenize a command string into [cmd, ...tokens] for syntax highlighting.
+ * Recognizes: command (first token), flags (--xxx / -x), and other args.
+ */
+function tokenizeCommand(text: string): Array<{ text: string; kind: 'cmd' | 'flag' | 'arg' | 'space' }> {
+  const out: Array<{ text: string; kind: 'cmd' | 'flag' | 'arg' | 'space' }> = []
+  const parts = text.split(/(\s+)/) // keep separators
+  let isFirst = true
+  for (const p of parts) {
+    if (!p) continue
+    if (/^\s+$/.test(p)) {
+      out.push({ text: p, kind: 'space' })
+    } else if (isFirst) {
+      out.push({ text: p, kind: 'cmd' })
+      isFirst = false
+    } else if (p.startsWith('--') || /^-[a-zA-Z]$/.test(p)) {
+      out.push({ text: p, kind: 'flag' })
+    } else {
+      out.push({ text: p, kind: 'arg' })
+    }
+  }
+  return out
+}
+
+/**
+ * Suggest a similar command from the known list (Levenshtein-based, case-insensitive).
+ */
+function suggestCommand(input: string): string | null {
+  const lower = input.toLowerCase()
+  if (!lower) return null
+  // Exact prefix match (preferred)
+  const prefix = COMMANDS.find((c) => c.startsWith(lower) && c !== lower)
+  if (prefix) return prefix
+  // Levenshtein-distance match (within 2 edits)
+  let best: { cmd: string; dist: number } | null = null
+  for (const c of COMMANDS) {
+    const d = levenshtein(lower, c)
+    if (!best || d < best.dist) best = { cmd: c, dist: d }
+  }
+  if (best && best.dist <= 2) return best.cmd
+  return null
+}
+
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0
+  if (!a.length) return b.length
+  if (!b.length) return a.length
+  // Single-row DP — track the "previous diagonal" (prev[j-1] from BEFORE
+  // this iteration's update) so we can compute the substitution cost correctly.
+  const prev = Array.from({ length: b.length + 1 }, (_, i) => i)
+  for (let i = 1; i <= a.length; i++) {
+    let prevDiagonal = prev[0] // = i - 1
+    prev[0] = i
+    for (let j = 1; j <= b.length; j++) {
+      const temp = prev[j] // capture prev[j] before overwrite (this is the value from the PREVIOUS row)
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      prev[j] = Math.min(
+        prev[j] + 1,          // deletion  (prev row at j) + 1
+        prev[j - 1] + 1,      // insertion (curr row at j-1, already updated) + 1
+        prevDiagonal + cost,  // substitution (prev row at j-1, captured) + cost
+      )
+      prevDiagonal = temp
+    }
+  }
+  return prev[b.length]
+}
+
 /* ===== COMMANDS ===== */
 
 const COMMANDS = [
@@ -437,6 +504,11 @@ export default function TerminalPage() {
 
       default:
         await addLog('error', `command not found: ${command}`)
+        // Suggest a similar known command
+        const suggestion = suggestCommand(command)
+        if (suggestion) {
+          await addLog('output', `  Did you mean "${suggestion}"?  Try again with:  ${suggestion}`)
+        }
         await addLog('output', 'Type "help" for available commands.')
     }
 
@@ -541,7 +613,22 @@ export default function TerminalPage() {
                 <>
                   <span className="text-term-dim">[{entry.timestamp}]</span>{' '}
                   <span className="text-term-green">$</span>{' '}
-                  {entry.text}
+                  {tokenizeCommand(entry.text).map((tok, i) => {
+                    if (tok.kind === 'space') return <span key={i}>{tok.text}</span>
+                    if (tok.kind === 'cmd') {
+                      // Known command = green bold; unknown = red bold
+                      const known = COMMANDS.includes(tok.text.toLowerCase())
+                      return (
+                        <span key={i} className={known ? 'text-term-green font-bold' : 'text-term-red font-bold'}>
+                          {tok.text}
+                        </span>
+                      )
+                    }
+                    if (tok.kind === 'flag') {
+                      return <span key={i} className="text-term-cyan">{tok.text}</span>
+                    }
+                    return <span key={i} className="text-term-amber">{tok.text}</span>
+                  })}
                 </>
               ) : entry.text ? (
                 <>
@@ -572,6 +659,34 @@ export default function TerminalPage() {
             />
             {!input && !isProcessing && <span className="blink-cursor" />}
           </div>
+
+          {/* Inline command suggestion hint */}
+          {input && !isProcessing && (() => {
+            const firstToken = input.trim().split(/\s+/)[0]?.toLowerCase() || ''
+            if (!firstToken) return null
+            const exactMatch = COMMANDS.includes(firstToken)
+            if (exactMatch) return null
+            const sugg = suggestCommand(firstToken)
+            if (!sugg) return null
+            return (
+              <div className="mt-1 text-[10px] font-terminal text-term-dim flex items-center gap-1">
+                <span className="text-term-amber">!</span>
+                <span>did you mean</span>
+                <button
+                  onClick={() => {
+                    // Replace the first token with the suggestion (keep trailing args)
+                    const rest = input.trim().split(/\s+/).slice(1).join(' ')
+                    setInput(rest ? `${sugg} ${rest}` : `${sugg} `)
+                    inputRef.current?.focus()
+                  }}
+                  className="text-term-cyan hover:text-term-green underline underline-offset-2 transition-colors"
+                >
+                  {sugg}
+                </button>
+                <span className="blink-cursor" />
+              </div>
+            )
+          })()}
         </div>
       </div>
     </div>
