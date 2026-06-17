@@ -25,7 +25,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" className="dark" data-theme="pro-dark" suppressHydrationWarning>
+      <head>
+        {/* Apply persisted theme before paint to avoid flash of default theme.
+            Defaults to pro-dark; overridden by the Zustand store on hydration. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('deshop-theme');if(t==='pro-dark'||t==='light'||t==='matrix'||t==='phosphor'||t==='amber'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="antialiased bg-term-bg text-term-text font-terminal min-h-screen">
         {children}
         <Toaster />

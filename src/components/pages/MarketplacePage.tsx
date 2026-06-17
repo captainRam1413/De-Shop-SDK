@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   AreaChart,
@@ -20,8 +20,17 @@ import {
   ShoppingCart,
   Tag,
   Sparkles,
+  Bot,
+  Image as ImageIcon,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Loader2,
+  Flame,
 } from 'lucide-react'
 import { useDeShopStore } from '@/store/useDeShopStore'
+import { useLivePrices } from '@/hooks/useLivePrices'
+import LivePriceTicker from '@/components/LivePriceTicker'
 
 /* ===== TRAFFIC LIGHT DOTS ===== */
 
@@ -52,6 +61,20 @@ interface MarketplaceAsset {
   description: string
   listedAt: string
   priceHistory: { day: string; price: number }[]
+}
+
+interface AIPriceResult {
+  price: number
+  confidence: number
+  reasoning: string
+  trend: 'up' | 'down' | 'stable'
+  source?: 'ai' | 'heuristic'
+}
+
+interface AIArtResult {
+  url: string
+  source: 'ai' | 'placeholder'
+  prompt?: string
 }
 
 /* ===== RARITY CONFIG ===== */
@@ -206,12 +229,198 @@ function ConfidenceBar({ value }: { value: number }) {
   )
 }
 
+/* ===== AI PRICE FETCH HOOK ===== */
+
+function useAIPrices() {
+  const [aiPrices, setAiPrices] = useState<Record<string, AIPriceResult>>({})
+  const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set())
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const fetchPrice = useCallback(async (asset: MarketplaceAsset) => {
+    setLoadingIds((prev) => new Set(prev).add(asset.id))
+    setErrors((prev) => {
+      const next = { ...prev }
+      delete next[asset.id]
+      return next
+    })
+    try {
+      const res = await fetch('/api/ai-price', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: asset.name,
+          rarity: asset.rarity.toLowerCase(),
+          type: 'weapon',
+          description: asset.description,
+        }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data: AIPriceResult = await res.json()
+      setAiPrices((prev) => ({ ...prev, [asset.id]: data }))
+    } catch (e) {
+      setErrors((prev) => ({
+        ...prev,
+        [asset.id]: e instanceof Error ? e.message : 'Failed to fetch',
+      }))
+    } finally {
+      setLoadingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(asset.id)
+        return next
+      })
+    }
+  }, [])
+
+  return { aiPrices, loadingIds, errors, fetchPrice }
+}
+
+/* ===== TREND ICON ===== */
+
+function TrendIcon({ trend, className = 'w-3 h-3' }: { trend: 'up' | 'down' | 'stable'; className?: string }) {
+  if (trend === 'up') return <TrendingUp className={`${className} text-term-green`} />
+  if (trend === 'down') return <TrendingDown className={`${className} text-term-red`} />
+  return <Minus className={`${className} text-term-dim`} />
+}
+
+/* ===== AI PRICE POPOVER ===== */
+
+function AIPricePopover({
+  asset,
+  result,
+  loading,
+  error,
+  onClose,
+}: {
+  asset: MarketplaceAsset
+  result?: AIPriceResult
+  loading: boolean
+  error?: string
+  onClose: () => void
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className="absolute z-30 top-full right-0 mt-1 w-72 terminal-card"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="terminal-card-header py-1.5 px-3">
+        <Bot className="w-3 h-3 text-term-green" />
+        <span className="terminal-title text-[10px] ml-2">ai_price.log</span>
+        <button
+          onClick={onClose}
+          className="ml-auto text-term-dim hover:text-term-red text-[10px] font-terminal"
+          aria-label="close"
+        >
+          [x]
+        </button>
+      </div>
+      <div className="p-3 bg-[#1E1E1E] space-y-2">
+        {loading && (
+          <div className="flex items-center gap-2 text-term-amber text-[11px] font-terminal">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            <span>querying AI oracle...</span>
+            <span className="blink-cursor" />
+          </div>
+        )}
+        {error && !loading && (
+          <div className="text-term-red text-[11px] font-terminal">
+            {`> ERR: ${error}`}
+          </div>
+        )}
+        {result && !loading && (
+          <>
+            <div className="flex items-center justify-between">
+              <span className="text-term-dim text-[10px] font-terminal">SUGGESTED PRICE</span>
+              {result.source === 'heuristic' && (
+                <span className="text-[9px] font-terminal text-term-amber border border-term-amber/40 px-1">
+                  heuristic
+                </span>
+              )}
+              {result.source === 'ai' && (
+                <span className="text-[9px] font-terminal text-term-green border border-term-green/40 px-1">
+                  ai-oracle
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-term-green text-lg font-terminal font-bold glow-green">
+                ◆ {result.price} ALGO
+              </span>
+              <TrendIcon trend={result.trend} className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-term-dim text-[10px] font-terminal mb-0.5">CONFIDENCE</div>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-2 bg-[#2D2D2D] border border-[#444444] overflow-hidden">
+                  <div
+                    className="h-full bg-term-green transition-all"
+                    style={{ width: `${result.confidence}%` }}
+                  />
+                </div>
+                <span className="text-term-green text-[10px] font-terminal">{result.confidence}%</span>
+              </div>
+            </div>
+            <div>
+              <div className="text-term-dim text-[10px] font-terminal mb-0.5">REASONING</div>
+              <div className="text-term-text text-[11px] font-terminal leading-relaxed">
+                {result.reasoning}
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] font-terminal pt-1 border-t border-[#333]">
+              <span className="text-term-dim">listed:</span>
+              <span className="text-term-amber">◆ {asset.price} ALGO</span>
+              <span className="text-term-dim">delta:</span>
+              <span
+                className={
+                  result.price > asset.price
+                    ? 'text-term-green'
+                    : result.price < asset.price
+                      ? 'text-term-red'
+                      : 'text-term-dim'
+                }
+              >
+                {result.price > asset.price ? '+' : ''}
+                {(result.price - asset.price).toFixed(2)}
+              </span>
+            </div>
+          </>
+        )}
+      </div>
+    </motion.div>
+  )
+}
+
 /* ===== DETAIL MODAL ===== */
 
-function DetailModal({ asset, onClose }: { asset: MarketplaceAsset; onClose: () => void }) {
+function DetailModal({
+  asset,
+  onClose,
+  aiPrices,
+  loadingIds,
+  aiErrors,
+  onFetchPrice,
+}: {
+  asset: MarketplaceAsset
+  onClose: () => void
+  aiPrices: Record<string, AIPriceResult>
+  loadingIds: Set<string>
+  aiErrors: Record<string, string>
+  onFetchPrice: (a: MarketplaceAsset) => void
+}) {
   const { walletConnected, addNotification, setShowWalletModal } = useDeShopStore()
   const config = RARITY_CONFIG[asset.rarity]
   const rarityScore = config.weight * 25
+
+  const [artLoading, setArtLoading] = useState(false)
+  const [artUrl, setArtUrl] = useState<string | null>(null)
+  const [artSource, setArtSource] = useState<'ai' | 'placeholder' | null>(null)
+  const [artError, setArtError] = useState<string | null>(null)
+
+  const aiPrice = aiPrices[asset.id]
+  const priceLoading = loadingIds.has(asset.id)
+  const priceError = aiErrors[asset.id]
 
   const handleBuy = () => {
     if (!walletConnected) {
@@ -220,6 +429,40 @@ function DetailModal({ asset, onClose }: { asset: MarketplaceAsset; onClose: () 
     }
     addNotification('success', `Purchased ${asset.name} for ${asset.price} ALGO`)
     onClose()
+  }
+
+  const handleGenerateArt = async () => {
+    setArtLoading(true)
+    setArtError(null)
+    setArtUrl(null)
+    setArtSource(null)
+    try {
+      const res = await fetch('/api/ai-artwork', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: asset.name,
+          rarity: asset.rarity.toLowerCase(),
+          type: 'weapon',
+          description: asset.description,
+          assetId: asset.id,
+        }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data: AIArtResult = await res.json()
+      setArtUrl(data.url)
+      setArtSource(data.source)
+      if (data.source === 'placeholder') {
+        addNotification('warning', 'AI art unavailable, using placeholder')
+      } else {
+        addNotification('success', `Generated artwork for ${asset.name}`)
+      }
+    } catch (e) {
+      setArtError(e instanceof Error ? e.message : 'Failed to generate artwork')
+      addNotification('error', 'Artwork generation failed')
+    } finally {
+      setArtLoading(false)
+    }
   }
 
   return (
@@ -249,9 +492,24 @@ function DetailModal({ asset, onClose }: { asset: MarketplaceAsset; onClose: () 
         <div className="terminal-card-body bg-[#1E1E1E] space-y-4 max-h-[80vh] overflow-y-auto">
           {/* Asset Header */}
           <div className="flex items-start gap-4">
-            <div className="text-5xl flex-shrink-0 w-16 h-16 flex items-center justify-center bg-[#2D2D2D] border border-[#444444] rounded-sm">
-              {asset.emoji}
-            </div>
+            {artUrl ? (
+              <div className="relative flex-shrink-0 w-16 h-16 overflow-hidden border border-[#444444] rounded-sm">
+                <img src={artUrl} alt={asset.name} className="w-full h-full object-cover" />
+                {artSource && (
+                  <span
+                    className={`absolute bottom-0 left-0 right-0 text-center text-[8px] font-terminal py-0.5 ${
+                      artSource === 'ai' ? 'bg-term-green/80 text-black' : 'bg-term-amber/80 text-black'
+                    }`}
+                  >
+                    {artSource === 'ai' ? 'AI' : 'PLACEHOLDER'}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="text-5xl flex-shrink-0 w-16 h-16 flex items-center justify-center bg-[#2D2D2D] border border-[#444444] rounded-sm">
+                {asset.emoji}
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <div className="text-xs text-term-dim font-terminal mb-1">ID: {asset.id}</div>
               <div className={`text-lg font-terminal font-bold text-term-green glow-green`}>{asset.name}</div>
@@ -263,6 +521,11 @@ function DetailModal({ asset, onClose }: { asset: MarketplaceAsset; onClose: () 
                   {asset.rarity.toUpperCase()}
                 </span>
                 <span className="text-term-amber text-sm font-terminal">◆ {asset.price} ALGO</span>
+                {aiPrice && (
+                  <span className="text-[10px] font-terminal text-term-green border border-term-green/40 px-1 bg-term-green/5">
+                    AI: {aiPrice.price} ALGO
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -285,6 +548,112 @@ function DetailModal({ asset, onClose }: { asset: MarketplaceAsset; onClose: () 
                 <Area type="monotone" dataKey="price" stroke={config.color} strokeWidth={2} fill="url(#modalPriceGrad)" name="Price" />
               </AreaChart>
             </ResponsiveContainer>
+          </div>
+
+          {/* AI Price Engine */}
+          <div className="border border-term-green/30 bg-term-green/[0.03] p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <Bot className="w-3.5 h-3.5 text-term-green" />
+              <span className="text-term-green text-[11px] font-terminal font-bold">AI PRICE ORACLE</span>
+              <span className="text-term-dim text-[9px] font-terminal ml-auto">z-ai-web-dev-sdk</span>
+            </div>
+            {priceLoading && (
+              <div className="flex items-center gap-2 text-term-amber text-[11px] font-terminal">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>querying oracle...</span>
+                <span className="blink-cursor" />
+              </div>
+            )}
+            {priceError && !priceLoading && (
+              <div className="text-term-red text-[11px] font-terminal">{`> ERR: ${priceError}`}</div>
+            )}
+            {aiPrice && !priceLoading && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-term-dim text-[10px] font-terminal">SUGGESTED</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-term-green text-sm font-terminal font-bold">◆ {aiPrice.price} ALGO</span>
+                    <TrendIcon trend={aiPrice.trend} />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-term-dim text-[10px] font-terminal">CONF</span>
+                  <div className="flex-1 h-1.5 bg-[#2D2D2D] border border-[#444444] overflow-hidden">
+                    <div
+                      className="h-full bg-term-green transition-all"
+                      style={{ width: `${aiPrice.confidence}%` }}
+                    />
+                  </div>
+                  <span className="text-term-green text-[10px] font-terminal">{aiPrice.confidence}%</span>
+                </div>
+                <div className="text-term-text text-[10px] font-terminal leading-relaxed border-l-2 border-term-green/30 pl-2">
+                  {aiPrice.reasoning}
+                </div>
+              </div>
+            )}
+            {!aiPrice && !priceLoading && !priceError && (
+              <div className="text-term-dim text-[10px] font-terminal">
+                Click below to get an AI-suggested price for this NFT.
+              </div>
+            )}
+            <button
+              onClick={() => onFetchPrice(asset)}
+              disabled={priceLoading}
+              className="terminal-btn flex items-center gap-2 w-full justify-center border-term-green/50 text-term-green hover:bg-term-green/10 disabled:opacity-50"
+            >
+              {priceLoading ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Bot className="w-3 h-3" />
+              )}
+              <span>{aiPrice ? 'Re-query Oracle' : 'Get AI Price'}</span>
+            </button>
+          </div>
+
+          {/* AI Artwork Generator */}
+          <div className="border border-term-magenta/30 bg-term-magenta/[0.03] p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="w-3.5 h-3.5 text-term-magenta" />
+              <span className="text-term-magenta text-[11px] font-terminal font-bold">AI ARTWORK GEN</span>
+              <span className="text-term-dim text-[9px] font-terminal ml-auto">cogview-3-plus</span>
+            </div>
+            {artLoading && (
+              <div className="flex flex-col items-center gap-2 py-3">
+                <Loader2 className="w-4 h-4 animate-spin text-term-magenta" />
+                <span className="text-term-amber text-[11px] font-terminal">generating pixel art...</span>
+                <span className="blink-cursor" />
+              </div>
+            )}
+            {artError && !artLoading && (
+              <div className="text-term-red text-[11px] font-terminal">{`> ERR: ${artError}`}</div>
+            )}
+            {artUrl && !artLoading && (
+              <div className="space-y-2">
+                <div className="relative w-full aspect-square overflow-hidden border border-[#444444] max-h-64 mx-auto">
+                  <img src={artUrl} alt={`${asset.name} AI artwork`} className="w-full h-full object-cover" />
+                  <span
+                    className={`absolute top-1 right-1 text-[9px] font-terminal px-1.5 py-0.5 ${
+                      artSource === 'ai' ? 'bg-term-green text-black' : 'bg-term-amber text-black'
+                    }`}
+                  >
+                    {artSource === 'ai' ? 'AI-GENERATED' : 'PLACEHOLDER'}
+                  </span>
+                </div>
+              </div>
+            )}
+            {!artUrl && !artLoading && !artError && (
+              <div className="text-term-dim text-[10px] font-terminal">
+                Generate pixel-art NFT artwork via the AI image model.
+              </div>
+            )}
+            <button
+              onClick={handleGenerateArt}
+              disabled={artLoading}
+              className="terminal-btn flex items-center gap-2 w-full justify-center border-term-magenta/50 text-term-magenta hover:bg-term-magenta/10 disabled:opacity-50"
+            >
+              {artLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3" />}
+              <span>{artUrl ? 'Regenerate Art' : 'Generate Art'}</span>
+            </button>
           </div>
 
           {/* AI Confidence */}
@@ -350,21 +719,100 @@ function DetailModal({ asset, onClose }: { asset: MarketplaceAsset; onClose: () 
 
 /* ===== GRID CARD ===== */
 
-function GridCard({ asset, onClick, index }: { asset: MarketplaceAsset; onClick: () => void; index: number }) {
+interface LastTradeInfo {
+  price: number
+  time: number
+}
+
+function GridCard({
+  asset,
+  onClick,
+  index,
+  aiPrice,
+  aiPriceLoading,
+  aiPriceError,
+  onFetchPrice,
+  lastTrade,
+  isPulsing,
+  isNewlyListed,
+  hasRecentActivity,
+}: {
+  asset: MarketplaceAsset
+  onClick: () => void
+  index: number
+  aiPrice?: AIPriceResult
+  aiPriceLoading: boolean
+  aiPriceError?: string
+  onFetchPrice: (a: MarketplaceAsset) => void
+  lastTrade?: LastTradeInfo
+  isPulsing?: boolean
+  isNewlyListed?: boolean
+  hasRecentActivity?: boolean
+}) {
   const config = RARITY_CONFIG[asset.rarity]
+  const [popoverOpen, setPopoverOpen] = useState(false)
+
+  const handleAIClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!aiPrice && !aiPriceLoading) {
+      onFetchPrice(asset)
+    }
+    setPopoverOpen((prev) => !prev)
+  }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.25 }}
-      className={`terminal-card cursor-pointer border ${config.borderColor} ${config.glowClass} group`}
+      className={`terminal-card cursor-pointer border ${config.borderColor} ${config.glowClass} group relative ${
+        isPulsing ? 'trade-pulse' : ''
+      }`}
       onClick={onClick}
     >
       {/* Card Chrome Header */}
       <div className="terminal-card-header py-1.5 px-3">
         <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: config.color }} />
         <span className="terminal-title text-[10px] text-left ml-2">{asset.id}</span>
+
+        {/* NEW badge — shown when a LIST event has arrived for this asset */}
+        {isNewlyListed && (
+          <span
+            className="ml-2 new-badge text-[9px] font-terminal font-bold text-term-amber border border-term-amber/60 px-1 bg-term-amber/10"
+            title="Recently listed via realtime feed"
+          >
+            NEW
+          </span>
+        )}
+
+        {/* Live activity dot — pulses when this asset had an event within the last 60 s */}
+        {hasRecentActivity && (
+          <span
+            className="ml-2 inline-flex items-center gap-1"
+            title="Recent realtime activity"
+          >
+            <span className="live-card-dot" />
+            <span className="text-[9px] font-terminal text-term-green">live</span>
+          </span>
+        )}
+
+        <button
+          onClick={handleAIClick}
+          className={`ml-auto flex items-center gap-1 text-[9px] font-terminal px-1.5 py-0.5 border transition-colors ${
+            aiPrice
+              ? 'border-term-green/50 text-term-green hover:bg-term-green/10'
+              : 'border-term-dim/40 text-term-dim hover:text-term-green hover:border-term-green/50'
+          }`}
+          aria-label="Get AI price"
+          title="Get AI price"
+        >
+          {aiPriceLoading ? (
+            <Loader2 className="w-2.5 h-2.5 animate-spin" />
+          ) : (
+            <Bot className="w-2.5 h-2.5" />
+          )}
+          <span>AI</span>
+        </button>
       </div>
 
       {/* Card Body */}
@@ -377,11 +825,51 @@ function GridCard({ asset, onClick, index }: { asset: MarketplaceAsset; onClick:
           {asset.name}
         </div>
 
-        {/* Price + Confidence */}
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-term-amber text-xs font-terminal">◆ {asset.price} ALGO</span>
+        {/* Price + last trade + AI Badge */}
+        <div className="flex items-center justify-between mb-1 flex-wrap gap-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-term-amber text-xs font-terminal">◆ {asset.price} ALGO</span>
+            {lastTrade && (
+              <span
+                className="text-term-dim text-[10px] font-terminal"
+                title={`Last traded at ${new Date(lastTrade.time).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                  hour12: false,
+                })}`}
+              >
+                last: <span className="text-term-cyan">{lastTrade.price.toFixed(2)}</span>
+              </span>
+            )}
+          </div>
           <span className="text-term-dim text-[10px] font-terminal">{asset.confidence}% conf.</span>
         </div>
+        {aiPrice && (
+          <div className="flex items-center justify-center mb-2">
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-terminal text-term-green border border-term-green/40 px-1.5 py-0.5 bg-term-green/5"
+              title={aiPrice.reasoning}
+            >
+              <Bot className="w-2.5 h-2.5" />
+              <span>AI: {aiPrice.price} ALGO</span>
+              <TrendIcon trend={aiPrice.trend} className="w-2.5 h-2.5" />
+            </span>
+          </div>
+        )}
+        {aiPriceLoading && !aiPrice && (
+          <div className="flex items-center justify-center mb-2">
+            <span className="inline-flex items-center gap-1 text-[10px] font-terminal text-term-amber border border-term-amber/40 px-1.5 py-0.5">
+              <Loader2 className="w-2.5 h-2.5 animate-spin" />
+              <span>querying...</span>
+            </span>
+          </div>
+        )}
+        {aiPriceError && !aiPrice && !aiPriceLoading && (
+          <div className="flex items-center justify-center mb-2">
+            <span className="text-[10px] font-terminal text-term-red">! {aiPriceError}</span>
+          </div>
+        )}
 
         {/* Rarity Badge */}
         <div className="flex items-center justify-center mb-2">
@@ -398,6 +886,22 @@ function GridCard({ asset, onClick, index }: { asset: MarketplaceAsset; onClick:
           <span className="text-term-dim text-[10px] font-terminal">seller: {asset.seller}</span>
         </div>
       </div>
+
+      {/* AI Price Popover */}
+      <AnimatePresence>
+        {popoverOpen && (aiPrice || aiPriceLoading || aiPriceError) && (
+          <AIPricePopover
+            asset={asset}
+            result={aiPrice}
+            loading={aiPriceLoading}
+            error={aiPriceError}
+            onClose={(e) => {
+              e?.stopPropagation()
+              setPopoverOpen(false)
+            }}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
@@ -491,6 +995,143 @@ export default function MarketplacePage() {
   const [selectedAsset, setSelectedAsset] = useState<MarketplaceAsset | null>(null)
   const [apiAssets, setApiAssets] = useState<MarketplaceAsset[]>([])
   const [loading, setLoading] = useState(true)
+  const { aiPrices, loadingIds, errors: aiErrors, fetchPrice } = useAIPrices()
+
+  /* ===== LIVE PRICE TICKER + MARKET HEAT (Task 11-d) ===== */
+  const {
+    assets: tickerAssets,
+    isConnected,
+    lastUpdate,
+    stats,
+    events,
+    topMover,
+    lastTradeByAsset,
+  } = useLivePrices()
+
+  // Per-asset live activity tracking for card highlighting
+  const [tradePulses, setTradePulses] = useState<Record<string, number>>({})
+  const [recentActivity, setRecentActivity] = useState<Record<string, number>>({})
+  const [newListings, setNewListings] = useState<Set<string>>(new Set())
+  const processedEventIdsRef = useRef<Set<string>>(new Set())
+
+  // Process new realtime events: stamp trade pulses, recent-activity, NEW badges
+  useEffect(() => {
+    if (events.length === 0) return
+    const unprocessed = events.filter((e) => !processedEventIdsRef.current.has(e.id))
+    if (unprocessed.length === 0) return
+    for (const e of unprocessed) processedEventIdsRef.current.add(e.id)
+
+    const now = Date.now()
+    setRecentActivity((prev) => {
+      const next = { ...prev }
+      for (const e of unprocessed) {
+        next[e.assetName] = Math.max(next[e.assetName] ?? 0, e.timestamp || now)
+      }
+      return next
+    })
+
+    const tradeEvents = unprocessed.filter((e) => e.type === 'TRADE')
+    if (tradeEvents.length > 0) {
+      setTradePulses((prev) => {
+        const next = { ...prev }
+        for (const e of tradeEvents) next[e.assetName] = now
+        return next
+      })
+    }
+
+    const listEvents = unprocessed.filter((e) => e.type === 'LIST')
+    if (listEvents.length > 0) {
+      setNewListings((prev) => {
+        const next = new Set(prev)
+        for (const e of listEvents) next.add(e.assetName)
+        return next
+      })
+    }
+  }, [events])
+
+  // Auto-clean stale trade pulses after 2 s
+  useEffect(() => {
+    const entries = Object.values(tradePulses)
+    if (entries.length === 0) return
+    const oldest = Math.min(...entries)
+    const ms = Math.max(0, 2100 - (Date.now() - oldest))
+    const t = setTimeout(() => {
+      const cutoff = Date.now() - 2000
+      setTradePulses((prev) => {
+        const next: Record<string, number> = {}
+        let changed = false
+        for (const [k, v] of Object.entries(prev)) {
+          if (v > cutoff) next[k] = v
+          else changed = true
+        }
+        return changed ? next : prev
+      })
+    }, ms + 50)
+    return () => clearTimeout(t)
+  }, [tradePulses])
+
+  // Auto-clean stale recent-activity entries after 60 s
+  useEffect(() => {
+    const entries = Object.values(recentActivity)
+    if (entries.length === 0) return
+    const oldest = Math.min(...entries)
+    const ms = Math.max(0, 61000 - (Date.now() - oldest))
+    const t = setTimeout(() => {
+      const cutoff = Date.now() - 60000
+      setRecentActivity((prev) => {
+        const next: Record<string, number> = {}
+        let changed = false
+        for (const [k, v] of Object.entries(prev)) {
+          if (v > cutoff) next[k] = v
+          else changed = true
+        }
+        return changed ? next : prev
+      })
+    }, ms + 50)
+    return () => clearTimeout(t)
+  }, [recentActivity])
+
+  // Garbage-collect the processed-event IDs set to prevent unbounded growth
+  useEffect(() => {
+    if (processedEventIdsRef.current.size > 200) {
+      processedEventIdsRef.current = new Set(events.map((e) => e.id))
+    }
+  }, [events])
+
+  // Clicking a ticker asset filters the marketplace by that asset's name
+  const handleSelectTickerAsset = useCallback((name: string) => {
+    setSearch(name)
+    setRarityFilter('All')
+  }, [])
+
+  const hasRecentActivity = useCallback(
+    (name: string) => {
+      const t = recentActivity[name]
+      return t ? Date.now() - t < 60000 : false
+    },
+    [recentActivity],
+  )
+
+  const isPulsing = useCallback(
+    (name: string) => {
+      const t = tradePulses[name]
+      return t ? Date.now() - t < 2000 : false
+    },
+    [tradePulses],
+  )
+
+  // Local EPM fallback: count events received in the last 60 s
+  const localEpm = useMemo(() => {
+    const cutoff = Date.now() - 60000
+    return events.filter((e) => e.timestamp >= cutoff).length
+  }, [events])
+
+  const epm = stats?.eventsPerMinute ?? localEpm
+  const heatLevel: 'HOT' | 'WARM' | 'COLD' = epm > 20 ? 'HOT' : epm >= 5 ? 'WARM' : 'COLD'
+  const heatClass = epm > 20 ? 'market-heat-hot' : epm >= 5 ? 'market-heat-warm' : 'market-heat-cold'
+  const heatDotClass = epm > 20 ? 'market-heat-dot-hot' : epm >= 5 ? 'market-heat-dot-warm' : 'market-heat-dot-cold'
+
+  /* ===== Existing marketplace loading ===== */
 
   const fetchMarket = useCallback(async () => {
     try {
@@ -566,6 +1207,88 @@ export default function MarketplacePage() {
           <span className="text-term-dim text-xs font-terminal">--browse --filter --trade</span>
           {loading && <span className="text-term-amber text-[10px] font-terminal animate-pulse">[fetching market...]</span>}
           <span className="blink-cursor" />
+        </div>
+      </div>
+
+      {/* Live Price Ticker (full width) */}
+      <LivePriceTicker
+        assets={tickerAssets}
+        isConnected={isConnected}
+        lastUpdate={lastUpdate}
+        onSelectAsset={handleSelectTickerAsset}
+      />
+
+      {/* Market Heat Panel */}
+      <div className="terminal-card">
+        <div className="terminal-card-header">
+          <TrafficLights />
+          <span className="terminal-title">market_heat.log</span>
+          <Flame className="w-3.5 h-3.5 text-term-amber" />
+          <span
+            className={`ml-auto text-[10px] font-terminal font-bold ${
+              isConnected ? 'text-term-green' : 'text-term-red'
+            }`}
+          >
+            {isConnected ? '● LIVE' : '● OFFLINE'}
+          </span>
+        </div>
+        <div className="p-4 bg-[#1E1E1E] grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {/* Market Heat */}
+          <div>
+            <div className="text-term-dim text-[10px] font-terminal mb-1">MARKET HEAT</div>
+            <div className="flex items-center">
+              <span className={`market-heat-dot ${heatDotClass}`} />
+              <span className={`text-2xl font-terminal font-bold ${heatClass}`}>{heatLevel}</span>
+            </div>
+            <div className="text-term-dim text-[10px] font-terminal mt-0.5">{epm} events/min</div>
+          </div>
+
+          {/* 24h Volume */}
+          <div>
+            <div className="text-term-dim text-[10px] font-terminal mb-1">24H VOLUME</div>
+            <div className="text-term-amber text-lg font-terminal font-bold">
+              {stats ? `${(stats.volume24h / 1000).toFixed(1)}K` : '—'}
+            </div>
+            <div className="text-term-dim text-[10px] font-terminal">ALGO</div>
+          </div>
+
+          {/* Active Traders */}
+          <div>
+            <div className="text-term-dim text-[10px] font-terminal mb-1">ACTIVE TRADERS</div>
+            <div className="text-term-cyan text-lg font-terminal font-bold">
+              {stats?.onlineClients ?? '—'}
+            </div>
+            <div className="text-term-dim text-[10px] font-terminal">online now</div>
+          </div>
+
+          {/* Top Mover */}
+          <div>
+            <div className="text-term-dim text-[10px] font-terminal mb-1">TOP MOVER</div>
+            {topMover ? (
+              <>
+                <div
+                  className="text-term-green text-sm font-terminal font-bold truncate"
+                  title={topMover.name}
+                >
+                  {topMover.name}
+                </div>
+                <div
+                  className={`text-[11px] font-terminal ${
+                    topMover.price >= topMover.prevPrice ? 'text-term-green' : 'text-term-red'
+                  }`}
+                >
+                  {topMover.price >= topMover.prevPrice ? '+' : ''}
+                  {(
+                    ((topMover.price - topMover.prevPrice) / (topMover.prevPrice || 1)) *
+                    100
+                  ).toFixed(2)}
+                  %
+                </div>
+              </>
+            ) : (
+              <div className="text-term-dim text-sm font-terminal">—</div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -674,6 +1397,14 @@ export default function MarketplacePage() {
                 asset={asset}
                 onClick={() => setSelectedAsset(asset)}
                 index={i}
+                aiPrice={aiPrices[asset.id]}
+                aiPriceLoading={loadingIds.has(asset.id)}
+                aiPriceError={aiErrors[asset.id]}
+                onFetchPrice={fetchPrice}
+                lastTrade={lastTradeByAsset[asset.name]}
+                isPulsing={isPulsing(asset.name)}
+                isNewlyListed={newListings.has(asset.name)}
+                hasRecentActivity={hasRecentActivity(asset.name)}
               />
             ))}
           </motion.div>
@@ -729,6 +1460,10 @@ export default function MarketplacePage() {
           <DetailModal
             asset={selectedAsset}
             onClose={() => setSelectedAsset(null)}
+            aiPrices={aiPrices}
+            loadingIds={loadingIds}
+            aiErrors={aiErrors}
+            onFetchPrice={fetchPrice}
           />
         )}
       </AnimatePresence>

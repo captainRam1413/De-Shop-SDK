@@ -1,0 +1,1093 @@
+     1→'use client'
+     2→
+     3→import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+     4→import { motion } from 'framer-motion'
+     5→import {
+     6→  AreaChart,
+     7→  Area,
+     8→  BarChart,
+     9→  Bar,
+    10→  PieChart,
+    11→  Pie,
+    12→  Cell,
+    13→  XAxis,
+    14→  YAxis,
+    15→  Tooltip,
+    16→  ResponsiveContainer,
+    17→  CartesianGrid,
+    18→} from 'recharts'
+    19→import {
+    20→  TrendingUp,
+    21→  TrendingDown,
+    22→  Wallet,
+    23→  Flame,
+    24→  ArrowRightLeft,
+    25→  FileText,
+    26→  Coins,
+    27→  Users,
+    28→  Zap,
+    29→  ListPlus,
+    30→  BookOpen,
+    31→  Activity,
+    32→  Bot,
+    33→  Minus,
+    34→  Loader2,
+    35→  Clock,
+    36→} from 'lucide-react'
+    37→import { useDeShopStore } from '@/store/useDeShopStore'
+    38→import { useRealtimeEvents, type MarketEvent } from '@/hooks/useRealtimeEvents'
+    39→import { SkeletonStatCard, SkeletonChart, SkeletonActivityRow } from '@/components/TerminalSkeleton'
+    40→
+    41→/* ===== TRAFFIC LIGHT DOTS ===== */
+    42→
+    43→function TrafficLights() {
+    44→  return (
+    45→    <div className="flex items-center gap-1.5 flex-shrink-0">
+    46→      <span className="terminal-dot terminal-dot-red" />
+    47→      <span className="terminal-dot terminal-dot-yellow" />
+    48→      <span className="terminal-dot terminal-dot-green" />
+    49→    </div>
+    50→  )
+    51→}
+    52→
+    53→/* ===== DATA ===== */
+    54→
+    55→const STATS = [
+    56→  {
+    57→    label: 'Total Value Locked',
+    58→    value: '$2.4M',
+    59→    change: '+12.5%',
+    60→    positive: true,
+    61→    icon: Coins,
+    62→    sparkData: [30, 45, 38, 52, 48, 60, 68],
+    63→  },
+    64→  {
+    65→    label: 'Active Wallets',
+    66→    value: '1,847',
+    67→    change: '+8.3%',
+    68→    positive: true,
+    69→    icon: Users,
+    70→    sparkData: [20, 28, 32, 35, 30, 38, 42],
+    71→  },
+    72→  {
+    73→    label: 'Gas Fees (24h)',
+    74→    value: '0.003 ALGO',
+    75→    change: '-2.1%',
+    76→    positive: false,
+    77→    icon: Zap,
+    78→    sparkData: [15, 12, 14, 10, 13, 11, 9],
+    79→  },
+    80→  {
+    81→    label: 'Cross-Chain Volume',
+    82→    value: '$890K',
+    83→    change: '+15.7%',
+    84→    positive: true,
+    85→    icon: ArrowRightLeft,
+    86→    sparkData: [40, 55, 50, 65, 58, 72, 80],
+    87→  },
+    88→]
+    89→
+    90→const PRICE_DATA = [
+    91→  { day: 'Mon', price: 1.82 },
+    92→  { day: 'Tue', price: 1.95 },
+    93→  { day: 'Wed', price: 1.88 },
+    94→  { day: 'Thu', price: 2.12 },
+    95→  { day: 'Fri', price: 2.05 },
+    96→  { day: 'Sat', price: 2.28 },
+    97→  { day: 'Sun', price: 2.41 },
+    98→]
+    99→
+   100→const VOLUME_DATA = [
+   101→  { day: 'Mon', volume: 12400 },
+   102→  { day: 'Tue', volume: 18200 },
+   103→  { day: 'Wed', volume: 14800 },
+   104→  { day: 'Thu', volume: 22100 },
+   105→  { day: 'Fri', volume: 19500 },
+   106→  { day: 'Sat', volume: 25600 },
+   107→  { day: 'Sun', volume: 21300 },
+   108→]
+   109→
+   110→const RARITY_DATA = [
+   111→  { name: 'Common', value: 4200, color: '#888888' },
+   112→  { name: 'Rare', value: 1800, color: '#00D4FF' },
+   113→  { name: 'Epic', value: 650, color: '#FF00FF' },
+   114→  { name: 'Legendary', value: 150, color: '#FFB800' },
+   115→]
+   116→
+   117→interface ActivityItem {
+   118→  id: number | string
+   119→  time: string
+   120→  type: 'FORGE' | 'TRADE' | 'LIST' | 'CANCEL' | 'TRANSFER' | 'BRIDGE'
+   121→  description: string
+   122→  value: string
+   123→}
+   124→
+   125→const INITIAL_ACTIVITY: ActivityItem[] = [
+   126→  { id: 1, time: '2m ago', type: 'FORGE', description: 'Diamond Sword #1337 minted', value: '25.0 ALGO' },
+   127→  { id: 2, time: '3m ago', type: 'TRADE', description: 'Gold Pickaxe #042 sold', value: '18.5 ALGO' },
+   128→  { id: 3, time: '5m ago', type: 'LIST', description: 'Enchanted Bow #219 listed', value: '32.0 ALGO' },
+   129→  { id: 4, time: '7m ago', type: 'FORGE', description: 'Nether Shield #088 minted', value: '12.0 ALGO' },
+   130→  { id: 5, time: '9m ago', type: 'CANCEL', description: 'Dragon Helm #001 delisted', value: '55.0 ALGO' },
+   131→  { id: 6, time: '12m ago', type: 'TRADE', description: 'Ender Pearl #305 traded', value: '8.2 ALGO' },
+   132→  { id: 7, time: '15m ago', type: 'LIST', description: 'Creeper Mask #444 listed', value: '14.5 ALGO' },
+   133→  { id: 8, time: '18m ago', type: 'FORGE', description: 'Blaze Rod #777 minted', value: '6.8 ALGO' },
+   134→  { id: 9, time: '22m ago', type: 'TRADE', description: 'Iron Golem #012 sold', value: '42.0 ALGO' },
+   135→  { id: 10, time: '25m ago', type: 'LIST', description: 'Wither Skull #666 listed', value: '99.9 ALGO' },
+   136→  { id: 11, time: '28m ago', type: 'CANCEL', description: 'Spider Eye #921 delisted', value: '3.5 ALGO' },
+   137→  { id: 12, time: '32m ago', type: 'TRADE', description: 'Ghast Tear #553 traded', value: '19.2 ALGO' },
+   138→  { id: 13, time: '35m ago', type: 'FORGE', description: 'Magma Cream #210 minted', value: '7.1 ALGO' },
+   139→  { id: 14, time: '38m ago', type: 'LIST', description: 'Elytra Wings #007 listed', value: '120.0 ALGO' },
+   140→  { id: 15, time: '42m ago', type: 'TRADE', description: 'Trident #999 sold', value: '75.0 ALGO' },
+   141→]
+   142→
+   143→const TYPE_CONFIG: Record<ActivityItem['type'], { color: string; bg: string; border: string }> = {
+   144→  FORGE: { color: 'text-term-green', bg: 'rgba(51, 255, 51, 0.1)', border: 'border-term-green/30' },
+   145→  TRADE: { color: 'text-term-cyan', bg: 'rgba(0, 212, 255, 0.1)', border: 'border-term-cyan/30' },
+   146→  LIST: { color: 'text-term-amber', bg: 'rgba(255, 184, 0, 0.1)', border: 'border-term-amber/30' },
+   147→  CANCEL: { color: 'text-term-red', bg: 'rgba(255, 51, 51, 0.1)', border: 'border-term-red/30' },
+   148→  TRANSFER: { color: 'text-term-magenta', bg: 'rgba(255, 0, 255, 0.1)', border: 'border-term-magenta/30' },
+   149→  BRIDGE: { color: 'text-term-magenta', bg: 'rgba(255, 0, 255, 0.1)', border: 'border-term-magenta/30' },
+   150→}
+   151→
+   152→/** Map a realtime MarketEvent from the WebSocket service to the dashboard ActivityItem shape. */
+   153→function marketEventToActivity(ev: MarketEvent): ActivityItem {
+   154→  const typeMap: Record<MarketEvent['type'], ActivityItem['type']> = {
+   155→    MINT: 'FORGE',
+   156→    TRADE: 'TRADE',
+   157→    LIST: 'LIST',
+   158→    CANCEL: 'CANCEL',
+   159→    TRANSFER: 'TRANSFER',
+   160→    BRIDGE: 'BRIDGE',
+   161→  }
+   162→  const verbMap: Record<MarketEvent['type'], string> = {
+   163→    MINT: 'minted',
+   164→    TRADE: 'traded',
+   165→    LIST: 'listed',
+   166→    CANCEL: 'delisted',
+   167→    TRANSFER: 'transferred',
+   168→    BRIDGE: 'bridged',
+   169→  }
+   170→  return {
+   171→    id: ev.id,
+   172→    time: 'just now',
+   173→    type: typeMap[ev.type],
+   174→    description: `${ev.assetName} #${ev.assetId} ${verbMap[ev.type]} (${ev.rarity}) ${ev.from} → ${ev.to}`,
+   175→    value: `${ev.amount.toFixed(3)} ALGO`,
+   176→  }
+   177→}
+   178→
+   179→const QUICK_ACTIONS = [
+   180→  { label: 'Mint NFT', icon: Flame, color: 'text-term-green', borderColor: 'border-term-green/50' },
+   181→  { label: 'List Item', icon: ListPlus, color: 'text-term-cyan', borderColor: 'border-term-cyan/50' },
+   182→  { label: 'Connect Wallet', icon: Wallet, color: 'text-term-amber', borderColor: 'border-term-amber/50' },
+   183→  { label: 'View Docs', icon: BookOpen, color: 'text-term-magenta', borderColor: 'border-term-magenta/50' },
+   184→]
+   185→
+   186→/* ===== CUSTOM TERMINAL TOOLTIP ===== */
+   187→
+   188→function TerminalTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string }>; label?: string }) {
+   189→  if (!active || !payload || !payload.length) return null
+   190→  return (
+   191→    <div className="bg-[#1E1E1E] border border-[#444444] p-2 rounded-sm shadow-lg font-terminal text-xs">
+   192→      <div className="text-term-dim mb-1">{label}</div>
+   193→      {payload.map((entry, i) => (
+   194→        <div key={i} className="text-term-green">
+   195→          {entry.name}: {typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
+   196→        </div>
+   197→      ))}
+   198→    </div>
+   199→  )
+   200→}
+   201→
+   202→/* ===== MINI SPARKLINE (SVG) ===== */
+   203→
+   204→function MiniSparkline({ data, color, positive }: { data: number[]; color: string; positive: boolean }) {
+   205→  const max = Math.max(...data)
+   206→  const min = Math.min(...data)
+   207→  const range = max - min || 1
+   208→  const width = 80
+   209→  const height = 28
+   210→  const points = data.map((v, i) => {
+   211→    const x = (i / (data.length - 1)) * width
+   212→    const y = height - ((v - min) / range) * height
+   213→    return `${x},${y}`
+   214→  }).join(' ')
+   215→
+   216→  return (
+   217→    <svg width={width} height={height} className="opacity-60">
+   218→      <polyline
+   219→        points={points}
+   220→        fill="none"
+   221→        stroke={positive ? '#33FF33' : '#FF3333'}
+   222→        strokeWidth="1.5"
+   223→        strokeLinecap="round"
+   224→        strokeLinejoin="round"
+   225→      />
+   226→    </svg>
+   227→  )
+   228→}
+   229→
+   230→/* ===== STAT CARD ===== */
+   231→
+   232→function StatCard({ stat, index }: { stat: typeof STATS[0]; index: number }) {
+   233→  const Icon = stat.icon
+   234→  return (
+   235→    <motion.div
+   236→      initial={{ opacity: 0, y: 12 }}
+   237→      animate={{ opacity: 1, y: 0 }}
+   238→      transition={{ delay: index * 0.08, duration: 0.3 }}
+   239→      className="terminal-card terminal-card-glow"
+   240→    >
+   241→      <div className="terminal-card-header">
+   242→        <TrafficLights />
+   243→        <span className="terminal-title">{stat.label.toLowerCase().replace(/\s/g, '_')}.log</span>
+   244→      </div>
+   245→      <div className="terminal-card-body">
+   246→        <div className="flex items-start justify-between">
+   247→          <div>
+   248→            <div className="text-term-dim text-[10px] mb-1 font-terminal">{stat.label}</div>
+   249→            <div className="text-2xl font-bold text-term-green font-terminal glow-green">
+   250→              {stat.value}
+   251→            </div>
+   252→            {/* Slide-up fade animation on change indicator - re-keys on value so it re-animates */}
+   253→            <div
+   254→              key={stat.value}
+   255→              className="flex items-center gap-1 mt-1 animate-slide-up-fade"
+   256→            >
+   257→              {stat.positive ? (
+   258→                <TrendingUp className="w-3 h-3 text-term-green" />
+   259→              ) : (
+   260→                <TrendingDown className="w-3 h-3 text-term-red" />
+   261→              )}
+   262→              <span className={`text-[11px] font-terminal ${stat.positive ? 'text-term-green' : 'text-term-red'}`}>
+   263→                {stat.change}
+   264→              </span>
+   265→            </div>
+   266→          </div>
+   267→          <div className="flex flex-col items-end gap-2">
+   268→            <div className="w-8 h-8 flex items-center justify-center rounded-sm bg-[#1E1E1E] border border-[#444444]">
+   269→              <Icon className="w-4 h-4 text-term-dim" />
+   270→            </div>
+   271→            <MiniSparkline data={stat.sparkData} color={stat.positive ? '#33FF33' : '#FF3333'} positive={stat.positive} />
+   272→          </div>
+   273→        </div>
+   274→      </div>
+   275→    </motion.div>
+   276→  )
+   277→}
+   278→
+   279→/* ===== PRICE CHART CARD ===== */
+   280→
+   281→function PriceChartCard() {
+   282→  return (
+   283→    <motion.div
+   284→      initial={{ opacity: 0, y: 12 }}
+   285→      animate={{ opacity: 1, y: 0 }}
+   286→      transition={{ delay: 0.3, duration: 0.3 }}
+   287→      className="terminal-card terminal-card-glow"
+   288→    >
+   289→      <div className="terminal-card-header">
+   290→        <TrafficLights />
+   291→        <span className="terminal-title">price_trend.log</span>
+   292→      </div>
+   293→      <div className="terminal-card-body" style={{ background: '#1E1E1E' }}>
+   294→        <div className="flex items-center justify-between mb-3">
+   295→          <span className="text-term-dim text-[10px] font-terminal">7-Day Price Trend (ALGO)</span>
+   296→          <span className="text-term-green text-[11px] font-terminal glow-green">$2.41 ▲</span>
+   297→        </div>
+   298→        <ResponsiveContainer width="100%" height={220}>
+   299→          <AreaChart data={PRICE_DATA} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+   300→            <defs>
+   301→              <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
+   302→                <stop offset="5%" stopColor="#33FF33" stopOpacity={0.3} />
+   303→                <stop offset="95%" stopColor="#33FF33" stopOpacity={0.02} />
+   304→              </linearGradient>
+   305→            </defs>
+   306→            <CartesianGrid strokeDasharray="3 3" stroke="#333333" />
+   307→            <XAxis
+   308→              dataKey="day"
+   309→              tick={{ fill: '#888888', fontSize: 10, fontFamily: 'monospace' }}
+   310→              axisLine={{ stroke: '#444444' }}
+   311→              tickLine={{ stroke: '#444444' }}
+   312→            />
+   313→            <YAxis
+   314→              tick={{ fill: '#888888', fontSize: 10, fontFamily: 'monospace' }}
+   315→              axisLine={{ stroke: '#444444' }}
+   316→              tickLine={{ stroke: '#444444' }}
+   317→              domain={['dataMin - 0.2', 'dataMax + 0.2']}
+   318→            />
+   319→            <Tooltip content={<TerminalTooltip />} />
+   320→            <Area
+   321→              type="monotone"
+   322→              dataKey="price"
+   323→              stroke="#33FF33"
+   324→              strokeWidth={2}
+   325→              fill="url(#priceGradient)"
+   326→              name="Price"
+   327→            />
+   328→          </AreaChart>
+   329→        </ResponsiveContainer>
+   330→      </div>
+   331→    </motion.div>
+   332→  )
+   333→}
+   334→
+   335→/* ===== VOLUME CHART CARD ===== */
+   336→
+   337→function VolumeChartCard() {
+   338→  return (
+   339→    <motion.div
+   340→      initial={{ opacity: 0, y: 12 }}
+   341→      animate={{ opacity: 1, y: 0 }}
+   342→      transition={{ delay: 0.4, duration: 0.3 }}
+   343→      className="terminal-card terminal-card-cyan-glow"
+   344→    >
+   345→      <div className="terminal-card-header">
+   346→        <TrafficLights />
+   347→        <span className="terminal-title">volume_stats.log</span>
+   348→      </div>
+   349→      <div className="terminal-card-body" style={{ background: '#1E1E1E' }}>
+   350→        <div className="flex items-center justify-between mb-3">
+   351→          <span className="text-term-dim text-[10px] font-terminal">Daily Volume (ALGO)</span>
+   352→          <span className="text-term-cyan text-[11px] font-terminal glow-cyan">25.6K ▲</span>
+   353→        </div>
+   354→        <ResponsiveContainer width="100%" height={220}>
+   355→          <BarChart data={VOLUME_DATA} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+   356→            <CartesianGrid strokeDasharray="3 3" stroke="#333333" />
+   357→            <XAxis
+   358→              dataKey="day"
+   359→              tick={{ fill: '#888888', fontSize: 10, fontFamily: 'monospace' }}
+   360→              axisLine={{ stroke: '#444444' }}
+   361→              tickLine={{ stroke: '#444444' }}
+   362→            />
+   363→            <YAxis
+   364→              tick={{ fill: '#888888', fontSize: 10, fontFamily: 'monospace' }}
+   365→              axisLine={{ stroke: '#444444' }}
+   366→              tickLine={{ stroke: '#444444' }}
+   367→            />
+   368→            <Tooltip content={<TerminalTooltip />} />
+   369→            <Bar
+   370→              dataKey="volume"
+   371→              fill="#00D4FF"
+   372→              radius={[2, 2, 0, 0]}
+   373→              name="Volume"
+   374→              opacity={0.85}
+   375→            />
+   376→          </BarChart>
+   377→        </ResponsiveContainer>
+   378→      </div>
+   379→    </motion.div>
+   380→  )
+   381→}
+   382→
+   383→/* ===== RARITY PIE CHART CARD ===== */
+   384→
+   385→function RarityChartCard({ data = RARITY_DATA }: { data?: typeof RARITY_DATA }) {
+   386→  return (
+   387→    <motion.div
+   388→      initial={{ opacity: 0, y: 12 }}
+   389→      animate={{ opacity: 1, y: 0 }}
+   390→      transition={{ delay: 0.5, duration: 0.3 }}
+   391→      className="terminal-card terminal-card-magenta-glow"
+   392→    >
+   393→      <div className="terminal-card-header">
+   394→        <TrafficLights />
+   395→        <span className="terminal-title">rarity_dist.log</span>
+   396→      </div>
+   397→      <div className="terminal-card-body" style={{ background: '#1E1E1E' }}>
+   398→        <div className="flex items-center justify-between mb-3">
+   399→          <span className="text-term-dim text-[10px] font-terminal">NFT Rarity Distribution</span>
+   400→        </div>
+   401→        <ResponsiveContainer width="100%" height={220}>
+   402→          <PieChart>
+   403→            <Pie
+   404→              data={data}
+   405→              cx="50%"
+   406→              cy="50%"
+   407→              innerRadius={50}
+   408→              outerRadius={80}
+   409→              paddingAngle={3}
+   410→              dataKey="value"
+   411→              stroke="#1E1E1E"
+   412→              strokeWidth={2}
+   413→            >
+   414→              {data.map((entry, index) => (
+   415→                <Cell key={`cell-${index}`} fill={entry.color} />
+   416→              ))}
+   417→            </Pie>
+   418→            <Tooltip
+   419→              content={({ active, payload }) => {
+   420→                if (!active || !payload || !payload.length) return null
+   421→                const data = payload[0]
+   422→                return (
+   423→                  <div className="bg-[#1E1E1E] border border-[#444444] p-2 rounded-sm shadow-lg font-terminal text-xs">
+   424→                    <div className="text-term-dim">{data.name}</div>
+   425→                    <div className="text-term-green">{data.value?.toLocaleString()} items</div>
+   426→                  </div>
+   427→                )
+   428→              }}
+   429→            />
+   430→          </PieChart>
+   431→        </ResponsiveContainer>
+   432→        <div className="flex flex-wrap justify-center gap-4 mt-2">
+   433→          {data.map((item) => (
+   434→            <div key={item.name} className="flex items-center gap-1.5">
+   435→              <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: item.color }} />
+   436→              <span className="text-[10px] font-terminal text-term-dim">{item.name}</span>
+   437→              <span className="text-[10px] font-terminal text-term-text">{item.value.toLocaleString()}</span>
+   438→            </div>
+   439→          ))}
+   440→        </div>
+   441→      </div>
+   442→    </motion.div>
+   443→  )
+   444→}
+   445→
+   446→/* ===== ACTIVITY FEED (REALTIME via WebSocket, fallback to simulated) ===== */
+   447→
+   448→function ActivityFeed() {
+   449→  const { events: liveEvents, isConnected } = useRealtimeEvents()
+   450→
+   451→  // Local simulated feed - only used as a fallback when the realtime
+   452→  // service is unreachable. Stops updating once we are connected.
+   453→  const [simActivities, setSimActivities] = useState<ActivityItem[]>(INITIAL_ACTIVITY)
+   454→  const feedRef = useRef<HTMLDivElement>(null)
+   455→  const counterRef = useRef(INITIAL_ACTIVITY.length)
+   456→
+   457→  // Auto-scroll to bottom whenever displayed list changes
+   458→  useEffect(() => {
+   459→    if (feedRef.current) {
+   460→      feedRef.current.scrollTop = feedRef.current.scrollHeight
+   461→    }
+   462→  }, [liveEvents, simActivities, isConnected])
+   463→
+   464→  // Simulate new activity every 8s ONLY when not connected to realtime
+   465→  useEffect(() => {
+   466→    if (isConnected) return
+   467→    const interval = setInterval(() => {
+   468→      const types: ActivityItem['type'][] = ['FORGE', 'TRADE', 'LIST', 'CANCEL', 'TRANSFER', 'BRIDGE']
+   469→      const descs = [
+   470→        'Obsidian Shard #888 minted',
+   471→        'Golden Apple #333 traded',
+   472→        'Nether Star #100 listed',
+   473→        'Emerald Sword #055 delisted',
+   474→        'Phoenix Feather #420 minted',
+   475→        'Dragon Scale #777 sold',
+   476→        'Crystal Orb #021 listed',
+   477→        'Shadow Cloak #666 delisted',
+   478→        'Phase Dagger #113 bridged',
+   479→        'Cryo Ring #909 transferred',
+   480→      ]
+   481→      const values = ['15.0 ALGO', '28.5 ALGO', '42.0 ALGO', '9.8 ALGO', '33.3 ALGO', '67.0 ALGO', '11.2 ALGO', '54.0 ALGO']
+   482→
+   483→      const newActivity: ActivityItem = {
+   484→        id: ++counterRef.current,
+   485→        time: 'just now',
+   486→        type: types[Math.floor(Math.random() * types.length)],
+   487→        description: descs[Math.floor(Math.random() * descs.length)],
+   488→        value: values[Math.floor(Math.random() * values.length)],
+   489→      }
+   490→
+   491→      setSimActivities((prev) => [...prev.slice(-14), newActivity])
+   492→    }, 8000)
+   493→
+   494→    return () => clearInterval(interval)
+   495→  }, [isConnected])
+   496→
+   497→  // Build the displayed list: realtime events take priority.
+   498→  // When we have realtime events, prepend them to a (frozen) snapshot of
+   499→  // simulated events for visual continuity. Otherwise show only simulated.
+   500→  const displayActivities = useMemo<ActivityItem[]>(() => {
+   501→    if (!isConnected || liveEvents.length === 0) {
+   502→      return simActivities
+   503→    }
+   504→    const liveItems = liveEvents.map(marketEventToActivity)
+   505→    // Top up with simulated items if we don't have enough live ones yet
+   506→    const tail = simActivities.slice(0, Math.max(0, 25 - liveItems.length))
+   507→    return [...liveItems, ...tail]
+   508→  }, [liveEvents, simActivities, isConnected])
+   509→
+   510→  return (
+   511→    <motion.div
+   512→      initial={{ opacity: 0, y: 12 }}
+   513→      animate={{ opacity: 1, y: 0 }}
+   514→      transition={{ delay: 0.6, duration: 0.3 }}
+   515→      className="terminal-card terminal-card-glow"
+   516→    >
+   517→      <div className="terminal-card-header moving-scanline">
+   518→        <TrafficLights />
+   519→        <span className="terminal-title">activity.log</span>
+   520→
+   521→        {/* LIVE / OFFLINE indicator */}
+   522→        <div className="ml-auto flex items-center gap-2">
+   523→          <span
+   524→            className={`flex items-center gap-1 px-1.5 py-0.5 rounded-sm border text-[9px] font-bold font-terminal ${
+   525→              isConnected
+   526→                ? 'text-term-green bg-[rgba(51,255,51,0.08)] border-term-green/40'
+   527→                : 'text-term-red bg-[rgba(255,51,51,0.08)] border-term-red/40'
+   528→            }`}
+   529→            title={isConnected ? 'WebSocket connected' : 'WebSocket offline - showing simulated feed'}
+   530→          >
+   531→            <span
+   532→              className={`w-1.5 h-1.5 rounded-full ${
+   533→                isConnected ? 'bg-term-green animate-pulse' : 'bg-term-red'
+   534→              }`}
+   535→            />
+   536→            {isConnected ? 'LIVE' : 'OFFLINE'}
+   537→          </span>
+   538→          <span
+   539→            className="hidden sm:inline-flex text-[9px] font-terminal text-term-dim border border-[#444] px-1.5 py-0.5 rounded-sm"
+   540→            title="socket.io via /?XTransformPort=3003"
+   541→          >
+   542→            Realtime via WebSocket
+   543→          </span>
+   544→          <Activity className={`w-3.5 h-3.5 ${isConnected ? 'text-term-green animate-pulse' : 'text-term-dim'}`} />
+   545→        </div>
+   546→      </div>
+   547→      <div
+   548→        ref={feedRef}
+   549→        className="terminal-card-body max-h-96 overflow-y-auto p-4 space-y-1.5"
+   550→      >
+   551→        {displayActivities.map((item) => {
+   552→          const config = TYPE_CONFIG[item.type] ?? TYPE_CONFIG.TRADE
+   553→          const isNew = item.time === 'just now'
+   554→          return (
+   555→            <motion.div
+   556→              key={item.id}
+   557→              initial={isNew ? { opacity: 0, x: 10 } : false}
+   558→              animate={{ opacity: 1, x: 0 }}
+   559→              transition={{ duration: 0.3 }}
+   560→              className={`flex items-center gap-2 text-[11px] font-terminal py-1 px-1.5 rounded-sm hover:bg-[#1E1E1E] transition-colors ${isNew ? 'bg-term-selection/30' : ''}`}
+   561→            >
+   562→              <span className="text-term-dim flex-shrink-0 w-16">[{item.time}]</span>
+   563→              <span
+   564→                className={`px-1.5 py-0.5 rounded-sm text-[9px] font-bold ${config.color} ${config.bg} border ${config.border} flex-shrink-0`}
+   565→              >
+   566→                {item.type}
+   567→              </span>
+   568→              <span className="text-term-text truncate flex-1">{item.description}</span>
+   569→              <span className="text-term-amber flex-shrink-0">→ {item.value}</span>
+   570→            </motion.div>
+   571→          )
+   572→        })}
+   573→        <div className="flex items-center gap-1 pt-2">
+   574→          <span className="blink-cursor" />
+   575→          <span className="text-term-dim text-[10px]">
+   576→            {isConnected ? 'live events streaming...' : 'offline - showing simulated feed...'}
+   577→          </span>
+   578→        </div>
+   579→      </div>
+   580→    </motion.div>
+   581→  )
+   582→}
+   583→
+   584→/* ===== AI PRICING ENGINE ===== */
+   585→
+   586→interface AIPriceResult {
+   587→  price: number
+   588→  confidence: number
+   589→  reasoning: string
+   590→  trend: 'up' | 'down' | 'stable'
+   591→  source?: 'ai' | 'heuristic'
+   592→}
+   593→
+   594→interface HistoryEntry {
+   595→  id: string
+   596→  name: string
+   597→  rarity: string
+   598→  price: number
+   599→  confidence: number
+   600→  trend: 'up' | 'down' | 'stable'
+   601→  source: string
+   602→  timestamp: string
+   603→}
+   604→
+   605→function TrendIcon({ trend, className = 'w-3 h-3' }: { trend: 'up' | 'down' | 'stable'; className?: string }) {
+   606→  if (trend === 'up') return <TrendingUp className={`${className} text-term-green`} />
+   607→  if (trend === 'down') return <TrendingDown className={`${className} text-term-red`} />
+   608→  return <Minus className={`${className} text-term-dim`} />
+   609→}
+   610→
+   611→function AIPricingEngine() {
+   612→  const { addNotification } = useDeShopStore()
+   613→  const [name, setName] = useState('')
+   614→  const [rarity, setRarity] = useState<'common' | 'rare' | 'epic' | 'legendary'>('rare')
+   615→  const [type, setType] = useState('weapon')
+   616→  const [description, setDescription] = useState('')
+   617→  const [loading, setLoading] = useState(false)
+   618→  const [error, setError] = useState<string | null>(null)
+   619→  const [result, setResult] = useState<AIPriceResult | null>(null)
+   620→  const [history, setHistory] = useState<HistoryEntry[]>([])
+   621→
+   622→  const handleGetPrice = async () => {
+   623→    if (!name.trim()) {
+   624→      addNotification('warning', 'Enter an asset name first')
+   625→      return
+   626→    }
+   627→    setLoading(true)
+   628→    setError(null)
+   629→    setResult(null)
+   630→    try {
+   631→      const res = await fetch('/api/ai-price', {
+   632→        method: 'POST',
+   633→        headers: { 'Content-Type': 'application/json' },
+   634→        body: JSON.stringify({ name, rarity, type, description }),
+   635→      })
+   636→      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+   637→      const data: AIPriceResult = await res.json()
+   638→      setResult(data)
+   639→      setHistory((prev) =>
+   640→        [
+   641→          {
+   642→            id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+   643→            name,
+   644→            rarity,
+   645→            price: data.price,
+   646→            confidence: data.confidence,
+   647→            trend: data.trend,
+   648→            source: data.source || 'ai',
+   649→            timestamp: new Date().toLocaleTimeString(),
+   650→          },
+   651→          ...prev,
+   652→        ].slice(0, 5)
+   653→      )
+   654→      addNotification(
+   655→        data.source === 'ai' ? 'success' : 'info',
+   656→        `AI oracle: ${data.price} ALGO for "${name}"`
+   657→      )
+   658→    } catch (e) {
+   659→      setError(e instanceof Error ? e.message : 'Failed to fetch')
+   660→      addNotification('error', 'AI pricing failed')
+   661→    } finally {
+   662→      setLoading(false)
+   663→    }
+   664→  }
+   665→
+   666→  const confidenceColor =
+   667→    result && result.confidence >= 75
+   668→      ? 'bg-term-green'
+   669→      : result && result.confidence >= 50
+   670→        ? 'bg-term-amber'
+   671→        : 'bg-term-red'
+   672→
+   673→  return (
+   674→    <motion.div
+   675→      initial={{ opacity: 0, y: 12 }}
+   676→      animate={{ opacity: 1, y: 0 }}
+   677→      transition={{ delay: 0.8, duration: 0.3 }}
+   678→      className="terminal-card terminal-card-glow"
+   679→    >
+   680→      <div className="terminal-card-header">
+   681→        <TrafficLights />
+   682→        <span className="terminal-title">ai_pricing.log</span>
+   683→        <Bot className="w-3.5 h-3.5 text-term-green" />
+   684→      </div>
+   685→      <div className="p-4 bg-[#1E1E1E]">
+   686→        <div className="flex items-center gap-2 mb-3">
+   687→          <span className="prompt-prefix text-sm">$</span>
+   688→          <span className="text-term-green text-xs font-terminal glow-green">./ai-pricing-engine</span>
+   689→          <span className="text-term-dim text-[10px] font-terminal">--query --rarity --type</span>
+   690→          <span className="ml-auto text-[9px] font-terminal text-term-dim border border-term-dim/40 px-1">
+   691→            z-ai-web-dev-sdk
+   692→          </span>
+   693→        </div>
+   694→
+   695→        <div className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-4">
+   696→          {/* LEFT: Form + Result */}
+   697→          <div className="space-y-3">
+   698→            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+   699→              <div>
+   700→                <label className="text-term-dim text-[10px] font-terminal mb-1 block">ASSET NAME</label>
+   701→                <input
+   702→                  type="text"
+   703→                  value={name}
+   704→                  onChange={(e) => setName(e.target.value)}
+   705→                  placeholder="e.g. Neon Blade"
+   706→                  className="terminal-input"
+   707→                  disabled={loading}
+   708→                  onKeyDown={(e) => {
+   709→                    if (e.key === 'Enter' && !loading) handleGetPrice()
+   710→                  }}
+   711→                />
+   712→              </div>
+   713→              <div className="grid grid-cols-2 gap-2">
+   714→                <div>
+   715→                  <label className="text-term-dim text-[10px] font-terminal mb-1 block">RARITY</label>
+   716→                  <select
+   717→                    value={rarity}
+   718→                    onChange={(e) => setRarity(e.target.value as 'common' | 'rare' | 'epic' | 'legendary')}
+   719→                    className="terminal-input"
+   720→                    disabled={loading}
+   721→                  >
+   722→                    <option value="common">Common</option>
+   723→                    <option value="rare">Rare</option>
+   724→                    <option value="epic">Epic</option>
+   725→                    <option value="legendary">Legendary</option>
+   726→                  </select>
+   727→                </div>
+   728→                <div>
+   729→                  <label className="text-term-dim text-[10px] font-terminal mb-1 block">TYPE</label>
+   730→                  <select
+   731→                    value={type}
+   732→                    onChange={(e) => setType(e.target.value)}
+   733→                    className="terminal-input"
+   734→                    disabled={loading}
+   735→                  >
+   736→                    <option value="weapon">Weapon</option>
+   737→                    <option value="character">Character</option>
+   738→                    <option value="accessory">Accessory</option>
+   739→                  </select>
+   740→                </div>
+   741→              </div>
+   742→            </div>
+   743→            <div>
+   744→              <label className="text-term-dim text-[10px] font-terminal mb-1 block">DESCRIPTION (optional)</label>
+   745→              <input
+   746→                type="text"
+   747→                value={description}
+   748→                onChange={(e) => setDescription(e.target.value)}
+   749→                placeholder="e.g. plasma-infused blade forged in the digital crucible"
+   750→                className="terminal-input"
+   751→                disabled={loading}
+   752→              />
+   753→            </div>
+   754→
+   755→            <button
+   756→              onClick={handleGetPrice}
+   757→              disabled={loading || !name.trim()}
+   758→              className="terminal-btn terminal-btn-primary flex items-center gap-2 disabled:opacity-50"
+   759→            >
+   760→              {loading ? (
+   761→                <>
+   762→                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+   763→                  <span>Querying Oracle...</span>
+   764→                </>
+   765→              ) : (
+   766→                <>
+   767→                  <Bot className="w-3.5 h-3.5" />
+   768→                  <span>Get Price</span>
+   769→                </>
+   770→              )}
+   771→            </button>
+   772→
+   773→            {/* Results Panel */}
+   774→            <div className="border border-[#333] bg-[#181818] p-3 space-y-2 min-h-[140px]">
+   775→              <div className="text-term-dim text-[10px] font-terminal mb-1 flex items-center gap-2">
+   776→                <span>&gt; result.log</span>
+   777→                {loading && <span className="blink-cursor" />}
+   778→              </div>
+   779→              {loading && (
+   780→                <div className="flex items-center gap-2 text-term-amber text-[11px] font-terminal">
+   781→                  <Loader2 className="w-3 h-3 animate-spin" />
+   782→                  <span>querying AI oracle...</span>
+   783→                </div>
+   784→              )}
+   785→              {error && !loading && (
+   786→                <div className="text-term-red text-[11px] font-terminal">{`> ERR: ${error}`}</div>
+   787→              )}
+   788→              {result && !loading && (
+   789→                <motion.div
+   790→                  initial={{ opacity: 0, y: 6 }}
+   791→                  animate={{ opacity: 1, y: 0 }}
+   792→                  className="space-y-2"
+   793→                >
+   794→                  <div className="flex items-center justify-between">
+   795→                    <div className="flex items-center gap-2">
+   796→                      <span className="text-term-dim text-[10px] font-terminal">PRICE</span>
+   797→                      <span className="text-term-green text-lg font-terminal font-bold glow-green">
+   798→                        ◆ {result.price} ALGO
+   799→                      </span>
+   800→                      <TrendIcon trend={result.trend} className="w-4 h-4" />
+   801→                    </div>
+   802→                    <span
+   803→                      className={`text-[9px] font-terminal border px-1 ${
+   804→                        result.source === 'ai'
+   805→                          ? 'text-term-green border-term-green/40'
+   806→                          : 'text-term-amber border-term-amber/40'
+   807→                      }`}
+   808→                    >
+   809→                      {result.source || 'ai'}
+   810→                    </span>
+   811→                  </div>
+   812→                  <div>
+   813→                    <div className="flex items-center justify-between mb-0.5">
+   814→                      <span className="text-term-dim text-[10px] font-terminal">CONFIDENCE</span>
+   815→                      <span className="text-term-green text-[10px] font-terminal">{result.confidence}%</span>
+   816→                    </div>
+   817→                    <div className="flex-1 h-2 bg-[#2D2D2D] border border-[#444444] overflow-hidden">
+   818→                      <div
+   819→                        className={`h-full transition-all ${confidenceColor}`}
+   820→                        style={{ width: `${result.confidence}%` }}
+   821→                      />
+   822→                    </div>
+   823→                  </div>
+   824→                  <div>
+   825→                    <div className="text-term-dim text-[10px] font-terminal mb-0.5">REASONING</div>
+   826→                    <div className="text-term-text text-[10px] font-terminal leading-relaxed border-l-2 border-term-green/30 pl-2">
+   827→                      {result.reasoning}
+   828→                    </div>
+   829→                  </div>
+   830→                </motion.div>
+   831→              )}
+   832→              {!result && !loading && !error && (
+   833→                <div className="text-term-dim text-[10px] font-terminal">
+   834→                  &gt; awaiting query... enter an asset name and click Get Price
+   835→                </div>
+   836→              )}
+   837→            </div>
+   838→          </div>
+   839→
+   840→          {/* RIGHT: History */}
+   841→          <div className="border border-[#333] bg-[#181818] flex flex-col">
+   842→            <div className="px-3 py-2 border-b border-[#333] flex items-center gap-2">
+   843→              <Clock className="w-3 h-3 text-term-dim" />
+   844→              <span className="text-term-dim text-[10px] font-terminal">last 5 queries</span>
+   845→            </div>
+   846→            <div className="flex-1 p-2 space-y-1.5 max-h-80 overflow-y-auto">
+   847→              {history.length === 0 && (
+   848→                <div className="text-term-dim text-[10px] font-terminal text-center py-4">
+   849→                  no queries yet
+   850→                </div>
+   851→              )}
+   852→              {history.map((entry) => (
+   853→                <motion.div
+   854→                  key={entry.id}
+   855→                  initial={{ opacity: 0, x: -6 }}
+   856→                  animate={{ opacity: 1, x: 0 }}
+   857→                  className="border border-[#2a2a2a] p-2 bg-[#1E1E1E] hover:border-term-green/30 transition-colors"
+   858→                >
+   859→                  <div className="flex items-center justify-between mb-0.5">
+   860→                    <span className="text-term-green text-[10px] font-terminal truncate flex-1">
+   861→                      {entry.name}
+   862→                    </span>
+   863→                    <TrendIcon trend={entry.trend} className="w-2.5 h-2.5 flex-shrink-0" />
+   864→                  </div>
+   865→                  <div className="flex items-center justify-between text-[9px] font-terminal">
+   866→                    <span className="text-term-dim">{entry.rarity}</span>
+   867→                    <span className="text-term-amber">◆ {entry.price}</span>
+   868→                  </div>
+   869→                  <div className="flex items-center justify-between text-[9px] font-terminal text-term-dim">
+   870→                    <span>{entry.source}</span>
+   871→                    <span>{entry.confidence}%</span>
+   872→                  </div>
+   873→                  <div className="text-[8px] font-terminal text-term-dim mt-0.5">{entry.timestamp}</div>
+   874→                </motion.div>
+   875→              ))}
+   876→            </div>
+   877→          </div>
+   878→        </div>
+   879→      </div>
+   880→    </motion.div>
+   881→  )
+   882→}
+   883→
+   884→/* ===== QUICK ACTIONS ===== */
+   885→
+   886→function QuickActions() {
+   887→  const { walletConnected, setShowWalletModal, setActivePage, addNotification } = useDeShopStore()
+   888→
+   889→  const handleAction = (label: string) => {
+   890→    switch (label) {
+   891→      case 'Connect Wallet':
+   892→        if (walletConnected) {
+   893→          addNotification('info', 'Wallet already connected')
+   894→        } else {
+   895→          setShowWalletModal(true)
+   896→        }
+   897→        break
+   898→      case 'View Docs':
+   899→        setActivePage('docs')
+   900→        break
+   901→      case 'Mint NFT':
+   902→        addNotification('info', 'Mint NFT module loading...')
+   903→        break
+   904→      case 'List Item':
+   905→        addNotification('info', 'List Item module loading...')
+   906→        break
+   907→    }
+   908→  }
+   909→
+   910→  return (
+   911→    <motion.div
+   912→      initial={{ opacity: 0, y: 12 }}
+   913→      animate={{ opacity: 1, y: 0 }}
+   914→      transition={{ delay: 0.7, duration: 0.3 }}
+   915→      className="flex flex-wrap gap-3"
+   916→    >
+   917→      {QUICK_ACTIONS.map((action) => {
+   918→        const Icon = action.icon
+   919→        return (
+   920→          <button
+   921→            key={action.label}
+   922→            onClick={() => handleAction(action.label)}
+   923→            className={`terminal-btn flex items-center gap-2 border ${action.borderColor} hover:bg-[#1E1E1E] transition-all group`}
+   924→          >
+   925→            <Icon className={`w-3.5 h-3.5 ${action.color} group-hover:scale-110 transition-transform`} />
+   926→            <span className={`${action.color} text-[11px]`}>{action.label}</span>
+   927→          </button>
+   928→        )
+   929→      })}
+   930→    </motion.div>
+   931→  )
+   932→}
+   933→
+   934→/* ===== API FETCH HOOK ===== */
+   935→
+   936→interface ApiStats {
+   937→  totalValueLocked: string
+   938→  activeWallets: string
+   939→  gasFees: string
+   940→  crossChainVolume: string
+   941→  totalAssets: number
+   942→  totalTransactions: number
+   943→  rarityDistribution: { common: number; rare: number; epic: number; legendary: number }
+   944→}
+   945→
+   946→function useApiStats() {
+   947→  const [apiStats, setApiStats] = useState<ApiStats | null>(null)
+   948→  const [loading, setLoading] = useState(true)
+   949→
+   950→  const fetchStats = useCallback(async () => {
+   951→    try {
+   952→      const res = await fetch('/api/stats')
+   953→      if (res.ok) {
+   954→        const data = await res.json()
+   955→        setApiStats(data)
+   956→      }
+   957→    } catch {
+   958→      // fallback to mock data
+   959→    } finally {
+   960→      setLoading(false)
+   961→    }
+   962→  }, [])
+   963→
+   964→  useEffect(() => {
+   965→    fetchStats()
+   966→  }, [fetchStats])
+   967→
+   968→  return { apiStats, loading }
+   969→}
+   970→
+   971→/* ===== MAIN DASHBOARD PAGE ===== */
+   972→
+   973→export default function DashboardPage() {
+   974→  const { apiStats, loading } = useApiStats()
+   975→
+   976→  // Merge API stats into displayed stats
+   977→  const displayStats = STATS.map((stat) => {
+   978→    if (!apiStats) return stat
+   979→    switch (stat.label) {
+   980→      case 'Total Value Locked':
+   981→        return { ...stat, value: apiStats.totalValueLocked }
+   982→      case 'Active Wallets':
+   983→        return { ...stat, value: apiStats.activeWallets }
+   984→      case 'Gas Fees (24h)':
+   985→        return { ...stat, value: apiStats.gasFees }
+   986→      case 'Cross-Chain Volume':
+   987→        return { ...stat, value: apiStats.crossChainVolume }
+   988→      default:
+   989→        return stat
+   990→    }
+   991→  })
+   992→
+   993→  // Update rarity data from API
+   994→  const displayRarityData = apiStats
+   995→    ? [
+   996→        { name: 'Common', value: apiStats.rarityDistribution.common + 4200, color: '#888888' },
+   997→        { name: 'Rare', value: apiStats.rarityDistribution.rare + 1800, color: '#00D4FF' },
+   998→        { name: 'Epic', value: apiStats.rarityDistribution.epic + 650, color: '#FF00FF' },
+   999→        { name: 'Legendary', value: apiStats.rarityDistribution.legendary + 150, color: '#FFB800' },
+  1000→      ]
+  1001→    : RARITY_DATA
+  1002→
+  1003→  return (
+  1004→    <div className="space-y-6">
+  1005→      {/* Terminal Window Header */}
+  1006→      <div className="terminal-card">
+  1007→        <div className="terminal-chrome">
+  1008→          <TrafficLights />
+  1009→          <span className="terminal-title font-terminal">dashboard@de-shop:~</span>
+  1010→        </div>
+  1011→        <div className="px-4 py-3 flex items-center gap-2 bg-[#1E1E1E]">
+  1012→          <span className="prompt-prefix text-sm">$</span>
+  1013→          <span className="text-term-green text-sm font-terminal glow-green">./dashboard</span>
+  1014→          <span className="text-term-dim text-xs font-terminal">--load-modules analytics,activity</span>
+  1015→          {loading && (
+  1016→            <span className="text-term-amber text-[10px] font-terminal animate-pulse">
+  1017→              [fetching stats...]
+  1018→            </span>
+  1019→          )}
+  1020→          <span className="blink-cursor" />
+  1021→        </div>
+  1022→      </div>
+  1023→
+  1024→      {/* Stats Grid - show skeletons while loading */}
+  1025→      {loading ? (
+  1026→        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  1027→          <SkeletonStatCard />
+  1028→          <SkeletonStatCard />
+  1029→          <SkeletonStatCard />
+  1030→          <SkeletonStatCard />
+  1031→        </div>
+  1032→      ) : (
+  1033→        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  1034→          {displayStats.map((stat, i) => (
+  1035→            <StatCard key={stat.label} stat={stat} index={i} />
+  1036→          ))}
+  1037→        </div>
+  1038→      )}
+  1039→
+  1040→      {/* Charts Row - skeletons while loading */}
+  1041→      {loading ? (
+  1042→        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  1043→          <SkeletonChart title="price_trend.log" />
+  1044→          <SkeletonChart title="volume_stats.log" />
+  1045→        </div>
+  1046→      ) : (
+  1047→        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  1048→          <PriceChartCard />
+  1049→          <VolumeChartCard />
+  1050→        </div>
+  1051→      )}
+  1052→
+  1053→      {/* Rarity + Activity Row */}
+  1054→      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+  1055→        <div className="lg:col-span-1">
+  1056→          {loading ? (
+  1057→            <SkeletonChart title="rarity_dist.log" height={220} />
+  1058→          ) : (
+  1059→            <RarityChartCard data={displayRarityData} />
+  1060→          )}
+  1061→        </div>
+  1062→        <div className="lg:col-span-2">
+  1063→          {loading ? (
+  1064→            <div className="skeleton-card">
+  1065→              <div className="skeleton-card-header flex items-center">
+  1066→                <div className="flex items-center gap-1.5 px-3 py-2">
+  1067→                  <span className="w-3 h-3 rounded-full bg-[#3a3a3a]" />
+  1068→                  <span className="w-3 h-3 rounded-full bg-[#3a3a3a]" />
+  1069→                  <span className="w-3 h-3 rounded-full bg-[#3a3a3a]" />
+  1070→                </div>
+  1071→                <span className="ml-2 text-[10px] font-terminal text-[#444444]">activity.log</span>
+  1072→              </div>
+  1073→              <div className="p-4 space-y-2">
+  1074→                {Array.from({ length: 8 }).map((_, i) => (
+  1075→                  <SkeletonActivityRow key={i} />
+  1076→                ))}
+  1077→              </div>
+  1078→            </div>
+  1079→          ) : (
+  1080→            <ActivityFeed />
+  1081→          )}
+  1082→        </div>
+  1083→      </div>
+  1084→
+  1085→      {/* Quick Actions */}
+  1086→      <QuickActions />
+  1087→
+  1088→      {/* AI Pricing Engine */}
+  1089→      <AIPricingEngine />
+  1090→    </div>
+  1091→  )
+  1092→}
+  1093→

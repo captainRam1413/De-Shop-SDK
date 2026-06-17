@@ -11,6 +11,7 @@ import {
   BookOpen,
   Puzzle,
   Gamepad2,
+  Activity,
   Wallet,
   Power,
   Flame,
@@ -143,6 +144,16 @@ const COMMANDS: Command[] = [
     shortcut: '⌘8',
     keywords: ['game', 'games', 'snake', 'typing', 'clicker', 'play'],
     run: (ctx) => ctx.setActivePage('game'),
+  },
+  {
+    id: 'nav-notifications',
+    name: 'cd activity',
+    description: 'Open the live activity center',
+    icon: Activity,
+    category: 'Navigation',
+    shortcut: '⌘9',
+    keywords: ['activity', 'events', 'live', 'feed', 'realtime', 'notifications', 'log', 'stream'],
+    run: (ctx) => ctx.setActivePage('notifications'),
   },
 
   // ----- Actions -----

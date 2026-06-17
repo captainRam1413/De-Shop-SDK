@@ -14,10 +14,13 @@ import {
   Puzzle,
   BarChart3,
   Gamepad2,
+  Settings,
   Github,
   MessageCircle,
   FileText,
+  Activity,
 } from 'lucide-react'
+import BootSequence from '@/components/BootSequence'
 
 // Dynamic import for the heavy TerminalLayout to avoid loading it on the landing page
 const TerminalLayout = dynamic(() => import('@/components/TerminalLayout'), {
@@ -155,6 +158,8 @@ function LandingPage({ onEnter }: { onEnter: () => void }) {
                       { icon: BookOpen, label: 'Docs', desc: 'API reference', color: 'text-term-cyan' },
                       { icon: Puzzle, label: 'Plugins', desc: 'Extend SDK', color: 'text-term-magenta' },
                       { icon: Gamepad2, label: 'Arcade', desc: 'Mini games', color: 'text-term-amber' },
+                      { icon: Activity, label: 'Activity', desc: 'Live events', color: 'text-term-green' },
+                      { icon: Settings, label: 'Settings', desc: 'Themes & prefs', color: 'text-term-cyan' },
                     ].map((feature, i) => (
                       <motion.div
                         key={feature.label}
@@ -226,34 +231,65 @@ function LandingPage({ onEnter }: { onEnter: () => void }) {
 
 export default function HomePage() {
   const [view, setView] = useState<'landing' | 'app'>('landing')
+  const [booting, setBooting] = useState(true)
+
+  // Skip the boot sequence if this session has already seen it
+  useEffect(() => {
+    try {
+      const already = window.sessionStorage.getItem('deshop-booted')
+      if (already === '1') {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setBooting(false)
+      }
+    } catch {
+      setBooting(false)
+    }
+  }, [])
+
+  const handleBootComplete = useCallback(() => {
+    try {
+      window.sessionStorage.setItem('deshop-booted', '1')
+    } catch {
+      /* ignore */
+    }
+    setBooting(false)
+  }, [])
 
   const handleEnter = useCallback(() => {
     setView('app')
   }, [])
 
+  // Render boot overlay (skips itself on mobile / reduced motion)
+  const bootOverlay = booting ? (
+    <BootSequence onComplete={handleBootComplete} />
+  ) : null
+
   return (
-    <AnimatePresence mode="wait">
-      {view === 'landing' ? (
-        <motion.div
-          key="landing"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <LandingPage onEnter={handleEnter} />
-        </motion.div>
-      ) : (
-        <motion.div
-          key="app"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          className="min-h-screen"
-        >
-          <TerminalLayout />
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <>
+      {bootOverlay}
+      <AnimatePresence mode="wait">
+        {view === 'landing' ? (
+          <motion.div
+            key="landing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <LandingPage onEnter={handleEnter} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="app"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="min-h-screen"
+          >
+            <TerminalLayout />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }

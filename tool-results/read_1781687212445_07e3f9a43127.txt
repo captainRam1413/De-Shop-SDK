@@ -1,0 +1,786 @@
+     1→'use client'
+     2→
+     3→import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+     4→import { motion } from 'framer-motion'
+     5→import {
+     6→  AreaChart,
+     7→  Area,
+     8→  BarChart,
+     9→  Bar,
+    10→  PieChart,
+    11→  Pie,
+    12→  Cell,
+    13→  XAxis,
+    14→  YAxis,
+    15→  Tooltip,
+    16→  ResponsiveContainer,
+    17→  CartesianGrid,
+    18→} from 'recharts'
+    19→import {
+    20→  TrendingUp,
+    21→  TrendingDown,
+    22→  Wallet,
+    23→  Flame,
+    24→  ArrowRightLeft,
+    25→  FileText,
+    26→  Coins,
+    27→  Users,
+    28→  Zap,
+    29→  ListPlus,
+    30→  BookOpen,
+    31→  Activity,
+    32→} from 'lucide-react'
+    33→import { useDeShopStore } from '@/store/useDeShopStore'
+    34→import { useRealtimeEvents, type MarketEvent } from '@/hooks/useRealtimeEvents'
+    35→import { SkeletonStatCard, SkeletonChart, SkeletonActivityRow } from '@/components/TerminalSkeleton'
+    36→
+    37→/* ===== TRAFFIC LIGHT DOTS ===== */
+    38→
+    39→function TrafficLights() {
+    40→  return (
+    41→    <div className="flex items-center gap-1.5 flex-shrink-0">
+    42→      <span className="terminal-dot terminal-dot-red" />
+    43→      <span className="terminal-dot terminal-dot-yellow" />
+    44→      <span className="terminal-dot terminal-dot-green" />
+    45→    </div>
+    46→  )
+    47→}
+    48→
+    49→/* ===== DATA ===== */
+    50→
+    51→const STATS = [
+    52→  {
+    53→    label: 'Total Value Locked',
+    54→    value: '$2.4M',
+    55→    change: '+12.5%',
+    56→    positive: true,
+    57→    icon: Coins,
+    58→    sparkData: [30, 45, 38, 52, 48, 60, 68],
+    59→  },
+    60→  {
+    61→    label: 'Active Wallets',
+    62→    value: '1,847',
+    63→    change: '+8.3%',
+    64→    positive: true,
+    65→    icon: Users,
+    66→    sparkData: [20, 28, 32, 35, 30, 38, 42],
+    67→  },
+    68→  {
+    69→    label: 'Gas Fees (24h)',
+    70→    value: '0.003 ALGO',
+    71→    change: '-2.1%',
+    72→    positive: false,
+    73→    icon: Zap,
+    74→    sparkData: [15, 12, 14, 10, 13, 11, 9],
+    75→  },
+    76→  {
+    77→    label: 'Cross-Chain Volume',
+    78→    value: '$890K',
+    79→    change: '+15.7%',
+    80→    positive: true,
+    81→    icon: ArrowRightLeft,
+    82→    sparkData: [40, 55, 50, 65, 58, 72, 80],
+    83→  },
+    84→]
+    85→
+    86→const PRICE_DATA = [
+    87→  { day: 'Mon', price: 1.82 },
+    88→  { day: 'Tue', price: 1.95 },
+    89→  { day: 'Wed', price: 1.88 },
+    90→  { day: 'Thu', price: 2.12 },
+    91→  { day: 'Fri', price: 2.05 },
+    92→  { day: 'Sat', price: 2.28 },
+    93→  { day: 'Sun', price: 2.41 },
+    94→]
+    95→
+    96→const VOLUME_DATA = [
+    97→  { day: 'Mon', volume: 12400 },
+    98→  { day: 'Tue', volume: 18200 },
+    99→  { day: 'Wed', volume: 14800 },
+   100→  { day: 'Thu', volume: 22100 },
+   101→  { day: 'Fri', volume: 19500 },
+   102→  { day: 'Sat', volume: 25600 },
+   103→  { day: 'Sun', volume: 21300 },
+   104→]
+   105→
+   106→const RARITY_DATA = [
+   107→  { name: 'Common', value: 4200, color: '#888888' },
+   108→  { name: 'Rare', value: 1800, color: '#00D4FF' },
+   109→  { name: 'Epic', value: 650, color: '#FF00FF' },
+   110→  { name: 'Legendary', value: 150, color: '#FFB800' },
+   111→]
+   112→
+   113→interface ActivityItem {
+   114→  id: number | string
+   115→  time: string
+   116→  type: 'FORGE' | 'TRADE' | 'LIST' | 'CANCEL' | 'TRANSFER' | 'BRIDGE'
+   117→  description: string
+   118→  value: string
+   119→}
+   120→
+   121→const INITIAL_ACTIVITY: ActivityItem[] = [
+   122→  { id: 1, time: '2m ago', type: 'FORGE', description: 'Diamond Sword #1337 minted', value: '25.0 ALGO' },
+   123→  { id: 2, time: '3m ago', type: 'TRADE', description: 'Gold Pickaxe #042 sold', value: '18.5 ALGO' },
+   124→  { id: 3, time: '5m ago', type: 'LIST', description: 'Enchanted Bow #219 listed', value: '32.0 ALGO' },
+   125→  { id: 4, time: '7m ago', type: 'FORGE', description: 'Nether Shield #088 minted', value: '12.0 ALGO' },
+   126→  { id: 5, time: '9m ago', type: 'CANCEL', description: 'Dragon Helm #001 delisted', value: '55.0 ALGO' },
+   127→  { id: 6, time: '12m ago', type: 'TRADE', description: 'Ender Pearl #305 traded', value: '8.2 ALGO' },
+   128→  { id: 7, time: '15m ago', type: 'LIST', description: 'Creeper Mask #444 listed', value: '14.5 ALGO' },
+   129→  { id: 8, time: '18m ago', type: 'FORGE', description: 'Blaze Rod #777 minted', value: '6.8 ALGO' },
+   130→  { id: 9, time: '22m ago', type: 'TRADE', description: 'Iron Golem #012 sold', value: '42.0 ALGO' },
+   131→  { id: 10, time: '25m ago', type: 'LIST', description: 'Wither Skull #666 listed', value: '99.9 ALGO' },
+   132→  { id: 11, time: '28m ago', type: 'CANCEL', description: 'Spider Eye #921 delisted', value: '3.5 ALGO' },
+   133→  { id: 12, time: '32m ago', type: 'TRADE', description: 'Ghast Tear #553 traded', value: '19.2 ALGO' },
+   134→  { id: 13, time: '35m ago', type: 'FORGE', description: 'Magma Cream #210 minted', value: '7.1 ALGO' },
+   135→  { id: 14, time: '38m ago', type: 'LIST', description: 'Elytra Wings #007 listed', value: '120.0 ALGO' },
+   136→  { id: 15, time: '42m ago', type: 'TRADE', description: 'Trident #999 sold', value: '75.0 ALGO' },
+   137→]
+   138→
+   139→const TYPE_CONFIG: Record<ActivityItem['type'], { color: string; bg: string; border: string }> = {
+   140→  FORGE: { color: 'text-term-green', bg: 'rgba(51, 255, 51, 0.1)', border: 'border-term-green/30' },
+   141→  TRADE: { color: 'text-term-cyan', bg: 'rgba(0, 212, 255, 0.1)', border: 'border-term-cyan/30' },
+   142→  LIST: { color: 'text-term-amber', bg: 'rgba(255, 184, 0, 0.1)', border: 'border-term-amber/30' },
+   143→  CANCEL: { color: 'text-term-red', bg: 'rgba(255, 51, 51, 0.1)', border: 'border-term-red/30' },
+   144→  TRANSFER: { color: 'text-term-magenta', bg: 'rgba(255, 0, 255, 0.1)', border: 'border-term-magenta/30' },
+   145→  BRIDGE: { color: 'text-term-magenta', bg: 'rgba(255, 0, 255, 0.1)', border: 'border-term-magenta/30' },
+   146→}
+   147→
+   148→/** Map a realtime MarketEvent from the WebSocket service to the dashboard ActivityItem shape. */
+   149→function marketEventToActivity(ev: MarketEvent): ActivityItem {
+   150→  const typeMap: Record<MarketEvent['type'], ActivityItem['type']> = {
+   151→    MINT: 'FORGE',
+   152→    TRADE: 'TRADE',
+   153→    LIST: 'LIST',
+   154→    CANCEL: 'CANCEL',
+   155→    TRANSFER: 'TRANSFER',
+   156→    BRIDGE: 'BRIDGE',
+   157→  }
+   158→  const verbMap: Record<MarketEvent['type'], string> = {
+   159→    MINT: 'minted',
+   160→    TRADE: 'traded',
+   161→    LIST: 'listed',
+   162→    CANCEL: 'delisted',
+   163→    TRANSFER: 'transferred',
+   164→    BRIDGE: 'bridged',
+   165→  }
+   166→  return {
+   167→    id: ev.id,
+   168→    time: 'just now',
+   169→    type: typeMap[ev.type],
+   170→    description: `${ev.assetName} #${ev.assetId} ${verbMap[ev.type]} (${ev.rarity}) ${ev.from} → ${ev.to}`,
+   171→    value: `${ev.amount.toFixed(3)} ALGO`,
+   172→  }
+   173→}
+   174→
+   175→const QUICK_ACTIONS = [
+   176→  { label: 'Mint NFT', icon: Flame, color: 'text-term-green', borderColor: 'border-term-green/50' },
+   177→  { label: 'List Item', icon: ListPlus, color: 'text-term-cyan', borderColor: 'border-term-cyan/50' },
+   178→  { label: 'Connect Wallet', icon: Wallet, color: 'text-term-amber', borderColor: 'border-term-amber/50' },
+   179→  { label: 'View Docs', icon: BookOpen, color: 'text-term-magenta', borderColor: 'border-term-magenta/50' },
+   180→]
+   181→
+   182→/* ===== CUSTOM TERMINAL TOOLTIP ===== */
+   183→
+   184→function TerminalTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string }>; label?: string }) {
+   185→  if (!active || !payload || !payload.length) return null
+   186→  return (
+   187→    <div className="bg-[#1E1E1E] border border-[#444444] p-2 rounded-sm shadow-lg font-terminal text-xs">
+   188→      <div className="text-term-dim mb-1">{label}</div>
+   189→      {payload.map((entry, i) => (
+   190→        <div key={i} className="text-term-green">
+   191→          {entry.name}: {typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
+   192→        </div>
+   193→      ))}
+   194→    </div>
+   195→  )
+   196→}
+   197→
+   198→/* ===== MINI SPARKLINE (SVG) ===== */
+   199→
+   200→function MiniSparkline({ data, color, positive }: { data: number[]; color: string; positive: boolean }) {
+   201→  const max = Math.max(...data)
+   202→  const min = Math.min(...data)
+   203→  const range = max - min || 1
+   204→  const width = 80
+   205→  const height = 28
+   206→  const points = data.map((v, i) => {
+   207→    const x = (i / (data.length - 1)) * width
+   208→    const y = height - ((v - min) / range) * height
+   209→    return `${x},${y}`
+   210→  }).join(' ')
+   211→
+   212→  return (
+   213→    <svg width={width} height={height} className="opacity-60">
+   214→      <polyline
+   215→        points={points}
+   216→        fill="none"
+   217→        stroke={positive ? '#33FF33' : '#FF3333'}
+   218→        strokeWidth="1.5"
+   219→        strokeLinecap="round"
+   220→        strokeLinejoin="round"
+   221→      />
+   222→    </svg>
+   223→  )
+   224→}
+   225→
+   226→/* ===== STAT CARD ===== */
+   227→
+   228→function StatCard({ stat, index }: { stat: typeof STATS[0]; index: number }) {
+   229→  const Icon = stat.icon
+   230→  return (
+   231→    <motion.div
+   232→      initial={{ opacity: 0, y: 12 }}
+   233→      animate={{ opacity: 1, y: 0 }}
+   234→      transition={{ delay: index * 0.08, duration: 0.3 }}
+   235→      className="terminal-card terminal-card-glow"
+   236→    >
+   237→      <div className="terminal-card-header">
+   238→        <TrafficLights />
+   239→        <span className="terminal-title">{stat.label.toLowerCase().replace(/\s/g, '_')}.log</span>
+   240→      </div>
+   241→      <div className="terminal-card-body">
+   242→        <div className="flex items-start justify-between">
+   243→          <div>
+   244→            <div className="text-term-dim text-[10px] mb-1 font-terminal">{stat.label}</div>
+   245→            <div className="text-2xl font-bold text-term-green font-terminal glow-green">
+   246→              {stat.value}
+   247→            </div>
+   248→            {/* Slide-up fade animation on change indicator - re-keys on value so it re-animates */}
+   249→            <div
+   250→              key={stat.value}
+   251→              className="flex items-center gap-1 mt-1 animate-slide-up-fade"
+   252→            >
+   253→              {stat.positive ? (
+   254→                <TrendingUp className="w-3 h-3 text-term-green" />
+   255→              ) : (
+   256→                <TrendingDown className="w-3 h-3 text-term-red" />
+   257→              )}
+   258→              <span className={`text-[11px] font-terminal ${stat.positive ? 'text-term-green' : 'text-term-red'}`}>
+   259→                {stat.change}
+   260→              </span>
+   261→            </div>
+   262→          </div>
+   263→          <div className="flex flex-col items-end gap-2">
+   264→            <div className="w-8 h-8 flex items-center justify-center rounded-sm bg-[#1E1E1E] border border-[#444444]">
+   265→              <Icon className="w-4 h-4 text-term-dim" />
+   266→            </div>
+   267→            <MiniSparkline data={stat.sparkData} color={stat.positive ? '#33FF33' : '#FF3333'} positive={stat.positive} />
+   268→          </div>
+   269→        </div>
+   270→      </div>
+   271→    </motion.div>
+   272→  )
+   273→}
+   274→
+   275→/* ===== PRICE CHART CARD ===== */
+   276→
+   277→function PriceChartCard() {
+   278→  return (
+   279→    <motion.div
+   280→      initial={{ opacity: 0, y: 12 }}
+   281→      animate={{ opacity: 1, y: 0 }}
+   282→      transition={{ delay: 0.3, duration: 0.3 }}
+   283→      className="terminal-card terminal-card-glow"
+   284→    >
+   285→      <div className="terminal-card-header">
+   286→        <TrafficLights />
+   287→        <span className="terminal-title">price_trend.log</span>
+   288→      </div>
+   289→      <div className="terminal-card-body" style={{ background: '#1E1E1E' }}>
+   290→        <div className="flex items-center justify-between mb-3">
+   291→          <span className="text-term-dim text-[10px] font-terminal">7-Day Price Trend (ALGO)</span>
+   292→          <span className="text-term-green text-[11px] font-terminal glow-green">$2.41 ▲</span>
+   293→        </div>
+   294→        <ResponsiveContainer width="100%" height={220}>
+   295→          <AreaChart data={PRICE_DATA} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+   296→            <defs>
+   297→              <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
+   298→                <stop offset="5%" stopColor="#33FF33" stopOpacity={0.3} />
+   299→                <stop offset="95%" stopColor="#33FF33" stopOpacity={0.02} />
+   300→              </linearGradient>
+   301→            </defs>
+   302→            <CartesianGrid strokeDasharray="3 3" stroke="#333333" />
+   303→            <XAxis
+   304→              dataKey="day"
+   305→              tick={{ fill: '#888888', fontSize: 10, fontFamily: 'monospace' }}
+   306→              axisLine={{ stroke: '#444444' }}
+   307→              tickLine={{ stroke: '#444444' }}
+   308→            />
+   309→            <YAxis
+   310→              tick={{ fill: '#888888', fontSize: 10, fontFamily: 'monospace' }}
+   311→              axisLine={{ stroke: '#444444' }}
+   312→              tickLine={{ stroke: '#444444' }}
+   313→              domain={['dataMin - 0.2', 'dataMax + 0.2']}
+   314→            />
+   315→            <Tooltip content={<TerminalTooltip />} />
+   316→            <Area
+   317→              type="monotone"
+   318→              dataKey="price"
+   319→              stroke="#33FF33"
+   320→              strokeWidth={2}
+   321→              fill="url(#priceGradient)"
+   322→              name="Price"
+   323→            />
+   324→          </AreaChart>
+   325→        </ResponsiveContainer>
+   326→      </div>
+   327→    </motion.div>
+   328→  )
+   329→}
+   330→
+   331→/* ===== VOLUME CHART CARD ===== */
+   332→
+   333→function VolumeChartCard() {
+   334→  return (
+   335→    <motion.div
+   336→      initial={{ opacity: 0, y: 12 }}
+   337→      animate={{ opacity: 1, y: 0 }}
+   338→      transition={{ delay: 0.4, duration: 0.3 }}
+   339→      className="terminal-card terminal-card-cyan-glow"
+   340→    >
+   341→      <div className="terminal-card-header">
+   342→        <TrafficLights />
+   343→        <span className="terminal-title">volume_stats.log</span>
+   344→      </div>
+   345→      <div className="terminal-card-body" style={{ background: '#1E1E1E' }}>
+   346→        <div className="flex items-center justify-between mb-3">
+   347→          <span className="text-term-dim text-[10px] font-terminal">Daily Volume (ALGO)</span>
+   348→          <span className="text-term-cyan text-[11px] font-terminal glow-cyan">25.6K ▲</span>
+   349→        </div>
+   350→        <ResponsiveContainer width="100%" height={220}>
+   351→          <BarChart data={VOLUME_DATA} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+   352→            <CartesianGrid strokeDasharray="3 3" stroke="#333333" />
+   353→            <XAxis
+   354→              dataKey="day"
+   355→              tick={{ fill: '#888888', fontSize: 10, fontFamily: 'monospace' }}
+   356→              axisLine={{ stroke: '#444444' }}
+   357→              tickLine={{ stroke: '#444444' }}
+   358→            />
+   359→            <YAxis
+   360→              tick={{ fill: '#888888', fontSize: 10, fontFamily: 'monospace' }}
+   361→              axisLine={{ stroke: '#444444' }}
+   362→              tickLine={{ stroke: '#444444' }}
+   363→            />
+   364→            <Tooltip content={<TerminalTooltip />} />
+   365→            <Bar
+   366→              dataKey="volume"
+   367→              fill="#00D4FF"
+   368→              radius={[2, 2, 0, 0]}
+   369→              name="Volume"
+   370→              opacity={0.85}
+   371→            />
+   372→          </BarChart>
+   373→        </ResponsiveContainer>
+   374→      </div>
+   375→    </motion.div>
+   376→  )
+   377→}
+   378→
+   379→/* ===== RARITY PIE CHART CARD ===== */
+   380→
+   381→function RarityChartCard({ data = RARITY_DATA }: { data?: typeof RARITY_DATA }) {
+   382→  return (
+   383→    <motion.div
+   384→      initial={{ opacity: 0, y: 12 }}
+   385→      animate={{ opacity: 1, y: 0 }}
+   386→      transition={{ delay: 0.5, duration: 0.3 }}
+   387→      className="terminal-card terminal-card-magenta-glow"
+   388→    >
+   389→      <div className="terminal-card-header">
+   390→        <TrafficLights />
+   391→        <span className="terminal-title">rarity_dist.log</span>
+   392→      </div>
+   393→      <div className="terminal-card-body" style={{ background: '#1E1E1E' }}>
+   394→        <div className="flex items-center justify-between mb-3">
+   395→          <span className="text-term-dim text-[10px] font-terminal">NFT Rarity Distribution</span>
+   396→        </div>
+   397→        <ResponsiveContainer width="100%" height={220}>
+   398→          <PieChart>
+   399→            <Pie
+   400→              data={data}
+   401→              cx="50%"
+   402→              cy="50%"
+   403→              innerRadius={50}
+   404→              outerRadius={80}
+   405→              paddingAngle={3}
+   406→              dataKey="value"
+   407→              stroke="#1E1E1E"
+   408→              strokeWidth={2}
+   409→            >
+   410→              {data.map((entry, index) => (
+   411→                <Cell key={`cell-${index}`} fill={entry.color} />
+   412→              ))}
+   413→            </Pie>
+   414→            <Tooltip
+   415→              content={({ active, payload }) => {
+   416→                if (!active || !payload || !payload.length) return null
+   417→                const data = payload[0]
+   418→                return (
+   419→                  <div className="bg-[#1E1E1E] border border-[#444444] p-2 rounded-sm shadow-lg font-terminal text-xs">
+   420→                    <div className="text-term-dim">{data.name}</div>
+   421→                    <div className="text-term-green">{data.value?.toLocaleString()} items</div>
+   422→                  </div>
+   423→                )
+   424→              }}
+   425→            />
+   426→          </PieChart>
+   427→        </ResponsiveContainer>
+   428→        <div className="flex flex-wrap justify-center gap-4 mt-2">
+   429→          {data.map((item) => (
+   430→            <div key={item.name} className="flex items-center gap-1.5">
+   431→              <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: item.color }} />
+   432→              <span className="text-[10px] font-terminal text-term-dim">{item.name}</span>
+   433→              <span className="text-[10px] font-terminal text-term-text">{item.value.toLocaleString()}</span>
+   434→            </div>
+   435→          ))}
+   436→        </div>
+   437→      </div>
+   438→    </motion.div>
+   439→  )
+   440→}
+   441→
+   442→/* ===== ACTIVITY FEED (REALTIME via WebSocket, fallback to simulated) ===== */
+   443→
+   444→function ActivityFeed() {
+   445→  const { events: liveEvents, isConnected } = useRealtimeEvents()
+   446→
+   447→  // Local simulated feed - only used as a fallback when the realtime
+   448→  // service is unreachable. Stops updating once we are connected.
+   449→  const [simActivities, setSimActivities] = useState<ActivityItem[]>(INITIAL_ACTIVITY)
+   450→  const feedRef = useRef<HTMLDivElement>(null)
+   451→  const counterRef = useRef(INITIAL_ACTIVITY.length)
+   452→
+   453→  // Auto-scroll to bottom whenever displayed list changes
+   454→  useEffect(() => {
+   455→    if (feedRef.current) {
+   456→      feedRef.current.scrollTop = feedRef.current.scrollHeight
+   457→    }
+   458→  }, [liveEvents, simActivities, isConnected])
+   459→
+   460→  // Simulate new activity every 8s ONLY when not connected to realtime
+   461→  useEffect(() => {
+   462→    if (isConnected) return
+   463→    const interval = setInterval(() => {
+   464→      const types: ActivityItem['type'][] = ['FORGE', 'TRADE', 'LIST', 'CANCEL', 'TRANSFER', 'BRIDGE']
+   465→      const descs = [
+   466→        'Obsidian Shard #888 minted',
+   467→        'Golden Apple #333 traded',
+   468→        'Nether Star #100 listed',
+   469→        'Emerald Sword #055 delisted',
+   470→        'Phoenix Feather #420 minted',
+   471→        'Dragon Scale #777 sold',
+   472→        'Crystal Orb #021 listed',
+   473→        'Shadow Cloak #666 delisted',
+   474→        'Phase Dagger #113 bridged',
+   475→        'Cryo Ring #909 transferred',
+   476→      ]
+   477→      const values = ['15.0 ALGO', '28.5 ALGO', '42.0 ALGO', '9.8 ALGO', '33.3 ALGO', '67.0 ALGO', '11.2 ALGO', '54.0 ALGO']
+   478→
+   479→      const newActivity: ActivityItem = {
+   480→        id: ++counterRef.current,
+   481→        time: 'just now',
+   482→        type: types[Math.floor(Math.random() * types.length)],
+   483→        description: descs[Math.floor(Math.random() * descs.length)],
+   484→        value: values[Math.floor(Math.random() * values.length)],
+   485→      }
+   486→
+   487→      setSimActivities((prev) => [...prev.slice(-14), newActivity])
+   488→    }, 8000)
+   489→
+   490→    return () => clearInterval(interval)
+   491→  }, [isConnected])
+   492→
+   493→  // Build the displayed list: realtime events take priority.
+   494→  // When we have realtime events, prepend them to a (frozen) snapshot of
+   495→  // simulated events for visual continuity. Otherwise show only simulated.
+   496→  const displayActivities = useMemo<ActivityItem[]>(() => {
+   497→    if (!isConnected || liveEvents.length === 0) {
+   498→      return simActivities
+   499→    }
+   500→    const liveItems = liveEvents.map(marketEventToActivity)
+   501→    // Top up with simulated items if we don't have enough live ones yet
+   502→    const tail = simActivities.slice(0, Math.max(0, 25 - liveItems.length))
+   503→    return [...liveItems, ...tail]
+   504→  }, [liveEvents, simActivities, isConnected])
+   505→
+   506→  return (
+   507→    <motion.div
+   508→      initial={{ opacity: 0, y: 12 }}
+   509→      animate={{ opacity: 1, y: 0 }}
+   510→      transition={{ delay: 0.6, duration: 0.3 }}
+   511→      className="terminal-card terminal-card-glow"
+   512→    >
+   513→      <div className="terminal-card-header moving-scanline">
+   514→        <TrafficLights />
+   515→        <span className="terminal-title">activity.log</span>
+   516→
+   517→        {/* LIVE / OFFLINE indicator */}
+   518→        <div className="ml-auto flex items-center gap-2">
+   519→          <span
+   520→            className={`flex items-center gap-1 px-1.5 py-0.5 rounded-sm border text-[9px] font-bold font-terminal ${
+   521→              isConnected
+   522→                ? 'text-term-green bg-[rgba(51,255,51,0.08)] border-term-green/40'
+   523→                : 'text-term-red bg-[rgba(255,51,51,0.08)] border-term-red/40'
+   524→            }`}
+   525→            title={isConnected ? 'WebSocket connected' : 'WebSocket offline - showing simulated feed'}
+   526→          >
+   527→            <span
+   528→              className={`w-1.5 h-1.5 rounded-full ${
+   529→                isConnected ? 'bg-term-green animate-pulse' : 'bg-term-red'
+   530→              }`}
+   531→            />
+   532→            {isConnected ? 'LIVE' : 'OFFLINE'}
+   533→          </span>
+   534→          <span
+   535→            className="hidden sm:inline-flex text-[9px] font-terminal text-term-dim border border-[#444] px-1.5 py-0.5 rounded-sm"
+   536→            title="socket.io via /?XTransformPort=3003"
+   537→          >
+   538→            Realtime via WebSocket
+   539→          </span>
+   540→          <Activity className={`w-3.5 h-3.5 ${isConnected ? 'text-term-green animate-pulse' : 'text-term-dim'}`} />
+   541→        </div>
+   542→      </div>
+   543→      <div
+   544→        ref={feedRef}
+   545→        className="terminal-card-body max-h-96 overflow-y-auto p-4 space-y-1.5"
+   546→      >
+   547→        {displayActivities.map((item) => {
+   548→          const config = TYPE_CONFIG[item.type] ?? TYPE_CONFIG.TRADE
+   549→          const isNew = item.time === 'just now'
+   550→          return (
+   551→            <motion.div
+   552→              key={item.id}
+   553→              initial={isNew ? { opacity: 0, x: 10 } : false}
+   554→              animate={{ opacity: 1, x: 0 }}
+   555→              transition={{ duration: 0.3 }}
+   556→              className={`flex items-center gap-2 text-[11px] font-terminal py-1 px-1.5 rounded-sm hover:bg-[#1E1E1E] transition-colors ${isNew ? 'bg-term-selection/30' : ''}`}
+   557→            >
+   558→              <span className="text-term-dim flex-shrink-0 w-16">[{item.time}]</span>
+   559→              <span
+   560→                className={`px-1.5 py-0.5 rounded-sm text-[9px] font-bold ${config.color} ${config.bg} border ${config.border} flex-shrink-0`}
+   561→              >
+   562→                {item.type}
+   563→              </span>
+   564→              <span className="text-term-text truncate flex-1">{item.description}</span>
+   565→              <span className="text-term-amber flex-shrink-0">→ {item.value}</span>
+   566→            </motion.div>
+   567→          )
+   568→        })}
+   569→        <div className="flex items-center gap-1 pt-2">
+   570→          <span className="blink-cursor" />
+   571→          <span className="text-term-dim text-[10px]">
+   572→            {isConnected ? 'live events streaming...' : 'offline - showing simulated feed...'}
+   573→          </span>
+   574→        </div>
+   575→      </div>
+   576→    </motion.div>
+   577→  )
+   578→}
+   579→
+   580→/* ===== QUICK ACTIONS ===== */
+   581→
+   582→function QuickActions() {
+   583→  const { walletConnected, setShowWalletModal, setActivePage, addNotification } = useDeShopStore()
+   584→
+   585→  const handleAction = (label: string) => {
+   586→    switch (label) {
+   587→      case 'Connect Wallet':
+   588→        if (walletConnected) {
+   589→          addNotification('info', 'Wallet already connected')
+   590→        } else {
+   591→          setShowWalletModal(true)
+   592→        }
+   593→        break
+   594→      case 'View Docs':
+   595→        setActivePage('docs')
+   596→        break
+   597→      case 'Mint NFT':
+   598→        addNotification('info', 'Mint NFT module loading...')
+   599→        break
+   600→      case 'List Item':
+   601→        addNotification('info', 'List Item module loading...')
+   602→        break
+   603→    }
+   604→  }
+   605→
+   606→  return (
+   607→    <motion.div
+   608→      initial={{ opacity: 0, y: 12 }}
+   609→      animate={{ opacity: 1, y: 0 }}
+   610→      transition={{ delay: 0.7, duration: 0.3 }}
+   611→      className="flex flex-wrap gap-3"
+   612→    >
+   613→      {QUICK_ACTIONS.map((action) => {
+   614→        const Icon = action.icon
+   615→        return (
+   616→          <button
+   617→            key={action.label}
+   618→            onClick={() => handleAction(action.label)}
+   619→            className={`terminal-btn flex items-center gap-2 border ${action.borderColor} hover:bg-[#1E1E1E] transition-all group`}
+   620→          >
+   621→            <Icon className={`w-3.5 h-3.5 ${action.color} group-hover:scale-110 transition-transform`} />
+   622→            <span className={`${action.color} text-[11px]`}>{action.label}</span>
+   623→          </button>
+   624→        )
+   625→      })}
+   626→    </motion.div>
+   627→  )
+   628→}
+   629→
+   630→/* ===== API FETCH HOOK ===== */
+   631→
+   632→interface ApiStats {
+   633→  totalValueLocked: string
+   634→  activeWallets: string
+   635→  gasFees: string
+   636→  crossChainVolume: string
+   637→  totalAssets: number
+   638→  totalTransactions: number
+   639→  rarityDistribution: { common: number; rare: number; epic: number; legendary: number }
+   640→}
+   641→
+   642→function useApiStats() {
+   643→  const [apiStats, setApiStats] = useState<ApiStats | null>(null)
+   644→  const [loading, setLoading] = useState(true)
+   645→
+   646→  const fetchStats = useCallback(async () => {
+   647→    try {
+   648→      const res = await fetch('/api/stats')
+   649→      if (res.ok) {
+   650→        const data = await res.json()
+   651→        setApiStats(data)
+   652→      }
+   653→    } catch {
+   654→      // fallback to mock data
+   655→    } finally {
+   656→      setLoading(false)
+   657→    }
+   658→  }, [])
+   659→
+   660→  useEffect(() => {
+   661→    fetchStats()
+   662→  }, [fetchStats])
+   663→
+   664→  return { apiStats, loading }
+   665→}
+   666→
+   667→/* ===== MAIN DASHBOARD PAGE ===== */
+   668→
+   669→export default function DashboardPage() {
+   670→  const { apiStats, loading } = useApiStats()
+   671→
+   672→  // Merge API stats into displayed stats
+   673→  const displayStats = STATS.map((stat) => {
+   674→    if (!apiStats) return stat
+   675→    switch (stat.label) {
+   676→      case 'Total Value Locked':
+   677→        return { ...stat, value: apiStats.totalValueLocked }
+   678→      case 'Active Wallets':
+   679→        return { ...stat, value: apiStats.activeWallets }
+   680→      case 'Gas Fees (24h)':
+   681→        return { ...stat, value: apiStats.gasFees }
+   682→      case 'Cross-Chain Volume':
+   683→        return { ...stat, value: apiStats.crossChainVolume }
+   684→      default:
+   685→        return stat
+   686→    }
+   687→  })
+   688→
+   689→  // Update rarity data from API
+   690→  const displayRarityData = apiStats
+   691→    ? [
+   692→        { name: 'Common', value: apiStats.rarityDistribution.common + 4200, color: '#888888' },
+   693→        { name: 'Rare', value: apiStats.rarityDistribution.rare + 1800, color: '#00D4FF' },
+   694→        { name: 'Epic', value: apiStats.rarityDistribution.epic + 650, color: '#FF00FF' },
+   695→        { name: 'Legendary', value: apiStats.rarityDistribution.legendary + 150, color: '#FFB800' },
+   696→      ]
+   697→    : RARITY_DATA
+   698→
+   699→  return (
+   700→    <div className="space-y-6">
+   701→      {/* Terminal Window Header */}
+   702→      <div className="terminal-card">
+   703→        <div className="terminal-chrome">
+   704→          <TrafficLights />
+   705→          <span className="terminal-title font-terminal">dashboard@de-shop:~</span>
+   706→        </div>
+   707→        <div className="px-4 py-3 flex items-center gap-2 bg-[#1E1E1E]">
+   708→          <span className="prompt-prefix text-sm">$</span>
+   709→          <span className="text-term-green text-sm font-terminal glow-green">./dashboard</span>
+   710→          <span className="text-term-dim text-xs font-terminal">--load-modules analytics,activity</span>
+   711→          {loading && (
+   712→            <span className="text-term-amber text-[10px] font-terminal animate-pulse">
+   713→              [fetching stats...]
+   714→            </span>
+   715→          )}
+   716→          <span className="blink-cursor" />
+   717→        </div>
+   718→      </div>
+   719→
+   720→      {/* Stats Grid - show skeletons while loading */}
+   721→      {loading ? (
+   722→        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   723→          <SkeletonStatCard />
+   724→          <SkeletonStatCard />
+   725→          <SkeletonStatCard />
+   726→          <SkeletonStatCard />
+   727→        </div>
+   728→      ) : (
+   729→        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   730→          {displayStats.map((stat, i) => (
+   731→            <StatCard key={stat.label} stat={stat} index={i} />
+   732→          ))}
+   733→        </div>
+   734→      )}
+   735→
+   736→      {/* Charts Row - skeletons while loading */}
+   737→      {loading ? (
+   738→        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   739→          <SkeletonChart title="price_trend.log" />
+   740→          <SkeletonChart title="volume_stats.log" />
+   741→        </div>
+   742→      ) : (
+   743→        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   744→          <PriceChartCard />
+   745→          <VolumeChartCard />
+   746→        </div>
+   747→      )}
+   748→
+   749→      {/* Rarity + Activity Row */}
+   750→      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+   751→        <div className="lg:col-span-1">
+   752→          {loading ? (
+   753→            <SkeletonChart title="rarity_dist.log" height={220} />
+   754→          ) : (
+   755→            <RarityChartCard data={displayRarityData} />
+   756→          )}
+   757→        </div>
+   758→        <div className="lg:col-span-2">
+   759→          {loading ? (
+   760→            <div className="skeleton-card">
+   761→              <div className="skeleton-card-header flex items-center">
+   762→                <div className="flex items-center gap-1.5 px-3 py-2">
+   763→                  <span className="w-3 h-3 rounded-full bg-[#3a3a3a]" />
+   764→                  <span className="w-3 h-3 rounded-full bg-[#3a3a3a]" />
+   765→                  <span className="w-3 h-3 rounded-full bg-[#3a3a3a]" />
+   766→                </div>
+   767→                <span className="ml-2 text-[10px] font-terminal text-[#444444]">activity.log</span>
+   768→              </div>
+   769→              <div className="p-4 space-y-2">
+   770→                {Array.from({ length: 8 }).map((_, i) => (
+   771→                  <SkeletonActivityRow key={i} />
+   772→                ))}
+   773→              </div>
+   774→            </div>
+   775→          ) : (
+   776→            <ActivityFeed />
+   777→          )}
+   778→        </div>
+   779→      </div>
+   780→
+   781→      {/* Quick Actions */}
+   782→      <QuickActions />
+   783→    </div>
+   784→  )
+   785→}
+   786→

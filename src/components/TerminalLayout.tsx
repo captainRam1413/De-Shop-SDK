@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   BarChart3,
@@ -11,6 +11,7 @@ import {
   BookOpen,
   Puzzle,
   Gamepad2,
+  Settings,
   Bell,
   Wallet,
   ChevronLeft,
@@ -26,6 +27,11 @@ import {
   LogOut,
   Home,
   Search,
+  Activity,
+  Cpu,
+  HardDrive,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react'
 import { useDeShopStore, type ActivePage } from '@/store/useDeShopStore'
 import DashboardPage from '@/components/pages/DashboardPage'
@@ -36,6 +42,8 @@ import ProfilePage from '@/components/pages/ProfilePage'
 import DocsPage from '@/components/pages/DocsPage'
 import PluginsPage from '@/components/pages/PluginsPage'
 import GamePage from '@/components/pages/GamePage'
+import SettingsPage from '@/components/pages/SettingsPage'
+import NotificationsPage from '@/components/pages/NotificationsPage'
 import CommandPalette from '@/components/CommandPalette'
 
 /* ===== NAV CONFIG ===== */
@@ -56,6 +64,8 @@ const NAV_ITEMS: NavItem[] = [
   { page: 'docs', label: 'Docs', command: 'cd docs', icon: BookOpen },
   { page: 'plugins', label: 'Plugins', command: 'cd plugins', icon: Puzzle },
   { page: 'game', label: 'Arcade', command: 'cd arcade', icon: Gamepad2 },
+  { page: 'notifications', label: 'Activity', command: 'cd activity', icon: Activity },
+  { page: 'settings', label: 'Settings', command: 'cd settings', icon: Settings },
 ]
 
 const PAGE_TITLES: Record<ActivePage, string> = {
@@ -67,6 +77,8 @@ const PAGE_TITLES: Record<ActivePage, string> = {
   docs: 'Documentation',
   plugins: 'Plugins',
   game: 'Arcade',
+  settings: 'Settings',
+  notifications: 'Activity Center',
 }
 
 /* ===== TRAFFIC LIGHT DOTS ===== */
@@ -379,6 +391,68 @@ function Sidebar() {
   )
 }
 
+/* ===== HEADER SYSTEM STATS WIDGETS ===== */
+
+function SystemStats() {
+  const [clock, setClock] = useState('--:--:--')
+  const [cpu, setCpu] = useState(12)
+  const [mem, setMem] = useState(105)
+  const [netUp, setNetUp] = useState(14)
+  const [netDown, setNetDown] = useState(64)
+
+  useEffect(() => {
+    const updateClock = () => {
+      const d = new Date()
+      const h = String(d.getHours()).padStart(2, '0')
+      const m = String(d.getMinutes()).padStart(2, '0')
+      const s = String(d.getSeconds()).padStart(2, '0')
+      setClock(`${h}:${m}:${s}`)
+    }
+    updateClock()
+    const clockId = window.setInterval(updateClock, 1000)
+
+    const sysId = window.setInterval(() => {
+      setCpu((c) => {
+        const next = c + (Math.random() * 6 - 3)
+        return Math.max(5, Math.min(25, Math.round(next)))
+      })
+      setMem((mm) => {
+        const next = mm + (Math.random() * 10 - 5)
+        return Math.max(80, Math.min(150, Math.round(next)))
+      })
+      setNetUp((n) => Math.max(2, Math.min(60, Math.round(n + (Math.random() * 12 - 6)))))
+      setNetDown((n) => Math.max(8, Math.min(180, Math.round(n + (Math.random() * 30 - 15)))))
+    }, 1500)
+
+    return () => {
+      window.clearInterval(clockId)
+      window.clearInterval(sysId)
+    }
+  }, [])
+
+  return (
+    <div className="hidden lg:flex items-center gap-1.5 font-terminal text-[10px]">
+      <div className="flex items-center gap-1 px-1.5 py-0.5 bg-term-elevated border border-term rounded-sm">
+        <span className="text-term-green tabular-nums">{clock}</span>
+      </div>
+      <div className="flex items-center gap-1 px-1.5 py-0.5 bg-term-elevated border border-term rounded-sm">
+        <Cpu size={9} className="text-term-green" />
+        <span className="text-term-green tabular-nums">CPU {cpu}%</span>
+      </div>
+      <div className="flex items-center gap-1 px-1.5 py-0.5 bg-term-elevated border border-term rounded-sm">
+        <HardDrive size={9} className="text-term-cyan" />
+        <span className="text-term-cyan tabular-nums">MEM {mem}mb</span>
+      </div>
+      <div className="flex items-center gap-1 px-1.5 py-0.5 bg-term-elevated border border-term rounded-sm">
+        <ArrowUp size={9} className="text-term-green" />
+        <span className="text-term-green tabular-nums">{netUp}kb/s</span>
+        <ArrowDown size={9} className="text-term-cyan ml-1" />
+        <span className="text-term-cyan tabular-nums">{netDown}kb/s</span>
+      </div>
+    </div>
+  )
+}
+
 /* ===== HEADER ===== */
 
 function Header() {
@@ -393,6 +467,7 @@ function Header() {
   const sidebarCollapsed = useDeShopStore((s) => s.sidebarCollapsed)
   const status = useDeShopStore((s) => s.status)
   const setCommandPaletteOpen = useDeShopStore((s) => s.setCommandPaletteOpen)
+  const setActivePage = useDeShopStore((s) => s.setActivePage)
 
   const handleDisconnect = useCallback(() => {
     disconnectWallet()
@@ -434,6 +509,9 @@ function Header() {
 
         {/* Right side controls */}
         <div className="flex items-center gap-3">
+          {/* Live system stats widgets */}
+          <SystemStats />
+
           {/* Network badge */}
           <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 bg-term-elevated border border-term rounded-sm">
             <span className="status-dot status-dot-online" style={{ width: 6, height: 6 }} />
@@ -458,10 +536,12 @@ function Header() {
             </span>
           </button>
 
-          {/* Notification bell */}
+          {/* Notification bell — click to open Activity Center */}
           <button
+            onClick={() => setActivePage('notifications')}
             className="relative text-term-dim hover:text-term-green transition-colors"
-            aria-label="Notifications"
+            aria-label="Open activity center"
+            title="Open activity center"
           >
             <Bell size={14} />
             {notifications.length > 0 && (
@@ -500,14 +580,45 @@ function Header() {
 function Footer() {
   const status = useDeShopStore((s) => s.status)
   const walletConnected = useDeShopStore((s) => s.walletConnected)
+  const [uptime, setUptime] = useState('0:00:00')
+  const startRef = useRef<number>(Date.now())
+
+  useEffect(() => {
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - startRef.current) / 1000)
+      const h = Math.floor(elapsed / 3600)
+      const m = Math.floor((elapsed % 3600) / 60)
+      const s = elapsed % 60
+      setUptime(`${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`)
+    }
+    tick()
+    const id = window.setInterval(tick, 1000)
+    return () => window.clearInterval(id)
+  }, [])
 
   return (
     <footer className="app-footer">
-      <div className="flex items-center justify-between text-[10px] text-term-dim">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-y-1 text-[10px] text-term-dim">
+        <div className="flex items-center gap-2">
           <span className="text-term-green">De-Shop SDK v2.0</span>
-          <span>|</span>
-          <span>Terminal Mode</span>
+          <span className="hidden sm:inline">|</span>
+          <span className="hidden sm:inline">Terminal Mode</span>
+          <span className="mx-1">|</span>
+          <span className="font-terminal tabular-nums">
+            uptime: <span className="text-term-green">{uptime}</span>
+          </span>
+          <span className="mx-1">|</span>
+          <span className="font-terminal">
+            pid: <span className="text-term-cyan">1337</span>
+          </span>
+          <span className="mx-1">|</span>
+          <span className="font-terminal">
+            users: <span className="text-term-amber">{walletConnected ? 2 : 1}</span>
+          </span>
+          <span className="mx-1 hidden md:inline">|</span>
+          <span className="font-terminal hidden md:inline">
+            load: <span className="text-term-magenta">0.42</span>
+          </span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -531,7 +642,7 @@ function Footer() {
             )}
           </div>
 
-          <span className="mx-1">|</span>
+          <span className="mx-1 hidden sm:inline">|</span>
 
           {/* Links */}
           <a
@@ -581,6 +692,16 @@ function Footer() {
 
 export default function TerminalLayout() {
   const activePage = useDeShopStore((s) => s.activePage)
+  const theme = useDeShopStore((s) => s.theme)
+
+  // Apply theme to <html data-theme="..."> on mount and whenever the theme
+  // changes. The store's setTheme() already applies this directly, but this
+  // effect guarantees the attribute is in sync after hydration from
+  // localStorage and acts as a safety net.
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
 
   const renderPage = () => {
     switch (activePage) {
@@ -600,6 +721,10 @@ export default function TerminalLayout() {
         return <PluginsPage />
       case 'game':
         return <GamePage />
+      case 'settings':
+        return <SettingsPage />
+      case 'notifications':
+        return <NotificationsPage />
       default:
         return <DashboardPage />
     }

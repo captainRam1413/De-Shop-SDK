@@ -2,7 +2,17 @@
 
 import { create } from 'zustand'
 
-export type ActivePage = 'dashboard' | 'market' | 'inventory' | 'terminal' | 'profile' | 'docs' | 'plugins' | 'game'
+export type ActivePage = 'dashboard' | 'market' | 'inventory' | 'terminal' | 'profile' | 'docs' | 'plugins' | 'game' | 'settings' | 'notifications'
+
+export type TerminalTheme = 'pro-dark' | 'light' | 'matrix' | 'phosphor' | 'amber'
+
+export const TERMINAL_THEMES: { id: TerminalTheme; name: string; tagline: string }[] = [
+  { id: 'pro-dark', name: 'Pro Dark', tagline: 'macOS Terminal dark — #33FF33 on #1E1E1E' },
+  { id: 'light', name: 'Light', tagline: 'macOS Terminal light — #006600 on #F5F5F0' },
+  { id: 'matrix', name: 'Matrix', tagline: 'matrix rain — #00FF00 on #000000' },
+  { id: 'phosphor', name: 'Phosphor', tagline: 'CRT green phosphor — #88FF88 on #0A0A0A' },
+  { id: 'amber', name: 'Amber', tagline: 'amber monochrome CRT — #FFB800 on #1A0F00' },
+]
 
 export type NotificationType = 'info' | 'success' | 'error' | 'warning'
 
@@ -31,6 +41,8 @@ interface DeShopState {
   status: AppStatus
   // Command palette
   commandPaletteOpen: boolean
+  // Theme
+  theme: TerminalTheme
 
   // Actions
   setActivePage: (page: ActivePage) => void
@@ -44,9 +56,32 @@ interface DeShopState {
   disconnectWallet: () => void
   setStatus: (status: AppStatus) => void
   setCommandPaletteOpen: (open: boolean) => void
+  setTheme: (theme: TerminalTheme) => void
 }
 
 let notificationCounter = 0
+
+const THEME_STORAGE_KEY = 'deshop-theme'
+
+function applyThemeToDocument(theme: TerminalTheme) {
+  if (typeof document === 'undefined') return
+  document.documentElement.setAttribute('data-theme', theme)
+}
+
+function loadInitialTheme(): TerminalTheme {
+  if (typeof window === 'undefined') return 'pro-dark'
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY)
+    if (stored === 'pro-dark' || stored === 'light' || stored === 'matrix' || stored === 'phosphor' || stored === 'amber') {
+      applyThemeToDocument(stored)
+      return stored
+    }
+  } catch {
+    /* ignore */
+  }
+  applyThemeToDocument('pro-dark')
+  return 'pro-dark'
+}
 
 export const useDeShopStore = create<DeShopState>((set) => ({
   // Navigation
@@ -69,6 +104,9 @@ export const useDeShopStore = create<DeShopState>((set) => ({
 
   // Command palette
   commandPaletteOpen: false,
+
+  // Theme (hydrated from localStorage on first client read)
+  theme: loadInitialTheme(),
 
   // Actions
   setActivePage: (page) => set({ activePage: page, mobileSidebarOpen: false }),
@@ -123,4 +161,16 @@ export const useDeShopStore = create<DeShopState>((set) => ({
   setStatus: (status) => set({ status }),
 
   setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
+
+  setTheme: (theme) => {
+    applyThemeToDocument(theme)
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(THEME_STORAGE_KEY, theme)
+      } catch {
+        /* ignore */
+      }
+    }
+    set({ theme })
+  },
 }))

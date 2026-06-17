@@ -1,0 +1,1196 @@
+     1→'use client'
+     2→
+     3→import React, { useState, useMemo, useEffect, useCallback } from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import {
+     6→  AreaChart,
+     7→  Area,
+     8→  XAxis,
+     9→  YAxis,
+    10→  Tooltip,
+    11→  ResponsiveContainer,
+    12→  CartesianGrid,
+    13→} from 'recharts'
+    14→import {
+    15→  Search,
+    16→  ArrowUpDown,
+    17→  LayoutGrid,
+    18→  List,
+    19→  X,
+    20→  ShoppingCart,
+    21→  Tag,
+    22→  Sparkles,
+    23→  Bot,
+    24→  Image as ImageIcon,
+    25→  TrendingUp,
+    26→  TrendingDown,
+    27→  Minus,
+    28→  Loader2,
+    29→} from 'lucide-react'
+    30→import { useDeShopStore } from '@/store/useDeShopStore'
+    31→
+    32→/* ===== TRAFFIC LIGHT DOTS ===== */
+    33→
+    34→function TrafficLights() {
+    35→  return (
+    36→    <div className="flex items-center gap-1.5 flex-shrink-0">
+    37→      <span className="terminal-dot terminal-dot-red" />
+    38→      <span className="terminal-dot terminal-dot-yellow" />
+    39→      <span className="terminal-dot terminal-dot-green" />
+    40→    </div>
+    41→  )
+    42→}
+    43→
+    44→/* ===== TYPES ===== */
+    45→
+    46→type Rarity = 'Common' | 'Rare' | 'Epic' | 'Legendary'
+    47→type SortOption = 'price-asc' | 'price-desc' | 'newest' | 'rarity'
+    48→type ViewMode = 'grid' | 'list'
+    49→
+    50→interface MarketplaceAsset {
+    51→  id: string
+    52→  name: string
+    53→  emoji: string
+    54→  rarity: Rarity
+    55→  price: number
+    56→  confidence: number
+    57→  seller: string
+    58→  description: string
+    59→  listedAt: string
+    60→  priceHistory: { day: string; price: number }[]
+    61→}
+    62→
+    63→interface AIPriceResult {
+    64→  price: number
+    65→  confidence: number
+    66→  reasoning: string
+    67→  trend: 'up' | 'down' | 'stable'
+    68→  source?: 'ai' | 'heuristic'
+    69→}
+    70→
+    71→interface AIArtResult {
+    72→  url: string
+    73→  source: 'ai' | 'placeholder'
+    74→  prompt?: string
+    75→}
+    76→
+    77→/* ===== RARITY CONFIG ===== */
+    78→
+    79→const RARITY_CONFIG: Record<Rarity, { color: string; textColor: string; borderColor: string; glow: string; glowClass: string; bg: string; weight: number }> = {
+    80→  Common: { color: '#888888', textColor: 'text-term-dim', borderColor: 'border-[#888888]/50', glow: '', glowClass: 'terminal-card-glow', bg: 'rgba(136, 136, 136, 0.08)', weight: 1 },
+    81→  Rare: { color: '#00D4FF', textColor: 'text-term-cyan', borderColor: 'border-[#00D4FF]/50', glow: 'glow-cyan', glowClass: 'terminal-card-cyan-glow', bg: 'rgba(0, 212, 255, 0.08)', weight: 2 },
+    82→  Epic: { color: '#FF00FF', textColor: 'text-term-magenta', borderColor: 'border-[#FF00FF]/50', glow: 'glow-magenta', glowClass: 'terminal-card-magenta-glow', bg: 'rgba(255, 0, 255, 0.08)', weight: 3 },
+    83→  Legendary: { color: '#FFB800', textColor: 'text-term-amber', borderColor: 'border-[#FFB800]/50', glow: 'glow-amber', glowClass: 'terminal-card-amber-glow', bg: 'rgba(255, 184, 0, 0.08)', weight: 4 },
+    84→}
+    85→
+    86→/* ===== MOCK DATA ===== */
+    87→
+    88→const MOCK_ASSETS: MarketplaceAsset[] = [
+    89→  {
+    90→    id: '0xA1B2', name: 'Neon Blade', emoji: '🗡️', rarity: 'Legendary', price: 42.5, confidence: 94,
+    91→    seller: '0x7F3a...9c1D', description: 'A legendary plasma-infused blade forged in the digital crucible. Cuts through any blockchain defense.',
+    92→    listedAt: '2h ago',
+    93→    priceHistory: [{ day: 'Mon', price: 38 }, { day: 'Tue', price: 40 }, { day: 'Wed', price: 39 }, { day: 'Thu', price: 41 }, { day: 'Fri', price: 42 }, { day: 'Sat', price: 44 }, { day: 'Sun', price: 42.5 }],
+    94→  },
+    95→  {
+    96→    id: '0xC3D4', name: 'Cyber Shield', emoji: '🛡️', rarity: 'Epic', price: 18.0, confidence: 88,
+    97→    seller: '0x2B8e...4fA2', description: 'Reinforced quantum-barrier shield. Absorbs 80% of incoming digital attacks.',
+    98→    listedAt: '4h ago',
+    99→    priceHistory: [{ day: 'Mon', price: 15 }, { day: 'Tue', price: 16 }, { day: 'Wed', price: 17 }, { day: 'Thu', price: 16.5 }, { day: 'Fri', price: 17.5 }, { day: 'Sat', price: 18 }, { day: 'Sun', price: 18 }],
+   100→  },
+   101→  {
+   102→    id: '0xE5F6', name: 'Quantum Helm', emoji: '⛑️', rarity: 'Epic', price: 22.3, confidence: 85,
+   103→    seller: '0x9C4d...1eB3', description: 'Helmet equipped with quantum processors for enhanced battlefield awareness.',
+   104→    listedAt: '1h ago',
+   105→    priceHistory: [{ day: 'Mon', price: 20 }, { day: 'Tue', price: 21 }, { day: 'Wed', price: 19.5 }, { day: 'Thu', price: 21.5 }, { day: 'Fri', price: 22 }, { day: 'Sat', price: 23 }, { day: 'Sun', price: 22.3 }],
+   106→  },
+   107→  {
+   108→    id: '0xA7B8', name: 'Digital Crown', emoji: '👑', rarity: 'Legendary', price: 50.0, confidence: 97,
+   109→    seller: '0x5E2f...8aD4', description: 'The ultimate symbol of digital sovereignty. Grants governance rights across all realms.',
+   110→    listedAt: '30m ago',
+   111→    priceHistory: [{ day: 'Mon', price: 45 }, { day: 'Tue', price: 47 }, { day: 'Wed', price: 48 }, { day: 'Thu', price: 49 }, { day: 'Fri', price: 50 }, { day: 'Sat', price: 52 }, { day: 'Sun', price: 50 }],
+   112→  },
+   113→  {
+   114→    id: '0xC9D0', name: 'Plasma Rifle', emoji: '🔫', rarity: 'Rare', price: 8.5, confidence: 76,
+   115→    seller: '0x1A3b...7cE5', description: 'Standard-issue plasma weapon with overclocked fire rate module.',
+   116→    listedAt: '6h ago',
+   117→    priceHistory: [{ day: 'Mon', price: 7 }, { day: 'Tue', price: 7.5 }, { day: 'Wed', price: 8 }, { day: 'Thu', price: 8.2 }, { day: 'Fri', price: 8.5 }, { day: 'Sat', price: 9 }, { day: 'Sun', price: 8.5 }],
+   118→  },
+   119→  {
+   120→    id: '0xE1F2', name: 'Void Cape', emoji: '🧥', rarity: 'Epic', price: 15.8, confidence: 82,
+   121→    seller: '0x6D4c...3fA9', description: 'A cape woven from void energy. Grants invisibility in shadow realms.',
+   122→    listedAt: '3h ago',
+   123→    priceHistory: [{ day: 'Mon', price: 14 }, { day: 'Tue', price: 14.5 }, { day: 'Wed', price: 15 }, { day: 'Thu', price: 15.2 }, { day: 'Fri', price: 15.8 }, { day: 'Sat', price: 16 }, { day: 'Sun', price: 15.8 }],
+   124→  },
+   125→  {
+   126→    id: '0x3A4B', name: 'Iron Gauntlet', emoji: '🧤', rarity: 'Common', price: 1.2, confidence: 65,
+   127→    seller: '0x8F7e...2bC6', description: 'Basic iron hand protection. Reliable but unremarkable.',
+   128→    listedAt: '12h ago',
+   129→    priceHistory: [{ day: 'Mon', price: 1.0 }, { day: 'Tue', price: 1.1 }, { day: 'Wed', price: 1.15 }, { day: 'Thu', price: 1.2 }, { day: 'Fri', price: 1.2 }, { day: 'Sat', price: 1.25 }, { day: 'Sun', price: 1.2 }],
+   130→  },
+   131→  {
+   132→    id: '0x5C6D', name: 'Shadow Dagger', emoji: '🔪', rarity: 'Rare', price: 6.7, confidence: 72,
+   133→    seller: '0x3B9a...5dE1', description: 'A swift blade infused with shadow essence. Critical hit chance +25%.',
+   134→    listedAt: '5h ago',
+   135→    priceHistory: [{ day: 'Mon', price: 5.5 }, { day: 'Tue', price: 6 }, { day: 'Wed', price: 6.3 }, { day: 'Thu', price: 6.5 }, { day: 'Fri', price: 6.7 }, { day: 'Sat', price: 7 }, { day: 'Sun', price: 6.7 }],
+   136→  },
+   137→  {
+   138→    id: '0x7E8F', name: 'Pixel Potion', emoji: '🧪', rarity: 'Common', price: 0.5, confidence: 60,
+   139→    seller: '0x4C2d...9aF8', description: 'Restores 50 HP. Basic healing item found in the starter zone.',
+   140→    listedAt: '1d ago',
+   141→    priceHistory: [{ day: 'Mon', price: 0.4 }, { day: 'Tue', price: 0.45 }, { day: 'Wed', price: 0.48 }, { day: 'Thu', price: 0.5 }, { day: 'Fri', price: 0.5 }, { day: 'Sat', price: 0.52 }, { day: 'Sun', price: 0.5 }],
+   142→  },
+   143→  {
+   144→    id: '0x9A0B', name: 'Titan Armor', emoji: '🦺', rarity: 'Legendary', price: 35.0, confidence: 91,
+   145→    seller: '0xD1e3...6bC7', description: 'Mythical armor forged by titans. Provides 95% damage reduction.',
+   146→    listedAt: '45m ago',
+   147→    priceHistory: [{ day: 'Mon', price: 30 }, { day: 'Tue', price: 31 }, { day: 'Wed', price: 32 }, { day: 'Thu', price: 33 }, { day: 'Fri', price: 34 }, { day: 'Sat', price: 35 }, { day: 'Sun', price: 35 }],
+   148→  },
+   149→  {
+   150→    id: '0xB2C3', name: 'Storm Ring', emoji: '💍', rarity: 'Rare', price: 5.2, confidence: 70,
+   151→    seller: '0xA7f8...3eD2', description: 'A ring that channels storm energy. Lightning damage +40%.',
+   152→    listedAt: '8h ago',
+   153→    priceHistory: [{ day: 'Mon', price: 4.5 }, { day: 'Tue', price: 4.8 }, { day: 'Wed', price: 5 }, { day: 'Thu', price: 5.1 }, { day: 'Fri', price: 5.2 }, { day: 'Sat', price: 5.5 }, { day: 'Sun', price: 5.2 }],
+   154→  },
+   155→  {
+   156→    id: '0xD4E5', name: 'Byte Staff', emoji: '🪄', rarity: 'Epic', price: 19.9, confidence: 86,
+   157→    seller: '0xE2c1...7fA4', description: 'A staff that manipulates raw bytecode. Casts system-level spells.',
+   158→    listedAt: '2h ago',
+   159→    priceHistory: [{ day: 'Mon', price: 17 }, { day: 'Tue', price: 18 }, { day: 'Wed', price: 18.5 }, { day: 'Thu', price: 19 }, { day: 'Fri', price: 19.5 }, { day: 'Sat', price: 20 }, { day: 'Sun', price: 19.9 }],
+   160→  },
+   161→  {
+   162→    id: '0xF6A7', name: 'Chain Mail', emoji: '⛓️', rarity: 'Common', price: 2.0, confidence: 63,
+   163→    seller: '0x1D5f...4bE9', description: 'Standard chain mail with interlocking blockchain links.',
+   164→    listedAt: '10h ago',
+   165→    priceHistory: [{ day: 'Mon', price: 1.8 }, { day: 'Tue', price: 1.9 }, { day: 'Wed', price: 1.95 }, { day: 'Thu', price: 2 }, { day: 'Fri', price: 2 }, { day: 'Sat', price: 2.1 }, { day: 'Sun', price: 2 }],
+   166→  },
+   167→  {
+   168→    id: '0x1829', name: 'Data Crystal', emoji: '💎', rarity: 'Rare', price: 9.8, confidence: 78,
+   169→    seller: '0x6A3c...8dF1', description: 'Crystallized data matrix. Stores 1TB of encrypted information.',
+   170→    listedAt: '7h ago',
+   171→    priceHistory: [{ day: 'Mon', price: 8 }, { day: 'Tue', price: 8.5 }, { day: 'Wed', price: 9 }, { day: 'Thu', price: 9.5 }, { day: 'Fri', price: 9.8 }, { day: 'Sat', price: 10 }, { day: 'Sun', price: 9.8 }],
+   172→  },
+   173→  {
+   174→    id: '0x3B4C', name: 'Flame Scroll', emoji: '📜', rarity: 'Common', price: 0.8, confidence: 61,
+   175→    seller: '0xB9e2...5cD7', description: 'A basic scroll containing the flame spell. Good for beginners.',
+   176→    listedAt: '18h ago',
+   177→    priceHistory: [{ day: 'Mon', price: 0.7 }, { day: 'Tue', price: 0.75 }, { day: 'Wed', price: 0.78 }, { day: 'Thu', price: 0.8 }, { day: 'Fri', price: 0.8 }, { day: 'Sat', price: 0.82 }, { day: 'Sun', price: 0.8 }],
+   178→  },
+   179→  {
+   180→    id: '0x5D6E', name: 'Neural Core', emoji: '🧠', rarity: 'Legendary', price: 48.0, confidence: 96,
+   181→    seller: '0xC4a7...2eB3', description: 'An advanced neural processing core. Unlocks AI companion features.',
+   182→    listedAt: '15m ago',
+   183→    priceHistory: [{ day: 'Mon', price: 42 }, { day: 'Tue', price: 44 }, { day: 'Wed', price: 45 }, { day: 'Thu', price: 46 }, { day: 'Fri', price: 47 }, { day: 'Sat', price: 48 }, { day: 'Sun', price: 48 }],
+   184→  },
+   185→]
+   186→
+   187→/* ===== FLOOR PRICE HELPER ===== */
+   188→
+   189→function getFloorPrices(assets: MarketplaceAsset[]) {
+   190→  const floors: Partial<Record<Rarity, number>> = {}
+   191→  for (const a of assets) {
+   192→    if (floors[a.rarity] === undefined || a.price < floors[a.rarity]!) {
+   193→      floors[a.rarity] = a.price
+   194→    }
+   195→  }
+   196→  return floors
+   197→}
+   198→
+   199→/* ===== CUSTOM TERMINAL TOOLTIP ===== */
+   200→
+   201→function TerminalTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string }>; label?: string }) {
+   202→  if (!active || !payload || !payload.length) return null
+   203→  return (
+   204→    <div className="bg-[#1E1E1E] border border-[#444444] p-2 rounded-sm shadow-lg font-terminal text-xs">
+   205→      <div className="text-term-dim mb-1">{label}</div>
+   206→      {payload.map((entry, i) => (
+   207→        <div key={i} className="text-term-green">
+   208→          {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(1) : entry.value} ALGO
+   209→        </div>
+   210→      ))}
+   211→    </div>
+   212→  )
+   213→}
+   214→
+   215→/* ===== CONFIDENCE BAR ===== */
+   216→
+   217→function ConfidenceBar({ value }: { value: number }) {
+   218→  const filled = Math.round(value / 5)
+   219→  const empty = 20 - filled
+   220→  return (
+   221→    <span className="text-[11px] font-terminal">
+   222→      <span className="text-term-green">{'█'.repeat(filled)}</span>
+   223→      <span className="text-term-dim">{'░'.repeat(empty)}</span>
+   224→      <span className="text-term-amber ml-1">{value}%</span>
+   225→    </span>
+   226→  )
+   227→}
+   228→
+   229→/* ===== AI PRICE FETCH HOOK ===== */
+   230→
+   231→function useAIPrices() {
+   232→  const [aiPrices, setAiPrices] = useState<Record<string, AIPriceResult>>({})
+   233→  const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set())
+   234→  const [errors, setErrors] = useState<Record<string, string>>({})
+   235→
+   236→  const fetchPrice = useCallback(async (asset: MarketplaceAsset) => {
+   237→    setLoadingIds((prev) => new Set(prev).add(asset.id))
+   238→    setErrors((prev) => {
+   239→      const next = { ...prev }
+   240→      delete next[asset.id]
+   241→      return next
+   242→    })
+   243→    try {
+   244→      const res = await fetch('/api/ai-price', {
+   245→        method: 'POST',
+   246→        headers: { 'Content-Type': 'application/json' },
+   247→        body: JSON.stringify({
+   248→          name: asset.name,
+   249→          rarity: asset.rarity.toLowerCase(),
+   250→          type: 'weapon',
+   251→          description: asset.description,
+   252→        }),
+   253→      })
+   254→      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+   255→      const data: AIPriceResult = await res.json()
+   256→      setAiPrices((prev) => ({ ...prev, [asset.id]: data }))
+   257→    } catch (e) {
+   258→      setErrors((prev) => ({
+   259→        ...prev,
+   260→        [asset.id]: e instanceof Error ? e.message : 'Failed to fetch',
+   261→      }))
+   262→    } finally {
+   263→      setLoadingIds((prev) => {
+   264→        const next = new Set(prev)
+   265→        next.delete(asset.id)
+   266→        return next
+   267→      })
+   268→    }
+   269→  }, [])
+   270→
+   271→  return { aiPrices, loadingIds, errors, fetchPrice }
+   272→}
+   273→
+   274→/* ===== TREND ICON ===== */
+   275→
+   276→function TrendIcon({ trend, className = 'w-3 h-3' }: { trend: 'up' | 'down' | 'stable'; className?: string }) {
+   277→  if (trend === 'up') return <TrendingUp className={`${className} text-term-green`} />
+   278→  if (trend === 'down') return <TrendingDown className={`${className} text-term-red`} />
+   279→  return <Minus className={`${className} text-term-dim`} />
+   280→}
+   281→
+   282→/* ===== AI PRICE POPOVER ===== */
+   283→
+   284→function AIPricePopover({
+   285→  asset,
+   286→  result,
+   287→  loading,
+   288→  error,
+   289→  onClose,
+   290→}: {
+   291→  asset: MarketplaceAsset
+   292→  result?: AIPriceResult
+   293→  loading: boolean
+   294→  error?: string
+   295→  onClose: () => void
+   296→}) {
+   297→  return (
+   298→    <motion.div
+   299→      initial={{ opacity: 0, scale: 0.95 }}
+   300→      animate={{ opacity: 1, scale: 1 }}
+   301→      exit={{ opacity: 0, scale: 0.95 }}
+   302→      className="absolute z-30 top-full right-0 mt-1 w-72 terminal-card"
+   303→      onClick={(e) => e.stopPropagation()}
+   304→    >
+   305→      <div className="terminal-card-header py-1.5 px-3">
+   306→        <Bot className="w-3 h-3 text-term-green" />
+   307→        <span className="terminal-title text-[10px] ml-2">ai_price.log</span>
+   308→        <button
+   309→          onClick={onClose}
+   310→          className="ml-auto text-term-dim hover:text-term-red text-[10px] font-terminal"
+   311→          aria-label="close"
+   312→        >
+   313→          [x]
+   314→        </button>
+   315→      </div>
+   316→      <div className="p-3 bg-[#1E1E1E] space-y-2">
+   317→        {loading && (
+   318→          <div className="flex items-center gap-2 text-term-amber text-[11px] font-terminal">
+   319→            <Loader2 className="w-3 h-3 animate-spin" />
+   320→            <span>querying AI oracle...</span>
+   321→            <span className="blink-cursor" />
+   322→          </div>
+   323→        )}
+   324→        {error && !loading && (
+   325→          <div className="text-term-red text-[11px] font-terminal">
+   326→            {`> ERR: ${error}`}
+   327→          </div>
+   328→        )}
+   329→        {result && !loading && (
+   330→          <>
+   331→            <div className="flex items-center justify-between">
+   332→              <span className="text-term-dim text-[10px] font-terminal">SUGGESTED PRICE</span>
+   333→              {result.source === 'heuristic' && (
+   334→                <span className="text-[9px] font-terminal text-term-amber border border-term-amber/40 px-1">
+   335→                  heuristic
+   336→                </span>
+   337→              )}
+   338→              {result.source === 'ai' && (
+   339→                <span className="text-[9px] font-terminal text-term-green border border-term-green/40 px-1">
+   340→                  ai-oracle
+   341→                </span>
+   342→              )}
+   343→            </div>
+   344→            <div className="flex items-center gap-2">
+   345→              <span className="text-term-green text-lg font-terminal font-bold glow-green">
+   346→                ◆ {result.price} ALGO
+   347→              </span>
+   348→              <TrendIcon trend={result.trend} className="w-4 h-4" />
+   349→            </div>
+   350→            <div>
+   351→              <div className="text-term-dim text-[10px] font-terminal mb-0.5">CONFIDENCE</div>
+   352→              <div className="flex items-center gap-2">
+   353→                <div className="flex-1 h-2 bg-[#2D2D2D] border border-[#444444] overflow-hidden">
+   354→                  <div
+   355→                    className="h-full bg-term-green transition-all"
+   356→                    style={{ width: `${result.confidence}%` }}
+   357→                  />
+   358→                </div>
+   359→                <span className="text-term-green text-[10px] font-terminal">{result.confidence}%</span>
+   360→              </div>
+   361→            </div>
+   362→            <div>
+   363→              <div className="text-term-dim text-[10px] font-terminal mb-0.5">REASONING</div>
+   364→              <div className="text-term-text text-[11px] font-terminal leading-relaxed">
+   365→                {result.reasoning}
+   366→              </div>
+   367→            </div>
+   368→            <div className="flex items-center justify-between text-[10px] font-terminal pt-1 border-t border-[#333]">
+   369→              <span className="text-term-dim">listed:</span>
+   370→              <span className="text-term-amber">◆ {asset.price} ALGO</span>
+   371→              <span className="text-term-dim">delta:</span>
+   372→              <span
+   373→                className={
+   374→                  result.price > asset.price
+   375→                    ? 'text-term-green'
+   376→                    : result.price < asset.price
+   377→                      ? 'text-term-red'
+   378→                      : 'text-term-dim'
+   379→                }
+   380→              >
+   381→                {result.price > asset.price ? '+' : ''}
+   382→                {(result.price - asset.price).toFixed(2)}
+   383→              </span>
+   384→            </div>
+   385→          </>
+   386→        )}
+   387→      </div>
+   388→    </motion.div>
+   389→  )
+   390→}
+   391→
+   392→/* ===== DETAIL MODAL ===== */
+   393→
+   394→function DetailModal({
+   395→  asset,
+   396→  onClose,
+   397→  aiPrices,
+   398→  loadingIds,
+   399→  aiErrors,
+   400→  onFetchPrice,
+   401→}: {
+   402→  asset: MarketplaceAsset
+   403→  onClose: () => void
+   404→  aiPrices: Record<string, AIPriceResult>
+   405→  loadingIds: Set<string>
+   406→  aiErrors: Record<string, string>
+   407→  onFetchPrice: (a: MarketplaceAsset) => void
+   408→}) {
+   409→  const { walletConnected, addNotification, setShowWalletModal } = useDeShopStore()
+   410→  const config = RARITY_CONFIG[asset.rarity]
+   411→  const rarityScore = config.weight * 25
+   412→
+   413→  const [artLoading, setArtLoading] = useState(false)
+   414→  const [artUrl, setArtUrl] = useState<string | null>(null)
+   415→  const [artSource, setArtSource] = useState<'ai' | 'placeholder' | null>(null)
+   416→  const [artError, setArtError] = useState<string | null>(null)
+   417→
+   418→  const aiPrice = aiPrices[asset.id]
+   419→  const priceLoading = loadingIds.has(asset.id)
+   420→  const priceError = aiErrors[asset.id]
+   421→
+   422→  const handleBuy = () => {
+   423→    if (!walletConnected) {
+   424→      setShowWalletModal(true)
+   425→      return
+   426→    }
+   427→    addNotification('success', `Purchased ${asset.name} for ${asset.price} ALGO`)
+   428→    onClose()
+   429→  }
+   430→
+   431→  const handleGenerateArt = async () => {
+   432→    setArtLoading(true)
+   433→    setArtError(null)
+   434→    setArtUrl(null)
+   435→    setArtSource(null)
+   436→    try {
+   437→      const res = await fetch('/api/ai-artwork', {
+   438→        method: 'POST',
+   439→        headers: { 'Content-Type': 'application/json' },
+   440→        body: JSON.stringify({
+   441→          name: asset.name,
+   442→          rarity: asset.rarity.toLowerCase(),
+   443→          type: 'weapon',
+   444→          description: asset.description,
+   445→          assetId: asset.id,
+   446→        }),
+   447→      })
+   448→      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+   449→      const data: AIArtResult = await res.json()
+   450→      setArtUrl(data.url)
+   451→      setArtSource(data.source)
+   452→      if (data.source === 'placeholder') {
+   453→        addNotification('warning', 'AI art unavailable, using placeholder')
+   454→      } else {
+   455→        addNotification('success', `Generated artwork for ${asset.name}`)
+   456→      }
+   457→    } catch (e) {
+   458→      setArtError(e instanceof Error ? e.message : 'Failed to generate artwork')
+   459→      addNotification('error', 'Artwork generation failed')
+   460→    } finally {
+   461→      setArtLoading(false)
+   462→    }
+   463→  }
+   464→
+   465→  return (
+   466→    <motion.div
+   467→      initial={{ opacity: 0 }}
+   468→      animate={{ opacity: 1 }}
+   469→      exit={{ opacity: 0 }}
+   470→      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+   471→      onClick={onClose}
+   472→    >
+   473→      <div className="absolute inset-0 bg-black/70" />
+   474→      <motion.div
+   475→        initial={{ scale: 0.95, opacity: 0 }}
+   476→        animate={{ scale: 1, opacity: 1 }}
+   477→        exit={{ scale: 0.95, opacity: 0 }}
+   478→        transition={{ duration: 0.2 }}
+   479→        className="relative w-full max-w-lg terminal-card z-10"
+   480→        onClick={(e) => e.stopPropagation()}
+   481→      >
+   482→        {/* Modal Chrome */}
+   483→        <div className="terminal-card-header">
+   484→          <TrafficLights />
+   485→          <span className="terminal-title">asset_detail.log</span>
+   486→          <button onClick={onClose} className="ml-auto terminal-dot terminal-dot-red cursor-pointer hover:opacity-80 flex-shrink-0" />
+   487→        </div>
+   488→
+   489→        <div className="terminal-card-body bg-[#1E1E1E] space-y-4 max-h-[80vh] overflow-y-auto">
+   490→          {/* Asset Header */}
+   491→          <div className="flex items-start gap-4">
+   492→            {artUrl ? (
+   493→              <div className="relative flex-shrink-0 w-16 h-16 overflow-hidden border border-[#444444] rounded-sm">
+   494→                <img src={artUrl} alt={asset.name} className="w-full h-full object-cover" />
+   495→                {artSource && (
+   496→                  <span
+   497→                    className={`absolute bottom-0 left-0 right-0 text-center text-[8px] font-terminal py-0.5 ${
+   498→                      artSource === 'ai' ? 'bg-term-green/80 text-black' : 'bg-term-amber/80 text-black'
+   499→                    }`}
+   500→                  >
+   501→                    {artSource === 'ai' ? 'AI' : 'PLACEHOLDER'}
+   502→                  </span>
+   503→                )}
+   504→              </div>
+   505→            ) : (
+   506→              <div className="text-5xl flex-shrink-0 w-16 h-16 flex items-center justify-center bg-[#2D2D2D] border border-[#444444] rounded-sm">
+   507→                {asset.emoji}
+   508→              </div>
+   509→            )}
+   510→            <div className="flex-1 min-w-0">
+   511→              <div className="text-xs text-term-dim font-terminal mb-1">ID: {asset.id}</div>
+   512→              <div className={`text-lg font-terminal font-bold text-term-green glow-green`}>{asset.name}</div>
+   513→              <div className="flex items-center gap-2 mt-1">
+   514→                <span
+   515→                  className={`px-1.5 py-0.5 rounded-sm text-[10px] font-terminal font-bold border ${config.textColor}`}
+   516→                  style={{ borderColor: config.color, backgroundColor: config.bg }}
+   517→                >
+   518→                  {asset.rarity.toUpperCase()}
+   519→                </span>
+   520→                <span className="text-term-amber text-sm font-terminal">◆ {asset.price} ALGO</span>
+   521→                {aiPrice && (
+   522→                  <span className="text-[10px] font-terminal text-term-green border border-term-green/40 px-1 bg-term-green/5">
+   523→                    AI: {aiPrice.price} ALGO
+   524→                  </span>
+   525→                )}
+   526→              </div>
+   527→            </div>
+   528→          </div>
+   529→
+   530→          {/* Price Chart */}
+   531→          <div>
+   532→            <div className="text-term-dim text-[10px] font-terminal mb-2">PRICE HISTORY (7D)</div>
+   533→            <ResponsiveContainer width="100%" height={120}>
+   534→              <AreaChart data={asset.priceHistory} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
+   535→                <defs>
+   536→                  <linearGradient id="modalPriceGrad" x1="0" y1="0" x2="0" y2="1">
+   537→                    <stop offset="5%" stopColor={config.color} stopOpacity={0.3} />
+   538→                    <stop offset="95%" stopColor={config.color} stopOpacity={0.02} />
+   539→                  </linearGradient>
+   540→                </defs>
+   541→                <CartesianGrid strokeDasharray="3 3" stroke="#333333" />
+   542→                <XAxis dataKey="day" tick={{ fill: '#888888', fontSize: 9, fontFamily: 'monospace' }} axisLine={{ stroke: '#444444' }} tickLine={{ stroke: '#444444' }} />
+   543→                <YAxis tick={{ fill: '#888888', fontSize: 9, fontFamily: 'monospace' }} axisLine={{ stroke: '#444444' }} tickLine={{ stroke: '#444444' }} domain={['dataMin - 1', 'dataMax + 1']} />
+   544→                <Tooltip content={<TerminalTooltip />} />
+   545→                <Area type="monotone" dataKey="price" stroke={config.color} strokeWidth={2} fill="url(#modalPriceGrad)" name="Price" />
+   546→              </AreaChart>
+   547→            </ResponsiveContainer>
+   548→          </div>
+   549→
+   550→          {/* AI Price Engine */}
+   551→          <div className="border border-term-green/30 bg-term-green/[0.03] p-3 space-y-2">
+   552→            <div className="flex items-center gap-2">
+   553→              <Bot className="w-3.5 h-3.5 text-term-green" />
+   554→              <span className="text-term-green text-[11px] font-terminal font-bold">AI PRICE ORACLE</span>
+   555→              <span className="text-term-dim text-[9px] font-terminal ml-auto">z-ai-web-dev-sdk</span>
+   556→            </div>
+   557→            {priceLoading && (
+   558→              <div className="flex items-center gap-2 text-term-amber text-[11px] font-terminal">
+   559→                <Loader2 className="w-3 h-3 animate-spin" />
+   560→                <span>querying oracle...</span>
+   561→                <span className="blink-cursor" />
+   562→              </div>
+   563→            )}
+   564→            {priceError && !priceLoading && (
+   565→              <div className="text-term-red text-[11px] font-terminal">{`> ERR: ${priceError}`}</div>
+   566→            )}
+   567→            {aiPrice && !priceLoading && (
+   568→              <div className="space-y-1.5">
+   569→                <div className="flex items-center justify-between">
+   570→                  <span className="text-term-dim text-[10px] font-terminal">SUGGESTED</span>
+   571→                  <div className="flex items-center gap-1">
+   572→                    <span className="text-term-green text-sm font-terminal font-bold">◆ {aiPrice.price} ALGO</span>
+   573→                    <TrendIcon trend={aiPrice.trend} />
+   574→                  </div>
+   575→                </div>
+   576→                <div className="flex items-center gap-2">
+   577→                  <span className="text-term-dim text-[10px] font-terminal">CONF</span>
+   578→                  <div className="flex-1 h-1.5 bg-[#2D2D2D] border border-[#444444] overflow-hidden">
+   579→                    <div
+   580→                      className="h-full bg-term-green transition-all"
+   581→                      style={{ width: `${aiPrice.confidence}%` }}
+   582→                    />
+   583→                  </div>
+   584→                  <span className="text-term-green text-[10px] font-terminal">{aiPrice.confidence}%</span>
+   585→                </div>
+   586→                <div className="text-term-text text-[10px] font-terminal leading-relaxed border-l-2 border-term-green/30 pl-2">
+   587→                  {aiPrice.reasoning}
+   588→                </div>
+   589→              </div>
+   590→            )}
+   591→            {!aiPrice && !priceLoading && !priceError && (
+   592→              <div className="text-term-dim text-[10px] font-terminal">
+   593→                Click below to get an AI-suggested price for this NFT.
+   594→              </div>
+   595→            )}
+   596→            <button
+   597→              onClick={() => onFetchPrice(asset)}
+   598→              disabled={priceLoading}
+   599→              className="terminal-btn flex items-center gap-2 w-full justify-center border-term-green/50 text-term-green hover:bg-term-green/10 disabled:opacity-50"
+   600→            >
+   601→              {priceLoading ? (
+   602→                <Loader2 className="w-3 h-3 animate-spin" />
+   603→              ) : (
+   604→                <Bot className="w-3 h-3" />
+   605→              )}
+   606→              <span>{aiPrice ? 'Re-query Oracle' : 'Get AI Price'}</span>
+   607→            </button>
+   608→          </div>
+   609→
+   610→          {/* AI Artwork Generator */}
+   611→          <div className="border border-term-magenta/30 bg-term-magenta/[0.03] p-3 space-y-2">
+   612→            <div className="flex items-center gap-2">
+   613→              <ImageIcon className="w-3.5 h-3.5 text-term-magenta" />
+   614→              <span className="text-term-magenta text-[11px] font-terminal font-bold">AI ARTWORK GEN</span>
+   615→              <span className="text-term-dim text-[9px] font-terminal ml-auto">cogview-3-plus</span>
+   616→            </div>
+   617→            {artLoading && (
+   618→              <div className="flex flex-col items-center gap-2 py-3">
+   619→                <Loader2 className="w-4 h-4 animate-spin text-term-magenta" />
+   620→                <span className="text-term-amber text-[11px] font-terminal">generating pixel art...</span>
+   621→                <span className="blink-cursor" />
+   622→              </div>
+   623→            )}
+   624→            {artError && !artLoading && (
+   625→              <div className="text-term-red text-[11px] font-terminal">{`> ERR: ${artError}`}</div>
+   626→            )}
+   627→            {artUrl && !artLoading && (
+   628→              <div className="space-y-2">
+   629→                <div className="relative w-full aspect-square overflow-hidden border border-[#444444] max-h-64 mx-auto">
+   630→                  <img src={artUrl} alt={`${asset.name} AI artwork`} className="w-full h-full object-cover" />
+   631→                  <span
+   632→                    className={`absolute top-1 right-1 text-[9px] font-terminal px-1.5 py-0.5 ${
+   633→                      artSource === 'ai' ? 'bg-term-green text-black' : 'bg-term-amber text-black'
+   634→                    }`}
+   635→                  >
+   636→                    {artSource === 'ai' ? 'AI-GENERATED' : 'PLACEHOLDER'}
+   637→                  </span>
+   638→                </div>
+   639→              </div>
+   640→            )}
+   641→            {!artUrl && !artLoading && !artError && (
+   642→              <div className="text-term-dim text-[10px] font-terminal">
+   643→                Generate pixel-art NFT artwork via the AI image model.
+   644→              </div>
+   645→            )}
+   646→            <button
+   647→              onClick={handleGenerateArt}
+   648→              disabled={artLoading}
+   649→              className="terminal-btn flex items-center gap-2 w-full justify-center border-term-magenta/50 text-term-magenta hover:bg-term-magenta/10 disabled:opacity-50"
+   650→            >
+   651→              {artLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3" />}
+   652→              <span>{artUrl ? 'Regenerate Art' : 'Generate Art'}</span>
+   653→            </button>
+   654→          </div>
+   655→
+   656→          {/* AI Confidence */}
+   657→          <div>
+   658→            <div className="text-term-dim text-[10px] font-terminal mb-1">AI CONFIDENCE</div>
+   659→            <ConfidenceBar value={asset.confidence} />
+   660→          </div>
+   661→
+   662→          {/* Rarity Score */}
+   663→          <div>
+   664→            <div className="text-term-dim text-[10px] font-terminal mb-1">RARITY SCORE</div>
+   665→            <div className="flex items-center gap-2">
+   666→              <div className="flex-1 h-3 bg-[#2D2D2D] border border-[#444444] rounded-sm overflow-hidden">
+   667→                <div
+   668→                  className="h-full rounded-sm transition-all"
+   669→                  style={{ width: `${rarityScore}%`, backgroundColor: config.color, opacity: 0.7 }}
+   670→                />
+   671→              </div>
+   672→              <span className={`text-xs font-terminal ${config.textColor}`}>{rarityScore}/100</span>
+   673→            </div>
+   674→          </div>
+   675→
+   676→          {/* Description */}
+   677→          <div>
+   678→            <div className="text-term-dim text-[10px] font-terminal mb-1">DESCRIPTION</div>
+   679→            <div className="text-term-text text-xs font-terminal leading-relaxed">{asset.description}</div>
+   680→          </div>
+   681→
+   682→          {/* Seller Info */}
+   683→          <div className="flex items-center justify-between">
+   684→            <div>
+   685→              <div className="text-term-dim text-[10px] font-terminal">SELLER</div>
+   686→              <div className="text-term-cyan text-xs font-terminal">{asset.seller}</div>
+   687→            </div>
+   688→            <div>
+   689→              <div className="text-term-dim text-[10px] font-terminal">LISTED</div>
+   690→              <div className="text-term-text text-xs font-terminal">{asset.listedAt}</div>
+   691→            </div>
+   692→          </div>
+   693→
+   694→          {/* Action Buttons */}
+   695→          <div className="flex gap-3 pt-2">
+   696→            <button
+   697→              onClick={handleBuy}
+   698→              className="terminal-btn terminal-btn-primary flex-1 flex items-center justify-center gap-2"
+   699→            >
+   700→              <ShoppingCart className="w-3.5 h-3.5" />
+   701→              <span>Buy for {asset.price} ALGO</span>
+   702→            </button>
+   703→            <button
+   704→              onClick={() => { addNotification('info', `Listing ${asset.name}...`); onClose() }}
+   705→              className="terminal-btn flex items-center justify-center gap-2 border-term-cyan/50 text-term-cyan hover:bg-[#1E1E1E]"
+   706→            >
+   707→              <Tag className="w-3.5 h-3.5" />
+   708→              <span>List</span>
+   709→            </button>
+   710→          </div>
+   711→        </div>
+   712→      </motion.div>
+   713→    </motion.div>
+   714→  )
+   715→}
+   716→
+   717→/* ===== GRID CARD ===== */
+   718→
+   719→function GridCard({
+   720→  asset,
+   721→  onClick,
+   722→  index,
+   723→  aiPrice,
+   724→  aiPriceLoading,
+   725→  aiPriceError,
+   726→  onFetchPrice,
+   727→}: {
+   728→  asset: MarketplaceAsset
+   729→  onClick: () => void
+   730→  index: number
+   731→  aiPrice?: AIPriceResult
+   732→  aiPriceLoading: boolean
+   733→  aiPriceError?: string
+   734→  onFetchPrice: (a: MarketplaceAsset) => void
+   735→}) {
+   736→  const config = RARITY_CONFIG[asset.rarity]
+   737→  const [popoverOpen, setPopoverOpen] = useState(false)
+   738→
+   739→  const handleAIClick = (e: React.MouseEvent) => {
+   740→    e.stopPropagation()
+   741→    if (!aiPrice && !aiPriceLoading) {
+   742→      onFetchPrice(asset)
+   743→    }
+   744→    setPopoverOpen((prev) => !prev)
+   745→  }
+   746→
+   747→  return (
+   748→    <motion.div
+   749→      initial={{ opacity: 0, y: 12 }}
+   750→      animate={{ opacity: 1, y: 0 }}
+   751→      transition={{ delay: index * 0.04, duration: 0.25 }}
+   752→      className={`terminal-card cursor-pointer border ${config.borderColor} ${config.glowClass} group relative`}
+   753→      onClick={onClick}
+   754→    >
+   755→      {/* Card Chrome Header */}
+   756→      <div className="terminal-card-header py-1.5 px-3">
+   757→        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: config.color }} />
+   758→        <span className="terminal-title text-[10px] text-left ml-2">{asset.id}</span>
+   759→        <button
+   760→          onClick={handleAIClick}
+   761→          className={`ml-auto flex items-center gap-1 text-[9px] font-terminal px-1.5 py-0.5 border transition-colors ${
+   762→            aiPrice
+   763→              ? 'border-term-green/50 text-term-green hover:bg-term-green/10'
+   764→              : 'border-term-dim/40 text-term-dim hover:text-term-green hover:border-term-green/50'
+   765→          }`}
+   766→          aria-label="Get AI price"
+   767→          title="Get AI price"
+   768→        >
+   769→          {aiPriceLoading ? (
+   770→            <Loader2 className="w-2.5 h-2.5 animate-spin" />
+   771→          ) : (
+   772→            <Bot className="w-2.5 h-2.5" />
+   773→          )}
+   774→          <span>AI</span>
+   775→        </button>
+   776→      </div>
+   777→
+   778→      {/* Card Body */}
+   779→      <div className="p-4 bg-[#1E1E1E]">
+   780→        {/* Emoji Icon */}
+   781→        <div className="text-4xl mb-3 text-center py-2">{asset.emoji}</div>
+   782→
+   783→        {/* Name */}
+   784→        <div className="text-term-green text-sm font-terminal font-bold text-center mb-2 glow-green">
+   785→          {asset.name}
+   786→        </div>
+   787→
+   788→        {/* Price + AI Badge */}
+   789→        <div className="flex items-center justify-between mb-1 flex-wrap gap-1">
+   790→          <span className="text-term-amber text-xs font-terminal">◆ {asset.price} ALGO</span>
+   791→          <span className="text-term-dim text-[10px] font-terminal">{asset.confidence}% conf.</span>
+   792→        </div>
+   793→        {aiPrice && (
+   794→          <div className="flex items-center justify-center mb-2">
+   795→            <span
+   796→              className="inline-flex items-center gap-1 text-[10px] font-terminal text-term-green border border-term-green/40 px-1.5 py-0.5 bg-term-green/5"
+   797→              title={aiPrice.reasoning}
+   798→            >
+   799→              <Bot className="w-2.5 h-2.5" />
+   800→              <span>AI: {aiPrice.price} ALGO</span>
+   801→              <TrendIcon trend={aiPrice.trend} className="w-2.5 h-2.5" />
+   802→            </span>
+   803→          </div>
+   804→        )}
+   805→        {aiPriceLoading && !aiPrice && (
+   806→          <div className="flex items-center justify-center mb-2">
+   807→            <span className="inline-flex items-center gap-1 text-[10px] font-terminal text-term-amber border border-term-amber/40 px-1.5 py-0.5">
+   808→              <Loader2 className="w-2.5 h-2.5 animate-spin" />
+   809→              <span>querying...</span>
+   810→            </span>
+   811→          </div>
+   812→        )}
+   813→        {aiPriceError && !aiPrice && !aiPriceLoading && (
+   814→          <div className="flex items-center justify-center mb-2">
+   815→            <span className="text-[10px] font-terminal text-term-red">! {aiPriceError}</span>
+   816→          </div>
+   817→        )}
+   818→
+   819→        {/* Rarity Badge */}
+   820→        <div className="flex items-center justify-center mb-2">
+   821→          <span
+   822→            className={`px-2 py-0.5 rounded-sm text-[10px] font-terminal font-bold border ${config.textColor}`}
+   823→            style={{ borderColor: config.color, backgroundColor: config.bg }}
+   824→          >
+   825→            {asset.rarity.toUpperCase()}
+   826→          </span>
+   827→        </div>
+   828→
+   829→        {/* Seller */}
+   830→        <div className="text-center">
+   831→          <span className="text-term-dim text-[10px] font-terminal">seller: {asset.seller}</span>
+   832→        </div>
+   833→      </div>
+   834→
+   835→      {/* AI Price Popover */}
+   836→      <AnimatePresence>
+   837→        {popoverOpen && (aiPrice || aiPriceLoading || aiPriceError) && (
+   838→          <AIPricePopover
+   839→            asset={asset}
+   840→            result={aiPrice}
+   841→            loading={aiPriceLoading}
+   842→            error={aiPriceError}
+   843→            onClose={(e) => {
+   844→              e?.stopPropagation()
+   845→              setPopoverOpen(false)
+   846→            }}
+   847→          />
+   848→        )}
+   849→      </AnimatePresence>
+   850→    </motion.div>
+   851→  )
+   852→}
+   853→
+   854→/* ===== LIST ROW ===== */
+   855→
+   856→function ListRow({ asset, index }: { asset: MarketplaceAsset; index: number }) {
+   857→  const { walletConnected, addNotification, setShowWalletModal } = useDeShopStore()
+   858→  const config = RARITY_CONFIG[asset.rarity]
+   859→
+   860→  const handleBuy = () => {
+   861→    if (!walletConnected) {
+   862→      setShowWalletModal(true)
+   863→      return
+   864→    }
+   865→    addNotification('success', `Purchased ${asset.name} for ${asset.price} ALGO`)
+   866→  }
+   867→
+   868→  return (
+   869→    <motion.div
+   870→      initial={{ opacity: 0, x: -8 }}
+   871→      animate={{ opacity: 1, x: 0 }}
+   872→      transition={{ delay: index * 0.03, duration: 0.2 }}
+   873→      className="flex items-center gap-2 py-2 px-3 text-[11px] font-terminal border-b border-[#333333] hover:bg-[#252525] transition-colors"
+   874→    >
+   875→      <span className="text-term-dim w-14 flex-shrink-0">{asset.id}</span>
+   876→      <span className="text-term-green flex-1 min-w-0 truncate">{asset.name}</span>
+   877→      <span className={`w-16 text-center flex-shrink-0 ${config.textColor}`} style={{ color: config.color }}>{asset.rarity}</span>
+   878→      <span className="text-term-amber w-20 text-right flex-shrink-0">◆ {asset.price} ALGO</span>
+   879→      <span className="text-term-dim w-14 text-right flex-shrink-0">{asset.confidence}%</span>
+   880→      <span className="text-term-dim w-20 text-right flex-shrink-0 truncate">{asset.seller}</span>
+   881→      <button
+   882→        onClick={handleBuy}
+   883→        className="terminal-btn terminal-btn-primary text-[10px] px-2 py-1 flex-shrink-0"
+   884→      >
+   885→        Buy
+   886→      </button>
+   887→    </motion.div>
+   888→  )
+   889→}
+   890→
+   891→/* ===== API FETCH HELPERS ===== */
+   892→
+   893→interface ApiAsset {
+   894→  id: string
+   895→  assetId: number
+   896→  name: string
+   897→  description: string
+   898→  rarity: string
+   899→  type: string
+   900→  price: number
+   901→  confidence: number
+   902→  emoji: string
+   903→  seller: string
+   904→  owner: string
+   905→  listed: boolean
+   906→  mintedAt: string
+   907→}
+   908→
+   909→function mapApiAsset(a: ApiAsset): MarketplaceAsset {
+   910→  const rarity = (a.rarity.charAt(0).toUpperCase() + a.rarity.slice(1)) as Rarity
+   911→  return {
+   912→    id: `0x${a.assetId.toString(16).toUpperCase().slice(0, 4)}`,
+   913→    name: a.name,
+   914→    emoji: a.emoji || '📦',
+   915→    rarity,
+   916→    price: a.price,
+   917→    confidence: a.confidence,
+   918→    seller: a.seller,
+   919→    description: a.description,
+   920→    listedAt: a.mintedAt ? new Date(a.mintedAt).toLocaleDateString() : '',
+   921→    priceHistory: [
+   922→      { day: 'Mon', price: a.price * 0.9 },
+   923→      { day: 'Tue', price: a.price * 0.93 },
+   924→      { day: 'Wed', price: a.price * 0.95 },
+   925→      { day: 'Thu', price: a.price * 0.97 },
+   926→      { day: 'Fri', price: a.price * 0.99 },
+   927→      { day: 'Sat', price: a.price * 1.02 },
+   928→      { day: 'Sun', price: a.price },
+   929→    ],
+   930→  }
+   931→}
+   932→
+   933→/* ===== MAIN MARKETPLACE PAGE ===== */
+   934→
+   935→export default function MarketplacePage() {
+   936→  const [search, setSearch] = useState('')
+   937→  const [rarityFilter, setRarityFilter] = useState<Rarity | 'All'>('All')
+   938→  const [sort, setSort] = useState<SortOption>('newest')
+   939→  const [viewMode, setViewMode] = useState<ViewMode>('grid')
+   940→  const [selectedAsset, setSelectedAsset] = useState<MarketplaceAsset | null>(null)
+   941→  const [apiAssets, setApiAssets] = useState<MarketplaceAsset[]>([])
+   942→  const [loading, setLoading] = useState(true)
+   943→  const { aiPrices, loadingIds, errors: aiErrors, fetchPrice } = useAIPrices()
+   944→
+   945→  const fetchMarket = useCallback(async () => {
+   946→    try {
+   947→      const res = await fetch('/api/market')
+   948→      if (res.ok) {
+   949→        const data = await res.json()
+   950→        if (data.assets && data.assets.length > 0) {
+   951→          setApiAssets(data.assets.map(mapApiAsset))
+   952→        }
+   953→      }
+   954→    } catch {
+   955→      // fallback to mock data
+   956→    } finally {
+   957→      setLoading(false)
+   958→    }
+   959→  }, [])
+   960→
+   961→  useEffect(() => {
+   962→    fetchMarket()
+   963→  }, [fetchMarket])
+   964→
+   965→  // Use API data if available, otherwise fall back to mock
+   966→  const baseAssets = apiAssets.length > 0 ? apiAssets : MOCK_ASSETS
+   967→
+   968→  const filteredAssets = useMemo(() => {
+   969→    let result = [...baseAssets]
+   970→
+   971→    // Search filter
+   972→    if (search.trim()) {
+   973→      const q = search.toLowerCase()
+   974→      result = result.filter(
+   975→        (a) => a.name.toLowerCase().includes(q) || a.id.toLowerCase().includes(q) || a.rarity.toLowerCase().includes(q)
+   976→      )
+   977→    }
+   978→
+   979→    // Rarity filter
+   980→    if (rarityFilter !== 'All') {
+   981→      result = result.filter((a) => a.rarity === rarityFilter)
+   982→    }
+   983→
+   984→    // Sort
+   985→    switch (sort) {
+   986→      case 'price-asc':
+   987→        result.sort((a, b) => a.price - b.price)
+   988→        break
+   989→      case 'price-desc':
+   990→        result.sort((a, b) => b.price - a.price)
+   991→        break
+   992→      case 'newest':
+   993→        // Keep original order (simulated newest first by listing time)
+   994→        break
+   995→      case 'rarity':
+   996→        result.sort((a, b) => RARITY_CONFIG[b.rarity].weight - RARITY_CONFIG[a.rarity].weight)
+   997→        break
+   998→    }
+   999→
+  1000→    return result
+  1001→  }, [search, rarityFilter, sort, baseAssets])
+  1002→
+  1003→  const floorPrices = useMemo(() => getFloorPrices(baseAssets), [baseAssets])
+  1004→
+  1005→  return (
+  1006→    <div className="space-y-4">
+  1007→      {/* Terminal Window Header */}
+  1008→      <div className="terminal-card">
+  1009→        <div className="terminal-chrome">
+  1010→          <TrafficLights />
+  1011→          <span className="terminal-title font-terminal">marketplace@de-shop:~/market</span>
+  1012→        </div>
+  1013→        <div className="px-4 py-3 flex items-center gap-2 bg-[#1E1E1E]">
+  1014→          <span className="prompt-prefix text-sm">$</span>
+  1015→          <span className="text-term-cyan text-sm font-terminal glow-cyan">./marketplace</span>
+  1016→          <span className="text-term-dim text-xs font-terminal">--browse --filter --trade</span>
+  1017→          {loading && <span className="text-term-amber text-[10px] font-terminal animate-pulse">[fetching market...]</span>}
+  1018→          <span className="blink-cursor" />
+  1019→        </div>
+  1020→      </div>
+  1021→
+  1022→      {/* Search & Filter Bar */}
+  1023→      <div className="terminal-card">
+  1024→        <div className="terminal-card-header">
+  1025→          <TrafficLights />
+  1026→          <span className="terminal-title">search_and_filter.sh</span>
+  1027→          <Sparkles className="w-3.5 h-3.5 text-term-amber" />
+  1028→        </div>
+  1029→        <div className="p-4 bg-[#1E1E1E] space-y-3">
+  1030→          {/* Search Row */}
+  1031→          <div className="flex flex-col sm:flex-row gap-3">
+  1032→            <div className="flex-1 relative">
+  1033→              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-term-green text-sm font-terminal">$</span>
+  1034→              <input
+  1035→                type="text"
+  1036→                value={search}
+  1037→                onChange={(e) => setSearch(e.target.value)}
+  1038→                placeholder="search --query"
+  1039→                className="terminal-input pl-7"
+  1040→              />
+  1041→              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-term-dim" />
+  1042→            </div>
+  1043→
+  1044→            {/* Rarity Filter */}
+  1045→            <select
+  1046→              value={rarityFilter}
+  1047→              onChange={(e) => setRarityFilter(e.target.value as Rarity | 'All')}
+  1048→              className="terminal-input w-auto min-w-[120px]"
+  1049→            >
+  1050→              <option value="All">All Rarities</option>
+  1051→              <option value="Common">Common</option>
+  1052→              <option value="Rare">Rare</option>
+  1053→              <option value="Epic">Epic</option>
+  1054→              <option value="Legendary">Legendary</option>
+  1055→            </select>
+  1056→
+  1057→            {/* Sort */}
+  1058→            <select
+  1059→              value={sort}
+  1060→              onChange={(e) => setSort(e.target.value as SortOption)}
+  1061→              className="terminal-input w-auto min-w-[140px]"
+  1062→            >
+  1063→              <option value="newest">Newest</option>
+  1064→              <option value="price-asc">Price Low→High</option>
+  1065→              <option value="price-desc">Price High→Low</option>
+  1066→              <option value="rarity">Rarity</option>
+  1067→            </select>
+  1068→
+  1069→            {/* View Toggle */}
+  1070→            <div className="flex border border-[#444444] rounded-sm overflow-hidden flex-shrink-0">
+  1071→              <button
+  1072→                onClick={() => setViewMode('grid')}
+  1073→                className={`px-3 py-1.5 text-xs font-terminal transition-colors ${viewMode === 'grid' ? 'bg-[#3D3D3D] text-term-green' : 'bg-[#2D2D2D] text-term-dim hover:text-term-text'}`}
+  1074→              >
+  1075→                <LayoutGrid className="w-3.5 h-3.5" />
+  1076→              </button>
+  1077→              <button
+  1078→                onClick={() => setViewMode('list')}
+  1079→                className={`px-3 py-1.5 text-xs font-terminal transition-colors ${viewMode === 'list' ? 'bg-[#3D3D3D] text-term-green' : 'bg-[#2D2D2D] text-term-dim hover:text-term-text'}`}
+  1080→              >
+  1081→                <List className="w-3.5 h-3.5" />
+  1082→              </button>
+  1083→            </div>
+  1084→          </div>
+  1085→
+  1086→          {/* Floor Price Summary */}
+  1087→          <div className="flex flex-wrap items-center gap-3">
+  1088→            <span className="text-term-dim text-[10px] font-terminal">FLOOR:</span>
+  1089→            {(['Common', 'Rare', 'Epic', 'Legendary'] as Rarity[]).map((r) => {
+  1090→              const cfg = RARITY_CONFIG[r]
+  1091→              const floor = floorPrices[r]
+  1092→              return (
+  1093→                <div key={r} className="flex items-center gap-1">
+  1094→                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: cfg.color }} />
+  1095→                  <span className={`text-[10px] font-terminal ${cfg.textColor}`} style={{ color: cfg.color }}>
+  1096→                    {r}
+  1097→                  </span>
+  1098→                  <span className="text-term-amber text-[10px] font-terminal">
+  1099→                    {floor !== undefined ? `${floor} ALGO` : '—'}
+  1100→                  </span>
+  1101→                </div>
+  1102→              )
+  1103→            })}
+  1104→            <span className="text-term-dim text-[10px] font-terminal ml-auto">
+  1105→              {filteredAssets.length} result{filteredAssets.length !== 1 ? 's' : ''}
+  1106→            </span>
+  1107→          </div>
+  1108→        </div>
+  1109→      </div>
+  1110→
+  1111→      {/* Content: Grid or List */}
+  1112→      <AnimatePresence mode="wait">
+  1113→        {viewMode === 'grid' ? (
+  1114→          <motion.div
+  1115→            key="grid"
+  1116→            initial={{ opacity: 0 }}
+  1117→            animate={{ opacity: 1 }}
+  1118→            exit={{ opacity: 0 }}
+  1119→            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+  1120→          >
+  1121→            {filteredAssets.map((asset, i) => (
+  1122→              <GridCard
+  1123→                key={asset.id}
+  1124→                asset={asset}
+  1125→                onClick={() => setSelectedAsset(asset)}
+  1126→                index={i}
+  1127→                aiPrice={aiPrices[asset.id]}
+  1128→                aiPriceLoading={loadingIds.has(asset.id)}
+  1129→                aiPriceError={aiErrors[asset.id]}
+  1130→                onFetchPrice={fetchPrice}
+  1131→              />
+  1132→            ))}
+  1133→          </motion.div>
+  1134→        ) : (
+  1135→          <motion.div
+  1136→            key="list"
+  1137→            initial={{ opacity: 0 }}
+  1138→            animate={{ opacity: 1 }}
+  1139→            exit={{ opacity: 0 }}
+  1140→            className="terminal-card"
+  1141→          >
+  1142→            <div className="terminal-card-header">
+  1143→              <TrafficLights />
+  1144→              <span className="terminal-title">listings_table.log</span>
+  1145→              <ArrowUpDown className="w-3.5 h-3.5 text-term-dim" />
+  1146→            </div>
+  1147→            <div className="bg-[#1E1E1E] max-h-[500px] overflow-y-auto">
+  1148→              {/* Table Header */}
+  1149→              <div className="flex items-center gap-2 py-2 px-3 text-[10px] font-terminal text-term-dim border-b border-[#444444] bg-[#252525] sticky top-0 z-10">
+  1150→                <span className="w-14 flex-shrink-0">ID</span>
+  1151→                <span className="flex-1">NAME</span>
+  1152→                <span className="w-16 text-center flex-shrink-0">RARITY</span>
+  1153→                <span className="w-20 text-right flex-shrink-0">PRICE</span>
+  1154→                <span className="w-14 text-right flex-shrink-0">CONF</span>
+  1155→                <span className="w-20 text-right flex-shrink-0">SELLER</span>
+  1156→                <span className="w-12 text-center flex-shrink-0">ACTION</span>
+  1157→              </div>
+  1158→              {/* Table Body */}
+  1159→              {filteredAssets.map((asset, i) => (
+  1160→                <ListRow key={asset.id} asset={asset} index={i} />
+  1161→              ))}
+  1162→              {filteredAssets.length === 0 && (
+  1163→                <div className="py-8 text-center text-term-dim text-xs font-terminal">
+  1164→                  No assets found matching your criteria.
+  1165→                </div>
+  1166→              )}
+  1167→            </div>
+  1168→          </motion.div>
+  1169→        )}
+  1170→      </AnimatePresence>
+  1171→
+  1172→      {viewMode === 'grid' && filteredAssets.length === 0 && (
+  1173→        <div className="terminal-card">
+  1174→          <div className="p-8 text-center text-term-dim text-xs font-terminal">
+  1175→            No assets found matching your criteria.
+  1176→          </div>
+  1177→        </div>
+  1178→      )}
+  1179→
+  1180→      {/* Detail Modal */}
+  1181→      <AnimatePresence>
+  1182→        {selectedAsset && (
+  1183→          <DetailModal
+  1184→            asset={selectedAsset}
+  1185→            onClose={() => setSelectedAsset(null)}
+  1186→            aiPrices={aiPrices}
+  1187→            loadingIds={loadingIds}
+  1188→            aiErrors={aiErrors}
+  1189→            onFetchPrice={fetchPrice}
+  1190→          />
+  1191→        )}
+  1192→      </AnimatePresence>
+  1193→    </div>
+  1194→  )
+  1195→}
+  1196→

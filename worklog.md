@@ -882,3 +882,444 @@ Addressed all 9 VLM-identified polish opportunities from Task 8 by augmenting `g
 8. **Add more terminal games**: Tetris, Pac-Man, Adventure
 9. **Add dark/light terminal theme toggle**: Pro (dark) vs Light (white bg, black text) terminal themes
 10. **Add export/import settings**: Backup user preferences, game scores, etc.
+
+---
+
+## Task 11-a: AI-Powered NFT Pricing + AI-Generated Artwork — Completed
+
+**Date**: 2026-06-17
+**Agent**: Main Agent (Task 11-a subagent)
+**Task ID**: 11-a
+
+### Summary
+
+Added two AI-powered features to the De-Shop SDK Mac Terminal app, both using `z-ai-web-dev-sdk` strictly on the server side (Next.js API routes). **(1) AI NFT Pricing Oracle** — POST `/api/ai-price` uses the ZAI chat completions LLM to suggest an ALGO price given name/rarity/type/description. Strict-JSON system prompt + `safeParseJSON` (strips markdown fences, falls back to `{...}` extraction). Clamps parsed price to rarity range (common=0.5-5, rare=5-15, epic=15-35, legendary=35-60). Falls back to deterministic heuristic on any failure. Response carries `source: 'ai' | 'heuristic'`. **(2) AI Artwork Generator** — POST `/api/ai-artwork` uses ZAI `images.generations.create({model:'cogview-3-plus', size:'1024x1024'})` with a rarity-coloured pixel-art prompt. Decodes base64 → `Buffer` → writes to `public/nft-artwork/{assetId}.png` (served directly by Next.js as a static asset). Falls back to `placehold.co` URL on any error. Response carries `source: 'ai' | 'placeholder'`.
+
+Both endpoints verified live: ai-price returns valid JSON in ~1 s (e.g. `{price:48, confidence:85, reasoning:"Legendary weapon with plasma-infused trait...", trend:"up", source:"ai"}`); ai-artwork returns `{url:"/nft-artwork/test-1.png", source:"ai"}` in ~38 s with an 84 KB PNG saved to disk.
+
+### Files Created / Modified
+
+**Created:**
+- `src/app/api/ai-price/route.ts` — POST-only endpoint. Validates `{name, rarity, type}` (400 on missing). Calls `ZAI.create()` + `zai.chat.completions.create({messages:[system, user], temperature:0.7})`. System prompt: "You are an NFT pricing oracle... Respond ONLY with valid JSON, no markdown fences". User prompt embeds the rarity range table and required JSON shape. `safeParseJSON` handles `\`\`\`json` fences and `{...}` extraction. Clamps price to `0.5×range[0]` … `1.5×range[1]`, confidence to 0-100. On any failure: `heuristicPrice()` deterministic fallback based on name/description length seed.
+- `src/app/api/ai-artwork/route.ts` — POST-only endpoint. Validates `{name, rarity, type}`. Builds prompt: `Pixel art style NFT artwork for a {rarity} {type} called "{name}". {description}. Dark background, glowing {amber|magenta|cyan|gray} accents, retro game aesthetic, square composition, highly detailed, centered, no text, no watermark.`. Calls `zai.images.generations.create({model:'cogview-3-plus', prompt, size:'1024x1024'})`. Writes `Buffer.from(base64, 'base64')` to `public/nft-artwork/{safeSlug(assetId)}.png`. Returns `{url, source:'ai', prompt}`. On any error: `placehold.co/512x512/1E1E1E/{rarityColor}?text={name}&font=monospace` with `source:'placeholder'`.
+- `public/nft-artwork/` — directory for generated PNGs (auto-created by route via `fs/promises.mkdir({recursive:true})`).
+- `agent-ctx/11-a-ai-pricing-artwork.md` — full work record.
+
+**Modified:**
+- `src/components/pages/MarketplacePage.tsx` — added: new lucide imports (`Bot`, `Image as ImageIcon`, `TrendingUp`, `TrendingDown`, `Minus`, `Loader2`); new types `AIPriceResult`/`AIArtResult`; new `useAIPrices()` hook returning `{aiPrices, loadingIds, errors, fetchPrice}` (per-asset loading+error state); new `TrendIcon` component; new `AIPricePopover` component (288-px terminal card with loading/error/result states, source badge, confidence bar, reasoning text, listed-price delta). `DetailModal` rewritten to accept `aiPrices`/`loadingIds`/`aiErrors`/`onFetchPrice` props and adds two border-highlighted panels: **AI PRICE ORACLE** (green) with Get/Re-query button + AI badge in header, **AI ARTWORK GEN** (magenta) with Generate/Regenerate button + 64-px thumbnail in header + full-size square preview with AI/PLACEHOLDER corner badge. `GridCard` rewritten to accept `aiPrice`/`aiPriceLoading`/`aiPriceError`/`onFetchPrice` props; adds `AI` button in card chrome header (stopPropagation, toggles popover); renders `AI: X ALGO` badge with trend icon below listed price when result exists; amber "querying..." badge while loading; red `! msg` on error. `MarketplacePage` main component instantiates `useAIPrices()` and passes slices to each `GridCard` + the single `DetailModal`.
+- `src/components/pages/InventoryPage.tsx` — `MintSection` rewritten: added new state (`description`, `aiPrice`, `aiPriceLoading`, `aiPriceError`, `artUrl`, `artSource`, `artLoading`, `artError`); added DESCRIPTION input row; added "AI Assist" row with two buttons (**AI Suggest Price** → `/api/ai-price`, **Generate Preview Art** → `/api/ai-artwork`); added **AI INSIGHT** panel (green border, animated height) showing suggested price + trend icon + confidence progress bar + reasoning quote + source badge; added **PREVIEW ART** panel (magenta border, animated height) showing centered 240-px square thumbnail with AI/PLACEHOLDER corner badge, or `Loader2` + "generating pixel art..." spinner with blink-cursor, or red `> ERR: ...`. All AI state reset when mint completes. Added new lucide imports + `AIPriceResult`/`AIArtResult` interfaces + `TrendIcon` helper.
+- `src/components/pages/DashboardPage.tsx` — added new `AIPricingEngine` component rendered at bottom of dashboard (after `QuickActions`): terminal card with `ai_pricing.log` chrome header + `Bot` icon + "z-ai-web-dev-sdk" badge; two-column responsive grid (`1fr / 240px` on lg+). **Left**: form (asset name input with Enter-to-submit, rarity select, type select, description input, primary "Get Price" button) + results panel showing suggested price + trend icon + source badge + colour-coded confidence progress bar (green ≥75 / amber ≥50 / red otherwise) + reasoning quote. **Right**: scrollable "last 5 queries" history panel — each entry shows name + trend icon, rarity + price, source + confidence, timestamp; newest first, capped at 5. Added new lucide imports (`Bot`, `Minus`, `Loader2`, `Clock`) + `AIPriceResult`/`HistoryEntry` types + `TrendIcon` helper.
+
+### Critical Rules Compliance
+- ✅ `z-ai-web-dev-sdk` used **only** in API routes (server-side). Zero client imports of the SDK.
+- ✅ All new UI uses existing Mac Terminal theme classes (`terminal-card`, `terminal-btn`, `terminal-input`, `text-term-*`, `prompt-prefix`, `glow-green`, `blink-cursor`, `terminal-card-glow`, etc.).
+- ✅ API errors handled gracefully — both routes catch all exceptions and return fallback responses (heuristic price / placehold.co image) with a `note` field; client UI shows red `> ERR: ...` text.
+- ✅ Loading states use `Loader2` spinner + "querying..." / "generating..." text + `blink-cursor` (terminal-styled).
+- ✅ Image generation falls back to `https://placehold.co/512x512/{bg}/{fg}?text={name}&font=monospace` with rarity-coloured fg.
+- ✅ `bun run lint` passes — 0 errors, 0 warnings (after removing 3 unused `@next/next/no-img-element` eslint-disable directives).
+- ✅ No existing functionality broken — only additive changes. All existing button handlers (Buy, List, Equip, Transfer, Forge NFT) unchanged.
+
+### Verification
+- **ESLint**: `bun run lint` — clean (0 errors, 0 warnings).
+- **Dev server**: `GET / 200` (compile 7 ms, render 26 ms). No errors in dev.log.
+- **AI Price API**: `POST /api/ai-price` → `200` in ~1 s — `{"price":48,"confidence":85,"reasoning":"Legendary weapon with plasma-infused trait, high demand for rare weapons","trend":"up","source":"ai"}`.
+- **AI Artwork API**: `POST /api/ai-artwork` → `200` in ~38 s — `{"url":"/nft-artwork/test-1.png","source":"ai","prompt":"Pixel art style NFT artwork for a rare weapon called \"Test Sword\"..."}`. Verified 84 KB PNG written to `public/nft-artwork/test-1.png`.
+- **Static asset**: generated image served directly by Next.js at `/nft-artwork/test-1.png` (public dir).
+
+### Notes
+- Image generation is slow (~30-40 s for cogview-3-plus at 1024×1024). UI shows spinner with blinking cursor the entire time.
+- AI price LLM instructed to respond with raw JSON (no markdown). `safeParseJSON` defensively strips `\`\`\`json` fences anyway.
+- AI price is **ephemeral UI state** (per-session) — not persisted to DB. Would require new `Asset` column + PATCH endpoint (out of scope).
+- The "AI: X ALGO" badge on GridCard is `text-[10px]` with green border + `bg-term-green/5` to distinguish from amber listed price.
+- The popover is positioned `absolute top-full right-0 mt-1 w-72 z-30` anchored to the card (which is now `position: relative`).
+- Dashboard confidence bar uses 3-tier colour scheme (green ≥75 / amber ≥50 / red otherwise) — quick visual trustworthiness signal.
+- Dashboard history panel caps at 5 entries (newest first) per spec.
+- Removed 3 `eslint-disable-next-line @next/next/no-img-element` directives because the lint rule wasn't actually flagging the `<img>` usages (string src), so the directives were unused and ESLint warned about them.
+
+---
+
+## Task 11-b: Settings Page with Multi-Theme Switcher — Completed
+
+**Date**: 2026-06-17
+**Agent**: Main Agent (Task 11-b subagent)
+**Task ID**: 11-b
+
+### Summary
+
+Added a comprehensive **Settings page** to the De-Shop SDK Mac Terminal app featuring a 5-theme switcher (Pro Dark / Light / Matrix / Phosphor / Amber) that updates the entire app instantly via a `data-theme` attribute on `<html>`. Built the theme system into the Zustand store, added per-theme CSS variables and override rules to `globals.css` (including a CSS-only matrix rain background animation, stronger CRT scanlines + vignette for Phosphor, and amber text glow for Amber), and wired the `<html data-theme>` attribute via an inline head script for flash-free first paint + a `useEffect` in `TerminalLayout` for runtime updates. The Settings page itself has 5 sections (Appearance / System / Notifications / Data & Privacy / About) with all preferences persisted to `localStorage`.
+
+### Files Created / Modified
+
+**Created:**
+- `src/components/pages/SettingsPage.tsx` — full `'use client'` settings page (~1270 lines) with 5 sections.
+- `agent-ctx/11-b-settings-page.md` — full work record.
+
+**Modified:**
+- `src/store/useDeShopStore.ts` — added `TerminalTheme` type, `TERMINAL_THEMES` metadata array, `theme` state, `setTheme` action (also writes `data-theme` attribute + persists to `localStorage` key `deshop-theme`), `loadInitialTheme()` for SSR-safe client hydration; extended `ActivePage` union with `'settings'`.
+- `src/app/globals.css` — appended ~870 lines of additive CSS: `:root` semantic `--t-*` variables, `[data-theme="pro-dark|light|matrix|phosphor|amber"]` blocks redefining both the `--t-*` palette and the shadcn semantic vars (`--background`, `--primary`, `--border`, `--sidebar`, `--chart-*`, etc.), `[data-theme] .selector { ... }` overrides for every major hardcoded UI rule (terminal-card, terminal-chrome, terminal-input, terminal-btn, terminal-toast, app-layout, app-sidebar, app-header, app-content, app-footer, nav-item, prompt-prefix, blink-cursor, status-dot, scanline-overlay, scrollbar, rarity-border, glow utilities, skeleton, command-palette), Matrix rain keyframe animation + `body::before` overlay, Phosphor CRT scanlines + vignette + green text glow, Amber CRT scanlines + vignette + amber text glow, Light theme paper-style scanline + adjusted traffic-light dot colors, theme-preview-card / theme-preview-mini / theme-check / confirm-modal-backdrop CSS classes for the SettingsPage.
+- `src/components/TerminalLayout.tsx` — imported `Settings` from lucide-react and `SettingsPage`; added nav item `{ page: 'settings', label: 'Settings', command: 'cd settings', icon: Settings }`; added `settings: 'Settings'` to `PAGE_TITLES`; added `case 'settings': return <SettingsPage />`; added `theme` selector + `useEffect` that re-applies `document.documentElement.setAttribute('data-theme', theme)` whenever the theme changes (safety net on top of the store's own `setTheme`).
+- `src/app/page.tsx` — imported `Settings` from lucide-react and added `{ icon: Settings, label: 'Settings', desc: 'Themes & prefs', color: 'text-term-cyan' }` as the 8th entry in the landing-page features grid.
+- `src/app/layout.tsx` — added `data-theme="pro-dark"` to the `<html>` element as the SSR default, plus an inline `<head>` script that reads `localStorage.getItem('deshop-theme')` and applies it before first paint to avoid FOUC.
+
+### Theme System Architecture (3 layers)
+
+1. **SSR default** (`layout.tsx`): `<html data-theme="pro-dark">` ensures every server-rendered HTML uses Pro Dark before any JS runs.
+2. **Inline pre-paint script** (`layout.tsx` `<head>`): `(function(){try{var t=localStorage.getItem('deshop-theme');if(t==='pro-dark'||t==='light'||t==='matrix'||t==='phosphor'||t==='amber'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();` — runs synchronously before body paint, so users with a saved preference see their theme immediately.
+3. **Runtime** (`useDeShopStore.setTheme` + `TerminalLayout.useEffect`): both call `document.documentElement.setAttribute('data-theme', theme)`. The store also persists to `localStorage`. The `useEffect` is a safety net that re-syncs the attribute if it ever drifts from the store value.
+
+### CSS Strategy
+
+All new CSS is **additive** — no existing rules were modified or removed. Override trick: `[data-theme] .selector { ... }` (specificity 0,1,1) beats the original `.selector { ... }` (specificity 0,1,0). For Pro Dark the `--t-*` values equal the original literals, so no visual regression. For the other 4 themes they swap to the new palette. Every major component rule has a `[data-theme]` override pointing to cascaded `--t-*` variables.
+
+### Theme Palettes
+
+| Theme | bg | surface | primary | text | signature effect |
+|-------|----|---------|---------|------|-------------------|
+| Pro Dark | #1E1E1E | #2D2D2D | #33FF33 | #CCCCCC | default — no extra effect |
+| Light | #F5F5F0 | #FFFFFF | #006600 | #333333 | paper-style scanlines; darker traffic-light dots |
+| Matrix | #000000 | #001100 | #00FF00 | #00CC00 | CSS-only matrix rain: 3 radial-gradient layers (14×220, 22×320, 10×170 px tiles), animated `background-position-y` falling 100vh in 4s, `mix-blend-mode: screen` |
+| Phosphor | #0A0A0A | #111111 | #88FF88 | #88FF88 | CRT scanlines every 2px at 22% black + radial vignette + 6s flicker; green text-shadow on all major text |
+| Amber | #1A0F00 | #2A1A00 | #FFB800 | #FFCC44 | CRT scanlines every 3px at 10% black + warm vignette + 7s flicker; amber text-shadow on all major text |
+
+### Settings Page Sections
+
+**a. Appearance (`appearance.log`)** — 5 theme preview cards in responsive grid (1/2/3/5 cols at sm/lg/xl). Each card has a mini terminal preview (`theme-preview-mini`) showing 3 traffic-light dots + a fake `ls -la` output with the theme's primary/cyan/amber/magenta colors, plus a blinking cursor. Below: theme name (bold), tagline (dim, 9px), and 6 color swatches. Selected theme gets `.selected` class: green border + glow + circular green check badge top-right + `[ACTIVE]` label. Click applies instantly via `setTheme(id)`; triggers `addNotification('success', 'Theme applied: {name}')`. Footer: `> Active theme: {name} | Stored in localStorage`.
+
+**b. System (`system.log`)** — Network radio (Testnet/Mainnet/Betanet as clickable cards with green border when selected), Currency radio (ALGO/USD/EUR pills), Auto-refresh Select (5/10/30s/Off), Confirmations Select (1/3/5/10 blocks). All persist to `localStorage` under `deshop-settings`.
+
+**c. Notifications (`notifications.log`)** — 5 Switch toggles (Price alerts, Trade notifications, New listings, Achievement unlocks, System messages), Sound effects toggle, Desktop notifications toggle + "Request permission" button (calls `Notification.requestPermission()`; on grant fires sample notification + auto-flips toggle on; on deny shows red "blocked" label + disables toggle).
+
+**d. Data & Privacy (`privacy.log`)** — Clear cache button ( wipes all localStorage keys EXCEPT settings/theme/scores/clicker/cmd-palette-recent), Export settings button (downloads JSON via Blob+URL.createObjectURL), Reset all settings button (DANGER modal: resets settings, theme to pro-dark, wipes scores, clears cache), Game scores panel (2-col grid showing high score + games-played count for Snake/Typing Test/Number Guess/Hacker Clicker; Clear Scores button → DANGER modal → `resetScores()`).
+
+**e. About (`about.log`)** — 2-col layout: version info on left (SDK v2.0.4, build a7f3e2c, protocol algorand-sdk@2.7.0, build date, MIT license), "Check for updates" button (1.8s simulated check → green "You are running the latest version"); 4 link cards on right (GitHub/Discord/Docs/Support with color-coded icons + ExternalLink icon, open in new tab).
+
+### Reusable Confirm Modal Component
+
+`ConfirmModal` rendered via `<AnimatePresence>` at page bottom. Takes `{ title, message, confirmLabel, onConfirm, danger? }`. Danger variant: red icon + red `terminal-btn-danger` confirm button + `danger_confirm.sh` filename. Non-danger: amber icon + green `terminal-btn-primary` + `confirm.sh`. Closes on backdrop click / X button / Cancel button. Confirm calls `onConfirm()` then closes.
+
+### Verification
+
+- **ESLint**: `bun run lint` — clean (0 errors, 0 warnings). Two `react-hooks/set-state-in-effect` rules suppressed (legitimate client-only localStorage / browser-API hydration, matching the established pattern from Tasks 9-b, 9-c, 11-a).
+- **Browser (agent-browser)**:
+  - ✅ Settings page renders at `/` after `cd settings` — all 5 sections present
+  - ✅ All 5 theme cards visible with mini previews; Pro Dark [ACTIVE] by default
+  - ✅ Click Light → `data-theme="light"`, body bg `rgb(245, 245, 240)` (#F5F5F0)
+  - ✅ Click Matrix → `data-theme="matrix"`, body bg `rgb(0, 0, 0)`; matrix rain visible
+  - ✅ Click Phosphor → `data-theme="phosphor"`; CRT scanlines + vignette visible
+  - ✅ Click Amber → `data-theme="amber"`, body bg `rgb(26, 15, 0)`; amber glow visible
+  - ✅ Click Pro Dark → `data-theme="pro-dark"`; back to default
+  - ✅ Theme persists across page reload (localStorage → inline script → attribute applied before first paint — zero FOUC)
+  - ✅ Theme persists across landing → dashboard → settings navigation
+  - ✅ Reset All confirm modal opens with danger styling ("Reset ALL settings?" + red "Reset Everything" button)
+  - ✅ Cancel modal closes without action (theme unchanged — stayed on Matrix)
+  - ✅ Network radio switching works (Testnet → Mainnet → Betanet)
+  - ✅ Currency radio switching works (ALGO / USD / EUR)
+  - ✅ Auto-refresh Select dropdown opens and changes value
+  - ✅ Confirmations Select dropdown works
+  - ✅ All 7 notification toggles flip state
+  - ✅ "Request permission" button visible when desktop permission is default
+  - ✅ Clear / Export / Reset All / Clear Scores / Check for updates buttons all present
+  - ✅ About links (GitHub / Docs / Discord / Support) all present
+  - ✅ Settings nav item present in sidebar with `Settings` gear icon (`> cd settings` when active)
+  - ✅ Landing page features grid shows Settings as 8th item
+  - ✅ HTTP 200 on `/` (compile ~7ms, render ~26ms)
+  - ✅ No console errors / runtime errors
+
+### Screenshots Captured
+- `/home/z/my-project/qa-settings-light.png` — full-page Light theme
+- `/home/z/my-project/qa-settings-matrix.png` — Matrix theme on Settings
+- `/home/z/my-project/qa-settings-matrix-view.png` — full-page Matrix theme after reload
+- `/home/z/my-project/qa-settings-matrix-persisted.png` — Matrix theme persisted across reload
+- `/home/z/my-project/qa-settings-phosphor.png` — Phosphor theme
+- `/home/z/my-project/qa-settings-amber.png` — Amber theme
+
+### Critical Rules Compliance
+- ✅ All new CSS is additive — no existing rules removed or modified
+- ✅ Theme switching is instant (no page reload) — `setTheme()` → `setAttribute` → CSS variables cascade → all components repaint in the same frame
+- ✅ All 5 themes look distinctly different (verified via screenshots)
+- ✅ Uses existing shadcn/ui `Switch`, `RadioGroup`, `RadioGroupItem`, `Select` family
+- ✅ Uses `lucide-react` icons throughout (Settings, Palette, Monitor, Bell, Shield, Info, Check, Download, Trash2, RotateCcw, Github, FileText, MessageCircle, LifeBuoy, RefreshCw, Loader2, Volume2, AlertTriangle, X, Network, DollarSign, Zap, Hash, Trophy, Cpu, Sparkles, ExternalLink)
+- ✅ Uses `framer-motion` for animations (card entry stagger, modal entrance, hover lift, while-tap scale)
+- ✅ Responsive — theme grid 1/2/3/5 cols at sm/lg/xl; system radios stack on mobile; about section stacks vertically
+- ✅ Doesn't break existing functionality — only added: store type union + theme state + setTheme, TerminalLayout nav item + page case + theme effect, globals.css additive overrides, SettingsPage component, landing feature entry, layout.tsx inline script + data-theme attribute
+- ✅ `bun run lint` passes — 0 errors, 0 warnings
+
+---
+
+## Task 11-c: Live Notifications/Activity Center + Boot Sequence + Status Bar Polish — Completed
+
+**Date**: 2026-06-17
+**Agent**: Main Agent (Task 11-c subagent)
+**Task ID**: 11-c
+
+### Summary
+
+Added three major UX pieces to the De-Shop SDK Mac Terminal app:
+
+1. **Live Notifications/Activity Center page** (`src/components/pages/NotificationsPage.tsx`) — a full-screen realtime activity feed driven by the existing `useRealtimeEvents` WebSocket hook. Live status bar (LIVE/OFFLINE pulsing dot, EPM counter, TOTAL counter, online clients), filter chips (type + rarity, multiple selection), min-amount input + asset-name search, animated event stream with color-coded type/rarity rows (MINT=green, TRADE=cyan, LIST=amber, CANCEL=red, TRANSFER=magenta, BRIDGE=cyan), sidebar stats panel (`event_stats.log`) showing event-type distribution ASCII bars, rarity distribution ASCII bars, top-5 traded assets, 5-min volume, and average event value. Includes PAUSE/RESUME, CLEAR, and MUTE/SOUND toggle (Web Audio API square-wave 880→440 Hz blip on new event). New events slide-in from the left with a brief green flash that fades over 600 ms. Capped at 100 events with defensive dedupe.
+
+2. **Boot sequence animation** (`src/components/BootSequence.tsx`) — fullscreen terminal overlay shown on the first app load of a session. 14 boot lines (`[OK]/[WARN]/[INFO]`) appear one-by-one with 80–150 ms randomized delays, then a blinking cursor with "Press any key to continue..." (auto-advances after 2 s). Any keypress / click / touch skips immediately. `sessionStorage['deshop-booted']` flag prevents re-showing in the same session. Auto-skipped on mobile (`max-width: 768px`) and when `prefers-reduced-motion: reduce`. Integrated into `src/app/page.tsx` as a wrapper that renders above the existing landing/app AnimatePresence; calls `onComplete` after fade-out.
+
+3. **Header & footer status bar polish** (`src/components/TerminalLayout.tsx`):
+   - New `SystemStats` component in the header right side: live clock (HH:MM:SS, updates every 1 s), CPU % (random walk 5–25%, every 1.5 s), MEM mb (random walk 80–150), NET ↑/↓ kb/s (independent random walks). All in small terminal-styled badges with `tabular-nums` for stable digit width; cleaned up on unmount.
+   - Footer rewritten to include `De-Shop SDK v2.0 | Terminal Mode | uptime: H:MM:SS | pid: 1337 | users: N | load: 0.42` — uptime ticks every second since mount via `useRef + setInterval`; `users` flips 1→2 when a wallet is connected. Layout uses `flex flex-wrap` so it degrades gracefully on narrow viewports.
+
+Also wired the new page into:
+- The sidebar nav (`Activity` / `cd activity` icon — `Activity` from lucide-react).
+- `PAGE_TITLES` (`notifications: 'Activity Center'`).
+- `renderPage()` switch (`case 'notifications': return <NotificationsPage />`).
+- The command palette (`⌘9` shortcut, keywords: activity/events/live/feed/realtime/notifications/log/stream).
+- The landing-page features grid (8th entry: `{ icon: Activity, label: 'Activity', desc: 'Live events', color: 'text-term-green' }`).
+- The header notification bell is now clickable (`onClick={() => setActivePage('notifications')}`) — jumps straight into the Activity Center.
+
+### Files Created / Modified
+
+**Created:**
+- `src/components/pages/NotificationsPage.tsx` — full `'use client'` page (~540 lines).
+- `src/components/BootSequence.tsx` — `'use client'` boot overlay (~220 lines).
+- `agent-ctx/11-c-activity-boot-statusbar.md` — full work record.
+
+**Modified:**
+- `src/store/useDeShopStore.ts` — extended `ActivePage` union with `'notifications'`.
+- `src/components/TerminalLayout.tsx` — imported `Activity, Cpu, HardDrive, ArrowUp, ArrowDown` from lucide-react + `NotificationsPage`; added nav item `{ page: 'notifications', label: 'Activity', command: 'cd activity', icon: Activity }`; added `notifications: 'Activity Center'` to `PAGE_TITLES`; added `case 'notifications': return <NotificationsPage />` to `renderPage()` switch; added new `SystemStats` component (clock + CPU + MEM + NET widgets) rendered in Header right-side controls; made the notification bell clickable to navigate to Activity Center; rewrote the `Footer` to include `uptime: H:MM:SS | pid: 1337 | users: N | load: 0.42` with a 1-second uptime counter; imported `useRef` from React.
+- `src/components/CommandPalette.tsx` — imported `Activity` from lucide-react; added new navigation command `nav-notifications` (`cd activity`, `⌘9`, keywords list).
+- `src/app/page.tsx` — imported `Activity` from lucide-react + `BootSequence` component; added `booting` state, `useEffect` that reads `sessionStorage['deshop-booted']` to skip on subsequent loads, `handleBootComplete` callback that writes the sessionStorage flag; renders `<BootSequence>` overlay above the existing landing/app AnimatePresence; added Activity as the 8th entry in the landing-page features grid.
+
+### Verification
+
+- **ESLint**: `bun run lint` — clean (0 errors, 0 warnings). One intentional `react-hooks/set-state-in-effect` suppression in `page.tsx` for the sessionStorage hydration pattern (matching the established pattern from Tasks 9-b/9-c/11-a/11-b).
+- **Dev server**: `GET / 200` (compile ~160 ms, render ~100 ms) on the latest changes. No runtime errors.
+- **Browser (agent-browser + VLM)**:
+  - ✅ Boot sequence renders correctly on first load (after `sessionStorage.clear()`): `de-shop-sdk@boot:~` chrome, ASCII art, `$ ./de-shop-sdk --init`, `[OK] Loading kernel modules...`, `[OK] Mounting /dev/blockchain`, `[OK] Starting Algorand node...`, `[OK] Connecting to testnet... connected (round 28472910)`, `[OK] Loading smart contracts... 3 deployed`, `[INFO] Verifying ARC-3 / ARC-19 / ARC-69 standards`.
+  - ✅ Boot auto-advances after ~2 s; subsequent loads skip the boot (sessionStorage flag set).
+  - ✅ Landing page shows Activity as the 8th entry in the features grid.
+  - ✅ Sidebar shows new `Activity` nav item (`cd activity` with `Activity` icon).
+  - ✅ Activity page renders with `De-Shop SDK — Activity Center` title, all filter chips (type + rarity), search + min-amount inputs, MUTE/PAUSE/CLEAR buttons, event-stream panel, and stats sidebar.
+  - ✅ Connection status: `● LIVE` (pulsing green) when accessed via port 81 (Caddy gateway); `● OFFLINE` when accessed via direct `localhost:3000` (expected — same limitation as Task 10).
+  - ✅ Live events stream in: 5 events received in ~8 s; EPM counter = 5; TOTAL counter = 5; COMMON/RARE/EPIC bars all non-zero.
+  - ✅ Header widgets visible: clock (HH:MM:SS, updating every second), CPU % (random walk), MEM mb (random walk), NET ↑/↓ kb/s (random walk).
+  - ✅ Footer line: `De-Shop SDK v2.0 | Terminal Mode | uptime: 0:01:21 | pid: 1337 | users: 1 | load: 0.42` — uptime ticks every second.
+  - ✅ Header notification bell now clickable → navigates to Activity Center.
+  - ✅ Command palette (`⌘K`) shows `cd activity` entry with `⌘9` shortcut.
+
+### Critical Rules Compliance
+- ✅ `'use client'` on all client components.
+- ✅ Uses existing terminal CSS classes (terminal-card, terminal-chrome, terminal-dot, terminal-btn, terminal-input, prompt-prefix, blink-cursor, glow-green-strong, ascii-art, scanline-overlay, status-dot, text-term-*, bg-term-elevated/surface/bg, border-term, font-terminal).
+- ✅ Uses `lucide-react` icons throughout.
+- ✅ Uses `framer-motion` for animations (layout animations on event rows, AnimatePresence for list transitions, slide-in + green flash on new events, fade-out on boot completion).
+- ✅ Boot sequence is skippable (any keypress / click / touch + auto-advance after 2 s).
+- ✅ Boot sequence only shows once per session (sessionStorage flag).
+- ✅ Boot sequence respects prefers-reduced-motion and skips on mobile.
+- ✅ Status bar widgets update via setInterval and clean up on unmount.
+- ✅ Doesn't break existing functionality — only additive changes.
+- ✅ `bun run lint` passes — 0 errors, 0 warnings.
+
+---
+
+## Task 11-d: Live Price Ticker + Realtime Marketplace Updates — Completed
+
+**Date**: 2026-06-17
+**Agent**: Main Agent (Task 11-d subagent)
+**Task ID**: 11-d
+
+### Summary
+
+Added a full live-market experience driven entirely by the existing `useRealtimeEvents` WebSocket hook (port 3003 via Caddy gateway):
+
+1. **Live Price Ticker** (`src/components/LivePriceTicker.tsx`) — full-width horizontal scrolling marquee above the marketplace search bar showing 8–12 assets as `NAME ▲/▼ PRICE ALGO (+/-X.XX%)`. 60 s CSS-animation loop, pause on hover, LIVE/OFFLINE indicator, last-update timestamp, click-to-filter.
+
+2. **`useLivePrices` hook** (`src/hooks/useLivePrices.ts`) — wraps `useRealtimeEvents`, owns ticker price state, derives `topMover` and `lastTradeByAsset`. Updates prices from TRADE/LIST events; applies ±0.5% random walk every 3 s for visual interest.
+
+3. **Market Heat panel** at the top of the marketplace — 4-cell grid: Market Heat (HOT/WARM/COLD with red-pulsing/amber/cyan), 24h volume, active traders, top mover. EPM uses `stats.eventsPerMinute` with a local 60 s event-count fallback.
+
+4. **Live indicators on marketplace GridCards**:
+   - `trade-pulse` (green border pulse, 4× 0.5 s = 2 s) on TRADE
+   - amber pulsing `NEW` badge on freshly LIST-ed assets
+   - `live` indicator (pulsing green dot + "live" label) on cards with any event within the last 60 s
+   - `last: X.XX` (cyan) traded price next to listed amber price when a TRADE event is in the events buffer
+
+5. **`realtime_stats.log` card** on the dashboard — 6-cell grid (online clients / events-per-min / total events / 24h volume / active wallets / gas price) with a LIVE/OFFLINE status bar. All values update in real-time.
+
+### Files Created / Modified
+
+**Created:**
+- `src/hooks/useLivePrices.ts` — wraps `useRealtimeEvents`, owns ticker state, periodic ±0.5% fluctuation, derived `topMover` (biggest abs % change) and `lastTradeByAsset` (newest TRADE per asset name). Exports `LiveAsset`, `LastTrade` interfaces + `SEED_PRICES` (20 asset names matching the realtime service).
+- `src/components/LivePriceTicker.tsx` — pure presentational `'use client'` component. Renders a `terminal-card` with chrome header (`live_prices.ticker` + LIVE/OFFLINE badge) and a marquee body. Content rendered TWICE (keyed `a`/`b`) so CSS `translateX(0 → -50%)` loops seamlessly. Each asset is a `<button>` calling `onSelectAsset(name)`. Edge-fade overlays + `sr-only` summary for screen readers.
+- `agent-ctx/11-d-live-price-ticker.md` — full work record.
+
+**Modified:**
+- `src/components/pages/MarketplacePage.tsx`:
+  - Imports: added `useRef`, `Flame`, `useLivePrices`, `LivePriceTicker`.
+  - `GridCard` extended with optional props `lastTrade`, `isPulsing`, `isNewlyListed`, `hasRecentActivity`. Renders NEW badge + live dot in chrome header; `trade-pulse` class on root; "last: X.XX" next to listed price.
+  - `MarketplacePage` main component: calls `useLivePrices()`, tracks `tradePulses` / `recentActivity` / `newListings` state. Effects process incoming events (deduped via `useRef<Set<string>>`), auto-clean stale pulses (>2 s) and stale recent-activity (>60 s). Computes local EPM fallback. Heat level: HOT (>20 EPM, red-pulsing), WARM (5–20, amber), COLD (<5, cyan). Added `<LivePriceTicker>` + `<market_heat.log>` panel JSX between terminal header and search bar. `handleSelectTickerAsset(name)` sets search input + resets rarity filter. Grid view passes 4 new live props to `<GridCard>`.
+- `src/components/pages/DashboardPage.tsx`:
+  - New `RealtimeStatBox` helper + `RealtimeStatsCard` component (calls `useRealtimeEvents()` itself). Renders `terminal-card terminal-card-cyan-glow` with `realtime_stats.log` header (Activity icon + LIVE/OFFLINE badge), `tail -f` prompt, 6-cell responsive grid (ONLINE CLIENTS, EVENTS/MIN, TOTAL EVENTS, 24H VOLUME, ACTIVE WALLETS, GAS PRICE), and footer status line. Placed between Stats Grid and Charts Row.
+- `src/app/globals.css` — appended ~240 lines of additive CSS:
+  - `@keyframes ticker-scroll` (translateX 0 → -50%, 60s linear) + `.ticker-track-wrapper` / `.ticker-track` / `.ticker-content` / `.ticker-item` classes
+  - `:hover` pause rule + `@media (prefers-reduced-motion: reduce)` disables animation
+  - `.ticker-fade-left` / `.ticker-fade-right` gradient overlays
+  - `@keyframes trade-pulse` + `.trade-pulse` class (4× 0.5 s green border pulse)
+  - `@keyframes new-badge-pulse` + `.new-badge` class
+  - `@keyframes live-card-pulse` + `.live-card-dot` class
+  - `@keyframes heat-hot-pulse` + `.market-heat-hot/warm/cold` text + dot classes
+  - `[data-theme]` overrides for ticker bg + borders + edge fades (uses `color-mix(in srgb, var(--t-bg) 85%, #000 15%)` so the ticker adapts to all 5 themes)
+
+### Verification
+
+- **ESLint**: `bun run lint` — clean (0 errors, 0 warnings).
+- **Compile**: `✓ Compiled in 115 ms`. No runtime errors. `GET / 200`.
+- **Realtime service**: still on port 3003, emitting events every 4–8 s, pushing `stats` every 5 s.
+
+### Browser verification (agent-browser via Caddy port 81):
+
+**Marketplace:**
+- ✅ LivePriceTicker at top (full width, below terminal header, above search bar): `live_prices.ticker` chrome header + `● LIVE` badge + scrolling marquee with 10–12 assets (Neon Blade 41.887 ALGO (-0.44%), Cyber Shield 18.308 ALGO, Quantum Helm 92.392 ALGO, …) with green ▲ / red ▼ / amber ■ colour coding, last-update timestamp at end
+- ✅ Market Heat panel: `WARM 12 events/min` (amber), `24H VOLUME 1214.7K ALGO`, `ACTIVE TRADERS 1 online now`, `TOP MOVER Shadow Dagger +0.47%`
+- ✅ Click ticker item → search input populated → grid filters to that asset
+- ✅ Card with TRADE event shows `last: 3.42` (cyan) next to `◆ 9.8 ALGO` listed price
+- ✅ Card with LIST event shows amber pulsing `NEW` badge
+- ✅ Card with any event in last 60 s shows pulsing green dot + `live` label
+- ✅ Card with TRADE in last 2 s gets `.trade-pulse` (green border pulse)
+
+**Dashboard:**
+- ✅ New `realtime_stats.log` card between Stats Grid and Charts Row
+- ✅ 6 stat boxes: ONLINE CLIENTS `2`, EVENTS/MIN `17`, TOTAL EVENTS `1,519`, 24H VOLUME `1212.7K`, ACTIVE WALLETS `1,800`, GAS PRICE `0.003517`
+- ✅ Footer: green dot + "streaming live marketplace events via socket.io"
+- ✅ Values update in real-time as `stats` payloads arrive
+
+### Critical Rules Compliance
+- ✅ `'use client'` on `LivePriceTicker.tsx` and `useLivePrices.ts`
+- ✅ Uses the existing `useRealtimeEvents` hook (no new socket logic)
+- ✅ All new UI uses existing Mac Terminal theme classes
+- ✅ New CSS is purely additive (appended to end of `globals.css`)
+- ✅ Animations via CSS `@keyframes` + existing `framer-motion`
+- ✅ Existing functionality preserved — only additive changes
+- ✅ `bun run lint` passes — 0 errors, 0 warnings
+- ✅ WebSocket events properly drive UI updates
+- ✅ Disconnect handled gracefully (OFFLINE badges + status dots + footer text)
+- ✅ Responsive (ticker full-width; heat panel `grid-cols-2 sm:grid-cols-4`; stat boxes `grid-cols-2 sm:grid-cols-3`)
+- ✅ Respects `prefers-reduced-motion` (ticker animation disabled, wrapper scrollable)
+- ✅ Task ID `11-d` recorded in `/agent-ctx/11-d-live-price-ticker.md` + appended to `worklog.md`
+
+### Notes
+- `useLivePrices` seeds 10 of 20 known asset names; LIST/TRADE events for unknown assets add them to the ticker (cap 12).
+- `topMover` recomputes on every fluctuation tick, so it changes frequently — keeps the heat panel alive.
+- Trade-pulse cleanup uses a single `setTimeout` scheduled for `2.1 s - (now - oldestPulse)` ms; new pulses during that window re-schedule the timer.
+- `processedEventIdsRef` Set garbage-collects when it grows past 200 entries.
+- `LivePriceTicker`'s second pass is `aria-hidden`; `sr-only` summary provides canonical text for screen readers.
+- `RealtimeStatsCard` calls `useRealtimeEvents()` itself (one extra socket per dashboard view; `onlineClients` reports 2 on the dashboard — acceptable for a simulated stats panel).
+
+---
+
+## Task 12: Round 2 Final QA & Summary — Completed
+
+**Date**: 2026-06-17 (Cron Round 2 Final)
+**Agent**: Main Agent
+
+### Round 2 QA Verification (agent-browser + VLM)
+
+**All Pages Tested — All Functional:**
+- ✅ Boot sequence: 14-line terminal boot animation plays on first load, skippable, persists via sessionStorage
+- ✅ Landing page: typing animation, ASCII art, feature grid (now 8 items including Settings + Activity)
+- ✅ Dashboard: 4 stat cards + 3 charts + AI Pricing Engine card + Realtime Stats card + activity feed + status bar widgets (clock/CPU/MEM/NET) + footer stats (uptime/pid/users/load)
+- ✅ Marketplace: Live price ticker (scrolling marquee), market heat panel, 16 assets with live trade pulses, AI price button, AI artwork generation
+- ✅ Inventory: 8 items, mint form with AI suggest price + AI preview art generation
+- ✅ Terminal: 16 commands, CRT screen effect, text glow
+- ✅ Profile: achievements, transactions, portfolio, connected accounts
+- ✅ Docs: 10 sections, code blocks, game integration tabs
+- ✅ Plugins: featured card, 6 plugins, download modal
+- ✅ Arcade: 4 playable games (Snake, Typing, Number Guess, Hacker Clicker)
+- ✅ **NEW Activity Center**: Live event stream with filters, stats sidebar, sound toggle, EPM counter
+- ✅ **NEW Settings**: 5 theme switcher (Pro Dark/Light/Matrix/Phosphor/Amber) + system/notifications/privacy/about sections
+- ✅ Command Palette (Cmd+K): 15+ commands
+- ✅ Wallet: connect/disconnect works globally
+- ✅ No console errors, no runtime errors
+- ✅ ESLint clean
+
+**VLM Polish Rating: 8/10** (up from 4/10 in Round 1)
+- "Terminal authenticity – Accurate dark theme, window chrome, and command-line UI mimic real Mac Terminal"
+- "Data visualization – Clear, color-coded charts and live log updates enhance readability"
+- "Information hierarchy – Layered sections organize complex data without clutter"
+
+### Round 2 Completed Features
+
+**Task 11-a: AI Pricing + Artwork Generation**
+- `/api/ai-price/route.ts` — LLM-powered NFT pricing oracle (z-ai-web-dev-sdk)
+- `/api/ai-artwork/route.ts` — AI image generation (cogview-3-plus) saves to public/nft-artwork/
+- Marketplace: AI price button on cards + Generate Art in detail modal
+- Inventory: AI Suggest Price + Generate Preview Art in mint form
+- Dashboard: AI Pricing Engine card with live demo + last 5 queries history
+
+**Task 11-b: Settings Page + 5 Themes**
+- 5 distinct themes: Pro Dark (#1E1E1E/#33FF33), Light (#F5F5F0/#006600), Matrix (#000/#00FF00 with rain animation), Phosphor (#0A0A0A/#88FF88 with strong CRT), Amber (#1A0F00/#FFB800)
+- Zero FOUC: SSR default + inline pre-paint script + runtime sync
+- 5 sections: Appearance, System, Notifications (Switch toggles), Data & Privacy (export/reset), About
+- Theme persists to localStorage, applies instantly
+
+**Task 11-c: Activity Center + Boot Sequence + Status Bar**
+- NotificationsPage: Live event stream with type/rarity filters, stats sidebar, sound toggle, EPM counter
+- BootSequence: 14-line terminal boot animation, skippable, sessionStorage flag, respects reduced-motion
+- Header status bar: live clock (HH:MM:SS), CPU%, MEM mb, NET ↑/↓ kb/s (random walk simulated)
+- Footer status line: uptime, pid, users, load
+
+**Task 11-d: Live Price Ticker + Market Heat**
+- LivePriceTicker: Horizontal scrolling marquee with 10+ assets, click-to-filter, LIVE indicator
+- useLivePrices hook: Wraps useRealtimeEvents, updates prices from TRADE/LIST events, ±0.5% random walk every 3s
+- Market Heat panel: HOT/WARM/COLD indicator, 24h volume, active traders, top mover
+- Card live updates: trade-pulse animation, NEW badges, live dots, last-trade prices
+- Dashboard RealtimeStatsCard: 6 live stats from WebSocket
+
+### Architecture (Final)
+- **Next.js 16 App Router** (port 3000) — 11 pages, 9 API routes
+- **Bun + socket.io realtime service** (port 3003) — emits marketplace events every 4-8s
+- **Caddy gateway** (port 81) — XTransformPort forwarding for WebSocket
+- **Prisma ORM + SQLite** — 3 models (Asset, Transaction, Plugin), 16+15+6 seeded records
+- **Zustand** — global state with 9 pages, theme, notifications, wallet, command palette
+- **z-ai-web-dev-sdk** — LLM pricing oracle + image generation (server-side only)
+- **Framer Motion** — animations throughout
+- **Recharts** — data visualization
+- **Tailwind CSS 4** + custom Mac Terminal theme with 5 variants
+
+### Services Running (Verified)
+- Next.js dev server: port 3000 ✅
+- Realtime socket.io service: port 3003 ✅ (PID 8240)
+- Caddy gateway: port 81 ✅
+
+### File Counts
+- Pages: 11 (dashboard, market, inventory, terminal, profile, docs, plugins, game, notifications, settings + landing)
+- API routes: 9 (assets, assets/[id], market, transactions, plugins, stats, seed, ai-price, ai-artwork)
+- Components: 15+ (TerminalLayout, CommandPalette, BootSequence, LivePriceTicker, TerminalSkeleton, etc.)
+- Hooks: 3 (useDeShopStore, useRealtimeEvents, useLivePrices, useGameScores)
+- Mini-services: 1 (realtime-service on port 3003)
+
+### Unresolved Issues / Risks
+
+1. **Realtime via direct localhost:3000**: WebSocket only works through Caddy gateway (port 81). When agent-browser tests via localhost:3000 directly, the dashboard shows "OFFLINE". This is by design — Preview Panel uses port 81.
+
+2. **AI artwork generation is slow**: ~30-40 seconds per image. Falls back to placehold.co placeholder on error. Could add a queue/background job system for production.
+
+3. **AI price API has rate limits**: z-ai-web-dev-sdk has usage limits. Heuristic fallback ensures the feature always returns a response.
+
+4. **5 themes add CSS complexity**: Each theme overrides ~15 CSS variables. All additive (no existing styles removed), but maintenance burden increases.
+
+5. **Boot sequence skip conditions**: Skipped on mobile or prefers-reduced-motion. Headless browsers may report these differently.
+
+### Priority Recommendations for Next Round
+
+1. **User authentication**: NextAuth.js with GitHub/Google OAuth for persistent user profiles
+2. **Real Algorand wallet integration**: Replace simulated wallet with @txnlab/use-wallet-react for actual Pera/Defly connection
+3. **Real transaction signing**: Actual Algorand transaction signing for buy/list/transfer operations
+4. **IPFS metadata storage**: Upload NFT metadata to IPFS for decentralized storage
+5. **More terminal games**: Tetris, Pac-Man, Adventure (currently 4 games)
+6. **Leaderboards**: Global leaderboards for arcade games (requires backend)
+7. **Chat/messaging**: Real-time chat between users (extend the WebSocket service)
+8. **Advanced AI features**: 
+   - AI-powered asset recommendations based on user history
+   - VLM-powered asset analysis (upload image, get rarity/price suggestion)
+   - AI chatbot for terminal help
+9. **Mobile app**: React Native version with shared backend
+10. **Analytics dashboard**: User trading analytics, profit/loss tracking, portfolio performance
+11. **Multi-language support**: i18n with next-intl (already installed)
+12. **Keyboard shortcuts overlay**: Press ? to show all keyboard shortcuts
+13. **Notification center**: Browser push notifications for price alerts
+14. **Dark mode auto-switch**: Time-based theme switching (Pro Dark at night, Light during day)

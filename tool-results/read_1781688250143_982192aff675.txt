@@ -1,0 +1,1187 @@
+     1→@import "tailwindcss";
+     2→@import "tw-animate-css";
+     3→
+     4→@custom-variant dark (&:is(.dark *));
+     5→
+     6→/* ===== MAC TERMINAL THEME DESIGN SYSTEM ===== */
+     7→
+     8→@theme inline {
+     9→  --color-background: var(--background);
+    10→  --color-foreground: var(--foreground);
+    11→  --font-sans: var(--font-terminal);
+    12→  --font-mono: var(--font-terminal);
+    13→  --color-sidebar-ring: var(--sidebar-ring);
+    14→  --color-sidebar-border: var(--sidebar-border);
+    15→  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    16→  --color-sidebar-accent: var(--sidebar-accent);
+    17→  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    18→  --color-sidebar-primary: var(--sidebar-primary);
+    19→  --color-sidebar-foreground: var(--sidebar-foreground);
+    20→  --color-sidebar: var(--sidebar);
+    21→  --color-chart-5: var(--chart-5);
+    22→  --color-chart-4: var(--chart-4);
+    23→  --color-chart-3: var(--chart-3);
+    24→  --color-chart-2: var(--chart-2);
+    25→  --color-chart-1: var(--chart-1);
+    26→  --color-ring: var(--ring);
+    27→  --color-input: var(--input);
+    28→  --color-border: var(--border);
+    29→  --color-destructive: var(--destructive);
+    30→  --color-accent-foreground: var(--accent-foreground);
+    31→  --color-accent: var(--accent);
+    32→  --color-muted-foreground: var(--muted-foreground);
+    33→  --color-muted: var(--muted);
+    34→  --color-secondary-foreground: var(--secondary-foreground);
+    35→  --color-secondary: var(--secondary);
+    36→  --color-primary-foreground: var(--primary-foreground);
+    37→  --color-primary: var(--primary);
+    38→  --color-popover-foreground: var(--popover-foreground);
+    39→  --color-popover: var(--popover);
+    40→  --color-card-foreground: var(--card-foreground);
+    41→  --color-card: var(--card);
+    42→  --radius-sm: 2px;
+    43→  --radius-md: 2px;
+    44→  --radius-lg: 4px;
+    45→  --radius-xl: 4px;
+    46→  /* Terminal custom colors */
+    47→  --color-term-bg: #1E1E1E;
+    48→  --color-term-surface: #2D2D2D;
+    49→  --color-term-elevated: #3D3D3D;
+    50→  --color-term-border: #444444;
+    51→  --color-term-green: #33FF33;
+    52→  --color-term-text: #CCCCCC;
+    53→  --color-term-dim: #888888;
+    54→  --color-term-amber: #FFB800;
+    55→  --color-term-cyan: #00D4FF;
+    56→  --color-term-magenta: #FF00FF;
+    57→  --color-term-red: #FF5555;
+    58→  --color-term-white: #FFFFFF;
+    59→  --color-term-selection: rgba(51, 255, 51, 0.15);
+    60→}
+    61→
+    62→:root {
+    63→  --radius: 2px;
+    64→  --font-terminal: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', 'Liberation Mono', monospace;
+    65→  /* Terminal Theme - Always dark */
+    66→  --background: #1E1E1E;
+    67→  --foreground: #CCCCCC;
+    68→  --card: #2D2D2D;
+    69→  --card-foreground: #CCCCCC;
+    70→  --popover: #2D2D2D;
+    71→  --popover-foreground: #CCCCCC;
+    72→  --primary: #33FF33;
+    73→  --primary-foreground: #1E1E1E;
+    74→  --secondary: #3D3D3D;
+    75→  --secondary-foreground: #CCCCCC;
+    76→  --muted: #2D2D2D;
+    77→  --muted-foreground: #888888;
+    78→  --accent: #3D3D3D;
+    79→  --accent-foreground: #33FF33;
+    80→  --destructive: #FF3333;
+    81→  --border: #444444;
+    82→  --input: #3D3D3D;
+    83→  --ring: #33FF33;
+    84→  --chart-1: #33FF33;
+    85→  --chart-2: #00D4FF;
+    86→  --chart-3: #FFB800;
+    87→  --chart-4: #FF00FF;
+    88→  --chart-5: #FF3333;
+    89→  --sidebar: #252525;
+    90→  --sidebar-foreground: #CCCCCC;
+    91→  --sidebar-primary: #33FF33;
+    92→  --sidebar-primary-foreground: #1E1E1E;
+    93→  --sidebar-accent: #2D2D2D;
+    94→  --sidebar-accent-foreground: #33FF33;
+    95→  --sidebar-border: #444444;
+    96→  --sidebar-ring: #33FF33;
+    97→}
+    98→
+    99→.dark {
+   100→  --background: #1E1E1E;
+   101→  --foreground: #CCCCCC;
+   102→  --card: #2D2D2D;
+   103→  --card-foreground: #CCCCCC;
+   104→  --popover: #2D2D2D;
+   105→  --popover-foreground: #CCCCCC;
+   106→  --primary: #33FF33;
+   107→  --primary-foreground: #1E1E1E;
+   108→  --secondary: #3D3D3D;
+   109→  --secondary-foreground: #CCCCCC;
+   110→  --muted: #2D2D2D;
+   111→  --muted-foreground: #888888;
+   112→  --accent: #3D3D3D;
+   113→  --accent-foreground: #33FF33;
+   114→  --destructive: #FF3333;
+   115→  --border: #444444;
+   116→  --input: #3D3D3D;
+   117→  --ring: #33FF33;
+   118→  --chart-1: #33FF33;
+   119→  --chart-2: #00D4FF;
+   120→  --chart-3: #FFB800;
+   121→  --chart-4: #FF00FF;
+   122→  --chart-5: #FF3333;
+   123→  --sidebar: #252525;
+   124→  --sidebar-foreground: #CCCCCC;
+   125→  --sidebar-primary: #33FF33;
+   126→  --sidebar-primary-foreground: #1E1E1E;
+   127→  --sidebar-accent: #2D2D2D;
+   128→  --sidebar-accent-foreground: #33FF33;
+   129→  --sidebar-border: #444444;
+   130→  --sidebar-ring: #33FF33;
+   131→}
+   132→
+   133→/* ===== BASE STYLES ===== */
+   134→
+   135→@layer base {
+   136→  * {
+   137→    @apply border-border outline-ring/50;
+   138→  }
+   139→
+   140→  html, body {
+   141→    background-color: #1E1E1E;
+   142→    color: #CCCCCC;
+   143→    font-family: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', 'Liberation Mono', monospace;
+   144→    -webkit-font-smoothing: antialiased;
+   145→    -moz-osx-font-smoothing: grayscale;
+   146→  }
+   147→
+   148→  body {
+   149→    @apply bg-background text-foreground;
+   150→  }
+   151→
+   152→  ::selection {
+   153→    background: rgba(51, 255, 51, 0.15);
+   154→    color: #33FF33;
+   155→  }
+   156→}
+   157→
+   158→/* ===== ANIMATIONS ===== */
+   159→
+   160→@keyframes blink {
+   161→  0%, 49% { opacity: 1; }
+   162→  50%, 100% { opacity: 0; }
+   163→}
+   164→
+   165→@keyframes scanline {
+   166→  0% { transform: translateY(-100%); }
+   167→  100% { transform: translateY(100vh); }
+   168→}
+   169→
+   170→@keyframes glow-pulse {
+   171→  0%, 100% { text-shadow: 0 0 4px rgba(51, 255, 51, 0.4); }
+   172→  50% { text-shadow: 0 0 12px rgba(51, 255, 51, 0.8), 0 0 24px rgba(51, 255, 51, 0.3); }
+   173→}
+   174→
+   175→@keyframes typing {
+   176→  from { width: 0; }
+   177→  to { width: 100%; }
+   178→}
+   179→
+   180→@keyframes fade-in {
+   181→  from { opacity: 0; transform: translateY(-8px); }
+   182→  to { opacity: 1; transform: translateY(0); }
+   183→}
+   184→
+   185→@keyframes fade-out {
+   186→  from { opacity: 1; transform: translateY(0); }
+   187→  to { opacity: 0; transform: translateY(-8px); }
+   188→}
+   189→
+   190→@keyframes slide-in-right {
+   191→  from { opacity: 0; transform: translateX(20px); }
+   192→  to { opacity: 1; transform: translateX(0); }
+   193→}
+   194→
+   195→@keyframes pulse-dot {
+   196→  0%, 100% { opacity: 1; }
+   197→  50% { opacity: 0.4; }
+   198→}
+   199→
+   200→@keyframes flicker {
+   201→  0% { opacity: 0.97; }
+   202→  5% { opacity: 0.9; }
+   203→  10% { opacity: 0.98; }
+   204→  15% { opacity: 0.93; }
+   205→  20% { opacity: 1; }
+   206→  50% { opacity: 0.96; }
+   207→  80% { opacity: 0.99; }
+   208→  100% { opacity: 0.98; }
+   209→}
+   210→
+   211→/* ===== CURSOR ===== */
+   212→
+   213→.cursor-blink {
+   214→  display: inline-block;
+   215→  width: 8px;
+   216→  height: 16px;
+   217→  background: #33FF33;
+   218→  animation: blink 1s step-end infinite;
+   219→  vertical-align: text-bottom;
+   220→  margin-left: 2px;
+   221→}
+   222→
+   223→.cursor-blink::after {
+   224→  content: '';
+   225→}
+   226→
+   227→/* ===== SCANLINE OVERLAY ===== */
+   228→
+   229→.scanline-overlay {
+   230→  position: relative;
+   231→}
+   232→
+   233→.scanline-overlay::after {
+   234→  content: '';
+   235→  position: absolute;
+   236→  top: 0;
+   237→  left: 0;
+   238→  right: 0;
+   239→  bottom: 0;
+   240→  pointer-events: none;
+   241→  z-index: 999;
+   242→  background: repeating-linear-gradient(
+   243→    0deg,
+   244→    transparent,
+   245→    transparent 2px,
+   246→    rgba(0, 0, 0, 0.03) 2px,
+   247→    rgba(0, 0, 0, 0.03) 4px
+   248→  );
+   249→}
+   250→
+   251→/* ===== TERMINAL WINDOW CHROME ===== */
+   252→
+   253→.terminal-chrome {
+   254→  display: flex;
+   255→  align-items: center;
+   256→  gap: 6px;
+   257→  padding: 8px 12px;
+   258→  background: #2D2D2D;
+   259→  border-bottom: 1px solid #444444;
+   260→  user-select: none;
+   261→}
+   262→
+   263→.terminal-dot {
+   264→  width: 12px;
+   265→  height: 12px;
+   266→  border-radius: 50%;
+   267→  flex-shrink: 0;
+   268→}
+   269→
+   270→.terminal-dot-red {
+   271→  background: #FF5F56;
+   272→  border: 1px solid #E0443E;
+   273→}
+   274→
+   275→.terminal-dot-yellow {
+   276→  background: #FFBD2E;
+   277→  border: 1px solid #DEA123;
+   278→}
+   279→
+   280→.terminal-dot-green {
+   281→  background: #27C93F;
+   282→  border: 1px solid #1AAB29;
+   283→}
+   284→
+   285→.terminal-title {
+   286→  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', monospace;
+   287→  font-size: 12px;
+   288→  color: #888888;
+   289→  margin-left: 8px;
+   290→  flex: 1;
+   291→  text-align: center;
+   292→}
+   293→
+   294→/* ===== CUSTOM SCROLLBAR ===== */
+   295→
+   296→::-webkit-scrollbar {
+   297→  width: 6px;
+   298→  height: 6px;
+   299→}
+   300→
+   301→::-webkit-scrollbar-track {
+   302→  background: #1E1E1E;
+   303→}
+   304→
+   305→::-webkit-scrollbar-thumb {
+   306→  background: #444444;
+   307→  border-radius: 0;
+   308→}
+   309→
+   310→::-webkit-scrollbar-thumb:hover {
+   311→  background: #555555;
+   312→}
+   313→
+   314→::-webkit-scrollbar-corner {
+   315→  background: #1E1E1E;
+   316→}
+   317→
+   318→* {
+   319→  scrollbar-width: thin;
+   320→  scrollbar-color: #444444 #1E1E1E;
+   321→}
+   322→
+   323→/* ===== TERMINAL CARD ===== */
+   324→
+   325→.terminal-card {
+   326→  background: #2D2D2D;
+   327→  border: 1px solid #444444;
+   328→  border-radius: 4px;
+   329→  overflow: hidden;
+   330→}
+   331→
+   332→.terminal-card-header {
+   333→  display: flex;
+   334→  align-items: center;
+   335→  gap: 6px;
+   336→  padding: 8px 12px;
+   337→  background: #353535;
+   338→  border-bottom: 1px solid #444444;
+   339→}
+   340→
+   341→.terminal-card-body {
+   342→  padding: 16px;
+   343→}
+   344→
+   345→/* ===== TERMINAL BUTTON ===== */
+   346→
+   347→.terminal-btn {
+   348→  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', monospace;
+   349→  font-size: 12px;
+   350→  padding: 6px 12px;
+   351→  background: #3D3D3D;
+   352→  color: #CCCCCC;
+   353→  border: 1px solid #444444;
+   354→  border-radius: 2px;
+   355→  cursor: pointer;
+   356→  transition: all 0.15s ease;
+   357→  white-space: nowrap;
+   358→}
+   359→
+   360→.terminal-btn:hover {
+   361→  background: #4A4A4A;
+   362→  color: #FFFFFF;
+   363→  border-color: #555555;
+   364→}
+   365→
+   366→.terminal-btn-primary {
+   367→  background: rgba(51, 255, 51, 0.1);
+   368→  color: #33FF33;
+   369→  border-color: #33FF33;
+   370→}
+   371→
+   372→.terminal-btn-primary:hover {
+   373→  background: rgba(51, 255, 51, 0.2);
+   374→  color: #33FF33;
+   375→  text-shadow: 0 0 8px rgba(51, 255, 51, 0.5);
+   376→}
+   377→
+   378→.terminal-btn-danger {
+   379→  background: rgba(255, 51, 51, 0.1);
+   380→  color: #FF3333;
+   381→  border-color: #FF3333;
+   382→}
+   383→
+   384→.terminal-btn-danger:hover {
+   385→  background: rgba(255, 51, 51, 0.2);
+   386→  color: #FF3333;
+   387→  text-shadow: 0 0 8px rgba(255, 51, 51, 0.5);
+   388→}
+   389→
+   390→.terminal-btn:disabled {
+   391→  opacity: 0.4;
+   392→  cursor: not-allowed;
+   393→}
+   394→
+   395→/* ===== TERMINAL INPUT ===== */
+   396→
+   397→.terminal-input {
+   398→  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', monospace;
+   399→  font-size: 13px;
+   400→  padding: 6px 10px;
+   401→  background: #1E1E1E;
+   402→  color: #33FF33;
+   403→  border: 1px solid #444444;
+   404→  border-radius: 2px;
+   405→  outline: none;
+   406→  width: 100%;
+   407→}
+   408→
+   409→.terminal-input:focus {
+   410→  border-color: #33FF33;
+   411→  box-shadow: 0 0 0 1px rgba(51, 255, 51, 0.2);
+   412→}
+   413→
+   414→.terminal-input::placeholder {
+   415→  color: #555555;
+   416→}
+   417→
+   418→/* ===== STATUS INDICATORS ===== */
+   419→
+   420→.status-dot {
+   421→  width: 8px;
+   422→  height: 8px;
+   423→  border-radius: 50%;
+   424→  display: inline-block;
+   425→  flex-shrink: 0;
+   426→}
+   427→
+   428→.status-dot-online {
+   429→  background: #33FF33;
+   430→  box-shadow: 0 0 6px rgba(51, 255, 51, 0.5);
+   431→  animation: pulse-dot 2s ease-in-out infinite;
+   432→}
+   433→
+   434→.status-dot-offline {
+   435→  background: #FF3333;
+   436→  box-shadow: 0 0 6px rgba(255, 51, 51, 0.5);
+   437→}
+   438→
+   439→.status-dot-warning {
+   440→  background: #FFB800;
+   441→  box-shadow: 0 0 6px rgba(255, 184, 0, 0.5);
+   442→}
+   443→
+   444→/* ===== TERMINAL TOAST / NOTIFICATION ===== */
+   445→
+   446→.terminal-toast {
+   447→  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', monospace;
+   448→  font-size: 12px;
+   449→  padding: 10px 14px;
+   450→  background: #2D2D2D;
+   451→  border: 1px solid #444444;
+   452→  border-radius: 2px;
+   453→  color: #CCCCCC;
+   454→  animation: slide-in-right 0.3s ease-out;
+   455→  min-width: 280px;
+   456→  max-width: 380px;
+   457→}
+   458→
+   459→.terminal-toast-success {
+   460→  border-left: 3px solid #33FF33;
+   461→}
+   462→
+   463→.terminal-toast-error {
+   464→  border-left: 3px solid #FF3333;
+   465→}
+   466→
+   467→.terminal-toast-warning {
+   468→  border-left: 3px solid #FFB800;
+   469→}
+   470→
+   471→.terminal-toast-info {
+   472→  border-left: 3px solid #00D4FF;
+   473→}
+   474→
+   475→/* ===== TERMINAL PROMPT ===== */
+   476→
+   477→.prompt-prefix {
+   478→  color: #33FF33;
+   479→  user-select: none;
+   480→}
+   481→
+   482→.prompt-prefix-dim {
+   483→  color: #888888;
+   484→  user-select: none;
+   485→}
+   486→
+   487→/* ===== GLOW EFFECT ===== */
+   488→
+   489→.glow-green {
+   490→  text-shadow: 0 0 8px rgba(51, 255, 51, 0.5);
+   491→}
+   492→
+   493→.glow-green-strong {
+   494→  text-shadow: 0 0 12px rgba(51, 255, 51, 0.8), 0 0 24px rgba(51, 255, 51, 0.3);
+   495→  animation: glow-pulse 3s ease-in-out infinite;
+   496→}
+   497→
+   498→.glow-cyan {
+   499→  text-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+   500→}
+   501→
+   502→.glow-amber {
+   503→  text-shadow: 0 0 8px rgba(255, 184, 0, 0.5);
+   504→}
+   505→
+   506→.glow-magenta {
+   507→  text-shadow: 0 0 8px rgba(255, 0, 255, 0.5);
+   508→}
+   509→
+   510→.glow-red {
+   511→  text-shadow: 0 0 8px rgba(255, 51, 51, 0.5);
+   512→}
+   513→
+   514→/* ===== LAYOUT STYLES ===== */
+   515→
+   516→.app-layout {
+   517→  display: flex;
+   518→  min-height: 100vh;
+   519→  background: #1E1E1E;
+   520→}
+   521→
+   522→.app-sidebar {
+   523→  width: 260px;
+   524→  background: #252525;
+   525→  border-right: 1px solid #444444;
+   526→  display: flex;
+   527→  flex-direction: column;
+   528→  transition: width 0.2s ease, transform 0.2s ease;
+   529→  flex-shrink: 0;
+   530→  position: relative;
+   531→  z-index: 40;
+   532→}
+   533→
+   534→.app-sidebar.collapsed {
+   535→  width: 56px;
+   536→}
+   537→
+   538→.app-main {
+   539→  flex: 1;
+   540→  display: flex;
+   541→  flex-direction: column;
+   542→  min-width: 0;
+   543→}
+   544→
+   545→.app-header {
+   546→  background: #2D2D2D;
+   547→  border-bottom: 1px solid #444444;
+   548→  flex-shrink: 0;
+   549→}
+   550→
+   551→.app-content {
+   552→  flex: 1;
+   553→  overflow-y: auto;
+   554→  padding: 20px;
+   555→  background: #1E1E1E;
+   556→}
+   557→
+   558→.app-footer {
+   559→  background: #252525;
+   560→  border-top: 1px solid #444444;
+   561→  padding: 8px 16px;
+   562→  flex-shrink: 0;
+   563→}
+   564→
+   565→/* ===== SIDEBAR NAV ITEMS ===== */
+   566→
+   567→.nav-item {
+   568→  display: flex;
+   569→  align-items: center;
+   570→  gap: 10px;
+   571→  padding: 8px 16px;
+   572→  font-size: 13px;
+   573→  cursor: pointer;
+   574→  transition: all 0.15s ease;
+   575→  border-left: 2px solid transparent;
+   576→  color: #888888;
+   577→  white-space: nowrap;
+   578→  overflow: hidden;
+   579→}
+   580→
+   581→.nav-item:hover {
+   582→  background: rgba(51, 255, 51, 0.03);
+   583→  color: #CCCCCC;
+   584→}
+   585→
+   586→.nav-item.active {
+   587→  color: #33FF33;
+   588→  background: rgba(51, 255, 51, 0.06);
+   589→  border-left-color: #33FF33;
+   590→}
+   591→
+   592→.nav-item.active .nav-icon {
+   593→  color: #33FF33;
+   594→}
+   595→
+   596→.nav-icon {
+   597→  width: 18px;
+   598→  height: 18px;
+   599→  flex-shrink: 0;
+   600→}
+   601→
+   602→.nav-label {
+   603→  overflow: hidden;
+   604→  text-overflow: ellipsis;
+   605→}
+   606→
+   607→/* ===== ASCII ART ===== */
+   608→
+   609→.ascii-art {
+   610→  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', monospace;
+   611→  font-size: 10px;
+   612→  line-height: 1.2;
+   613→  color: #33FF33;
+   614→  white-space: pre;
+   615→}
+   616→
+   617→/* ===== RESPONSIVE ===== */
+   618→
+   619→@media (max-width: 768px) {
+   620→  .app-sidebar {
+   621→    position: fixed;
+   622→    top: 0;
+   623→    left: 0;
+   624→    bottom: 0;
+   625→    transform: translateX(-100%);
+   626→    z-index: 50;
+   627→  }
+   628→
+   629→  .app-sidebar.mobile-open {
+   630→    transform: translateX(0);
+   631→  }
+   632→
+   633→  .app-sidebar.collapsed {
+   634→    transform: translateX(-100%);
+   635→  }
+   636→
+   637→  .mobile-overlay {
+   638→    position: fixed;
+   639→    inset: 0;
+   640→    background: rgba(0, 0, 0, 0.5);
+   641→    z-index: 45;
+   642→  }
+   643→
+   644→  .app-content {
+   645→    padding: 12px;
+   646→  }
+   647→}
+   648→
+   649→/* ===== UTILITY CLASSES ===== */
+   650→
+   651→.text-term-green { color: #33FF33; }
+   652→.text-term-text { color: #CCCCCC; }
+   653→.text-term-dim { color: #888888; }
+   654→.text-term-amber { color: #FFB800; }
+   655→.text-term-cyan { color: #00D4FF; }
+   656→.text-term-magenta { color: #FF00FF; }
+   657→.text-term-red { color: #FF3333; }
+   658→.text-term-white { color: #FFFFFF; }
+   659→
+   660→.bg-term-bg { background-color: #1E1E1E; }
+   661→.bg-term-surface { background-color: #2D2D2D; }
+   662→.bg-term-elevated { background-color: #3D3D3D; }
+   663→.bg-term-selection { background-color: rgba(51, 255, 51, 0.15); }
+   664→
+   665→.border-term { border-color: #444444; }
+   666→
+   667→.font-terminal {
+   668→  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', monospace;
+   669→}
+   670→
+   671→/* ===== FLICKER EFFECT FOR LANDING ===== */
+   672→
+   673→.terminal-flicker {
+   674→  animation: flicker 5s infinite;
+   675→}
+   676→
+   677→/* ===== BREADCRUMB STYLE ===== */
+   678→
+   679→.breadcrumb-sep {
+   680→  color: #555555;
+   681→  margin: 0 4px;
+   682→}
+   683→
+   684→/* ============================================================ */
+   685→/* ===== TASK 9-c: ENHANCED POLISH (CRT, GLOW, SKELETONS) ===== */
+   686→/* ============================================================ */
+   687→
+   688→/* ----- New keyframe animations ----- */
+   689→
+   690→@keyframes crt-flicker {
+   691→  0%, 100% { opacity: 1; }
+   692→  47% { opacity: 1; }
+   693→  48% { opacity: 0.97; }
+   694→  49% { opacity: 1; }
+   695→  94% { opacity: 1; }
+   696→  95% { opacity: 0.98; }
+   697→  96% { opacity: 1; }
+   698→}
+   699→
+   700→@keyframes text-glow-pulse {
+   701→  0%, 100% { text-shadow: 0 0 4px rgba(51, 255, 51, 0.4); }
+   702→  50% { text-shadow: 0 0 10px rgba(51, 255, 51, 0.7), 0 0 20px rgba(51, 255, 51, 0.3); }
+   703→}
+   704→
+   705→@keyframes slide-up-fade {
+   706→  0% { opacity: 0; transform: translateY(8px); }
+   707→  100% { opacity: 1; transform: translateY(0); }
+   708→}
+   709→
+   710→@keyframes skeleton-shimmer {
+   711→  0% { background-position: -200% 0; }
+   712→  100% { background-position: 200% 0; }
+   713→}
+   714→
+   715→@keyframes border-trace {
+   716→  0% { background-position: 0% 0%; }
+   717→  100% { background-position: 200% 0%; }
+   718→}
+   719→
+   720→@keyframes scan-line-move {
+   721→  0% { transform: translateY(-100%); }
+   722→  100% { transform: translateY(2000%); }
+   723→}
+   724→
+   725→/* ----- CRT screen effect (vignette + curvature) ----- */
+   726→
+   727→.crt-screen {
+   728→  position: relative;
+   729→}
+   730→
+   731→.crt-screen::before {
+   732→  content: '';
+   733→  position: absolute;
+   734→  inset: 0;
+   735→  pointer-events: none;
+   736→  z-index: 1;
+   737→  box-shadow:
+   738→    inset 0 0 60px rgba(0, 0, 0, 0.4),
+   739→    inset 0 0 120px rgba(0, 0, 0, 0.25);
+   740→  border-radius: 4px;
+   741→}
+   742→
+   743→.crt-screen::after {
+   744→  content: '';
+   745→  position: absolute;
+   746→  inset: 0;
+   747→  pointer-events: none;
+   748→  z-index: 2;
+   749→  background:
+   750→    radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.35) 100%);
+   751→  border-radius: 4px;
+   752→  animation: crt-flicker 8s infinite steps(60);
+   753→}
+   754→
+   755→/* ----- Card hover glow states ----- */
+   756→
+   757→.terminal-card-glow {
+   758→  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+   759→}
+   760→
+   761→.terminal-card-glow:hover {
+   762→  border-color: rgba(51, 255, 51, 0.6);
+   763→  box-shadow:
+   764→    0 0 0 1px rgba(51, 255, 51, 0.2),
+   765→    0 0 18px rgba(51, 255, 51, 0.18),
+   766→    0 0 32px rgba(51, 255, 51, 0.08);
+   767→  transform: translateY(-1px);
+   768→}
+   769→
+   770→.terminal-card-amber-glow {
+   771→  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+   772→}
+   773→
+   774→.terminal-card-amber-glow:hover {
+   775→  border-color: rgba(255, 184, 0, 0.6);
+   776→  box-shadow:
+   777→    0 0 0 1px rgba(255, 184, 0, 0.2),
+   778→    0 0 18px rgba(255, 184, 0, 0.18);
+   779→  transform: translateY(-1px);
+   780→}
+   781→
+   782→.terminal-card-cyan-glow {
+   783→  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+   784→}
+   785→
+   786→.terminal-card-cyan-glow:hover {
+   787→  border-color: rgba(0, 212, 255, 0.6);
+   788→  box-shadow:
+   789→    0 0 0 1px rgba(0, 212, 255, 0.2),
+   790→    0 0 18px rgba(0, 212, 255, 0.18);
+   791→  transform: translateY(-1px);
+   792→}
+   793→
+   794→.terminal-card-magenta-glow {
+   795→  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+   796→}
+   797→
+   798→.terminal-card-magenta-glow:hover {
+   799→  border-color: rgba(255, 0, 255, 0.6);
+   800→  box-shadow:
+   801→    0 0 0 1px rgba(255, 0, 255, 0.2),
+   802→    0 0 18px rgba(255, 0, 255, 0.18);
+   803→  transform: translateY(-1px);
+   804→}
+   805→
+   806→.terminal-card-red-glow {
+   807→  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+   808→}
+   809→
+   810→.terminal-card-red-glow:hover {
+   811→  border-color: rgba(255, 85, 85, 0.6);
+   812→  box-shadow:
+   813→    0 0 0 1px rgba(255, 85, 85, 0.2),
+   814→    0 0 18px rgba(255, 85, 85, 0.18);
+   815→  transform: translateY(-1px);
+   816→}
+   817→
+   818→/* ----- Loading skeletons ----- */
+   819→
+   820→.skeleton-line {
+   821→  display: block;
+   822→  height: 10px;
+   823→  background: linear-gradient(
+   824→    90deg,
+   825→    #1E1E1E 0%,
+   826→    #2D2D2D 40%,
+   827→    #3a4d3a 50%,
+   828→    #2D2D2D 60%,
+   829→    #1E1E1E 100%
+   830→  );
+   831→  background-size: 200% 100%;
+   832→  border-radius: 2px;
+   833→  animation: skeleton-shimmer 1.6s linear infinite;
+   834→  position: relative;
+   835→  overflow: hidden;
+   836→}
+   837→
+   838→.skeleton-line::after {
+   839→  content: '';
+   840→  position: absolute;
+   841→  inset: 0;
+   842→  background: linear-gradient(
+   843→    90deg,
+   844→    transparent 0%,
+   845→    rgba(51, 255, 51, 0.08) 50%,
+   846→    transparent 100%
+   847→  );
+   848→  background-size: 200% 100%;
+   849→  animation: skeleton-shimmer 1.6s linear infinite reverse;
+   850→}
+   851→
+   852→.skeleton-block {
+   853→  display: block;
+   854→  height: 80px;
+   855→  background: linear-gradient(
+   856→    90deg,
+   857→    #1E1E1E 0%,
+   858→    #2D2D2D 40%,
+   859→    #3a4d3a 50%,
+   860→    #2D2D2D 60%,
+   861→    #1E1E1E 100%
+   862→  );
+   863→  background-size: 200% 100%;
+   864→  border-radius: 2px;
+   865→  animation: skeleton-shimmer 1.6s linear infinite;
+   866→  position: relative;
+   867→  overflow: hidden;
+   868→}
+   869→
+   870→.skeleton-block::after {
+   871→  content: '';
+   872→  position: absolute;
+   873→  inset: 0;
+   874→  background: linear-gradient(
+   875→    90deg,
+   876→    transparent 0%,
+   877→    rgba(51, 255, 51, 0.06) 50%,
+   878→    transparent 100%
+   879→  );
+   880→  background-size: 200% 100%;
+   881→  animation: skeleton-shimmer 1.6s linear infinite reverse;
+   882→}
+   883→
+   884→/* ----- Text glow utilities ----- */
+   885→
+   886→.text-glow-green {
+   887→  text-shadow: 0 0 6px rgba(51, 255, 51, 0.55), 0 0 12px rgba(51, 255, 51, 0.25);
+   888→}
+   889→
+   890→.text-glow-cyan {
+   891→  text-shadow: 0 0 6px rgba(0, 212, 255, 0.55), 0 0 12px rgba(0, 212, 255, 0.25);
+   892→}
+   893→
+   894→.text-glow-amber {
+   895→  text-shadow: 0 0 6px rgba(255, 184, 0, 0.55), 0 0 12px rgba(255, 184, 0, 0.25);
+   896→}
+   897→
+   898→.text-glow-magenta {
+   899→  text-shadow: 0 0 6px rgba(255, 0, 255, 0.55), 0 0 12px rgba(255, 0, 255, 0.25);
+   900→}
+   901→
+   902→.text-glow-red {
+   903→  text-shadow: 0 0 6px rgba(255, 85, 85, 0.55), 0 0 12px rgba(255, 85, 85, 0.25);
+   904→}
+   905→
+   906→/* ----- Moving scanline overlay (more prominent than the static one) ----- */
+   907→
+   908→.moving-scanline {
+   909→  position: relative;
+   910→  overflow: hidden;
+   911→}
+   912→
+   913→.moving-scanline::after {
+   914→  content: '';
+   915→  position: absolute;
+   916→  top: 0;
+   917→  left: 0;
+   918→  right: 0;
+   919→  height: 2px;
+   920→  background: linear-gradient(
+   921→    90deg,
+   922→    transparent 0%,
+   923→    rgba(51, 255, 51, 0.55) 50%,
+   924→    transparent 100%
+   925→  );
+   926→  pointer-events: none;
+   927→  z-index: 3;
+   928→  animation: scan-line-move 5s linear infinite;
+   929→  opacity: 0.7;
+   930→}
+   931→
+   932→/* ----- Terminal glow input ----- */
+   933→
+   934→.terminal-glow-input {
+   935→  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', monospace;
+   936→  font-size: 13px;
+   937→  padding: 8px 12px 8px 28px;
+   938→  background: #1E1E1E;
+   939→  color: #33FF33;
+   940→  border: 1px solid #444444;
+   941→  border-radius: 2px;
+   942→  outline: none;
+   943→  width: 100%;
+   944→  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+   945→}
+   946→
+   947→.terminal-glow-input:focus {
+   948→  border-color: #33FF33;
+   949→  box-shadow:
+   950→    0 0 0 1px rgba(51, 255, 51, 0.3),
+   951→    0 0 12px rgba(51, 255, 51, 0.25),
+   952→    inset 0 0 8px rgba(51, 255, 51, 0.08);
+   953→}
+   954→
+   955→.terminal-glow-input::placeholder {
+   956→  color: #555555;
+   957→}
+   958→
+   959→/* ----- Rarity borders ----- */
+   960→
+   961→.rarity-border-common {
+   962→  border: 1px solid #555555;
+   963→}
+   964→
+   965→.rarity-border-rare {
+   966→  border: 1px solid rgba(0, 212, 255, 0.5);
+   967→  box-shadow: 0 0 0 1px rgba(0, 212, 255, 0.05) inset;
+   968→}
+   969→
+   970→.rarity-border-epic {
+   971→  border: 1px solid rgba(255, 0, 255, 0.5);
+   972→  box-shadow: 0 0 0 1px rgba(255, 0, 255, 0.05) inset;
+   973→}
+   974→
+   975→.rarity-border-legendary {
+   976→  border: 1px solid rgba(255, 184, 0, 0.6);
+   977→  box-shadow:
+   978→    0 0 0 1px rgba(255, 184, 0, 0.05) inset,
+   979→    0 0 10px rgba(255, 184, 0, 0.1);
+   980→}
+   981→
+   982→/* ----- Improved blinking cursor with glow ----- */
+   983→
+   984→.blink-cursor {
+   985→  display: inline-block;
+   986→  width: 8px;
+   987→  height: 16px;
+   988→  background: #33FF33;
+   989→  box-shadow: 0 0 6px rgba(51, 255, 51, 0.7), 0 0 12px rgba(51, 255, 51, 0.3);
+   990→  animation: blink 1s step-end infinite;
+   991→  vertical-align: text-bottom;
+   992→  margin-left: 2px;
+   993→}
+   994→
+   995→/* ----- Terminal tag / chip ----- */
+   996→
+   997→.terminal-tag {
+   998→  display: inline-flex;
+   999→  align-items: center;
+  1000→  gap: 4px;
+  1001→  padding: 2px 6px;
+  1002→  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', monospace;
+  1003→  font-size: 9px;
+  1004→  font-weight: 700;
+  1005→  border-radius: 2px;
+  1006→  border: 1px solid;
+  1007→  letter-spacing: 0.05em;
+  1008→  text-transform: uppercase;
+  1009→  white-space: nowrap;
+  1010→}
+  1011→
+  1012→/* ----- Terminal divider ----- */
+  1013→
+  1014→.terminal-divider {
+  1015→  height: 1px;
+  1016→  background: linear-gradient(
+  1017→    90deg,
+  1018→    transparent 0%,
+  1019→    #444444 20%,
+  1020→    #444444 80%,
+  1021→    transparent 100%
+  1022→  );
+  1023→  margin: 12px 0;
+  1024→  border: none;
+  1025→}
+  1026→
+  1027→/* ----- Terminal progress bar (div-based, ASCII-style) ----- */
+  1028→
+  1029→.terminal-progress {
+  1030→  position: relative;
+  1031→  width: 100%;
+  1032→  height: 12px;
+  1033→  background: #1E1E1E;
+  1034→  border: 1px solid #444444;
+  1035→  border-radius: 2px;
+  1036→  overflow: hidden;
+  1037→  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', monospace;
+  1038→}
+  1039→
+  1040→.terminal-progress-bar {
+  1041→  height: 100%;
+  1042→  background: linear-gradient(
+  1043→    90deg,
+  1044→    rgba(51, 255, 51, 0.3) 0%,
+  1045→    rgba(51, 255, 51, 0.8) 100%
+  1046→  );
+  1047→  box-shadow: 0 0 8px rgba(51, 255, 51, 0.4);
+  1048→  transition: width 0.4s ease;
+  1049→  position: relative;
+  1050→}
+  1051→
+  1052→.terminal-progress-bar::after {
+  1053→  content: '';
+  1054→  position: absolute;
+  1055→  inset: 0;
+  1056→  background: repeating-linear-gradient(
+  1057→    90deg,
+  1058→    transparent 0,
+  1059→    transparent 4px,
+  1060→    rgba(0, 0, 0, 0.15) 4px,
+  1061→    rgba(0, 0, 0, 0.15) 5px
+  1062→  );
+  1063→}
+  1064→
+  1065→/* ----- Improved existing utilities (additive) ----- */
+  1066→
+  1067→/* Subtle text-shadow glow on all terminal color utilities */
+  1068→.text-term-green { text-shadow: 0 0 4px rgba(51, 255, 51, 0.25); }
+  1069→.text-term-cyan { text-shadow: 0 0 4px rgba(0, 212, 255, 0.25); }
+  1070→.text-term-amber { text-shadow: 0 0 4px rgba(255, 184, 0, 0.25); }
+  1071→.text-term-magenta { text-shadow: 0 0 4px rgba(255, 0, 255, 0.25); }
+  1072→.text-term-red { text-shadow: 0 0 4px rgba(255, 85, 85, 0.3); }
+  1073→
+  1074→/* Smoother nav-item transitions */
+  1075→.nav-item {
+  1076→  transition: background-color 0.2s ease, color 0.2s ease, border-left-color 0.2s ease, transform 0.15s ease;
+  1077→}
+  1078→
+  1079→/* Better terminal-card hover state (lift + glow) */
+  1080→.terminal-card {
+  1081→  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  1082→}
+  1083→
+  1084→.terminal-card:hover {
+  1085→  border-color: #555555;
+  1086→}
+  1087→
+  1088→/* Improved primary button hover (stronger glow) */
+  1089→.terminal-btn-primary {
+  1090→  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, text-shadow 0.2s ease, box-shadow 0.2s ease;
+  1091→}
+  1092→
+  1093→.terminal-btn-primary:hover {
+  1094→  background: rgba(51, 255, 51, 0.22);
+  1095→  color: #33FF33;
+  1096→  text-shadow: 0 0 10px rgba(51, 255, 51, 0.7), 0 0 18px rgba(51, 255, 51, 0.3);
+  1097→  box-shadow: 0 0 14px rgba(51, 255, 51, 0.25);
+  1098→}
+  1099→
+  1100→/* ----- Animation utility classes ----- */
+  1101→
+  1102→.animate-slide-up-fade {
+  1103→  animation: slide-up-fade 0.4s ease-out both;
+  1104→}
+  1105→
+  1106→.animate-text-glow-pulse {
+  1107→  animation: text-glow-pulse 2.5s ease-in-out infinite;
+  1108→}
+  1109→
+  1110→.animate-crt-flicker {
+  1111→  animation: crt-flicker 8s infinite steps(60);
+  1112→}
+  1113→
+  1114→/* ----- Command palette specific ----- */
+  1115→
+  1116→.cmd-palette-item {
+  1117→  display: flex;
+  1118→  align-items: center;
+  1119→  gap: 10px;
+  1120→  padding: 8px 12px;
+  1121→  cursor: pointer;
+  1122→  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', monospace;
+  1123→  font-size: 12px;
+  1124→  color: #CCCCCC;
+  1125→  border-left: 2px solid transparent;
+  1126→  transition: background-color 0.1s ease, color 0.1s ease, border-left-color 0.1s ease;
+  1127→}
+  1128→
+  1129→.cmd-palette-item:hover {
+  1130→  background: rgba(51, 255, 51, 0.06);
+  1131→  color: #FFFFFF;
+  1132→}
+  1133→
+  1134→.cmd-palette-item.active {
+  1135→  background: rgba(51, 255, 51, 0.12);
+  1136→  color: #33FF33;
+  1137→  border-left-color: #33FF33;
+  1138→  text-shadow: 0 0 6px rgba(51, 255, 51, 0.4);
+  1139→}
+  1140→
+  1141→.cmd-palette-item.active .cmd-palette-icon {
+  1142→  color: #33FF33;
+  1143→}
+  1144→
+  1145→.cmd-palette-icon {
+  1146→  color: #888888;
+  1147→  flex-shrink: 0;
+  1148→  transition: color 0.1s ease;
+  1149→}
+  1150→
+  1151→.cmd-palette-kbd {
+  1152→  display: inline-flex;
+  1153→  align-items: center;
+  1154→  justify-content: center;
+  1155→  min-width: 18px;
+  1156→  height: 16px;
+  1157→  padding: 0 4px;
+  1158→  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', monospace;
+  1159→  font-size: 9px;
+  1160→  color: #888888;
+  1161→  background: #1E1E1E;
+  1162→  border: 1px solid #444444;
+  1163→  border-radius: 2px;
+  1164→}
+  1165→
+  1166→/* ----- Skeleton card (terminal-card shaped) ----- */
+  1167→
+  1168→.skeleton-card {
+  1169→  background: #2D2D2D;
+  1170→  border: 1px solid #444444;
+  1171→  border-radius: 4px;
+  1172→  overflow: hidden;
+  1173→}
+  1174→
+  1175→.skeleton-card-header {
+  1176→  height: 32px;
+  1177→  background: #353535;
+  1178→  border-bottom: 1px solid #444444;
+  1179→}
+  1180→
+  1181→.skeleton-card-body {
+  1182→  padding: 16px;
+  1183→  display: flex;
+  1184→  flex-direction: column;
+  1185→  gap: 10px;
+  1186→}
+  1187→

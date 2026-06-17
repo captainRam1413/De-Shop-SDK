@@ -29,6 +29,10 @@ import {
   ListPlus,
   BookOpen,
   Activity,
+  Bot,
+  Minus,
+  Loader2,
+  Clock,
 } from 'lucide-react'
 import { useDeShopStore } from '@/store/useDeShopStore'
 import { useRealtimeEvents, type MarketEvent } from '@/hooks/useRealtimeEvents'
@@ -577,6 +581,306 @@ function ActivityFeed() {
   )
 }
 
+/* ===== AI PRICING ENGINE ===== */
+
+interface AIPriceResult {
+  price: number
+  confidence: number
+  reasoning: string
+  trend: 'up' | 'down' | 'stable'
+  source?: 'ai' | 'heuristic'
+}
+
+interface HistoryEntry {
+  id: string
+  name: string
+  rarity: string
+  price: number
+  confidence: number
+  trend: 'up' | 'down' | 'stable'
+  source: string
+  timestamp: string
+}
+
+function TrendIcon({ trend, className = 'w-3 h-3' }: { trend: 'up' | 'down' | 'stable'; className?: string }) {
+  if (trend === 'up') return <TrendingUp className={`${className} text-term-green`} />
+  if (trend === 'down') return <TrendingDown className={`${className} text-term-red`} />
+  return <Minus className={`${className} text-term-dim`} />
+}
+
+function AIPricingEngine() {
+  const { addNotification } = useDeShopStore()
+  const [name, setName] = useState('')
+  const [rarity, setRarity] = useState<'common' | 'rare' | 'epic' | 'legendary'>('rare')
+  const [type, setType] = useState('weapon')
+  const [description, setDescription] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [result, setResult] = useState<AIPriceResult | null>(null)
+  const [history, setHistory] = useState<HistoryEntry[]>([])
+
+  const handleGetPrice = async () => {
+    if (!name.trim()) {
+      addNotification('warning', 'Enter an asset name first')
+      return
+    }
+    setLoading(true)
+    setError(null)
+    setResult(null)
+    try {
+      const res = await fetch('/api/ai-price', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, rarity, type, description }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data: AIPriceResult = await res.json()
+      setResult(data)
+      setHistory((prev) =>
+        [
+          {
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            name,
+            rarity,
+            price: data.price,
+            confidence: data.confidence,
+            trend: data.trend,
+            source: data.source || 'ai',
+            timestamp: new Date().toLocaleTimeString(),
+          },
+          ...prev,
+        ].slice(0, 5)
+      )
+      addNotification(
+        data.source === 'ai' ? 'success' : 'info',
+        `AI oracle: ${data.price} ALGO for "${name}"`
+      )
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to fetch')
+      addNotification('error', 'AI pricing failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const confidenceColor =
+    result && result.confidence >= 75
+      ? 'bg-term-green'
+      : result && result.confidence >= 50
+        ? 'bg-term-amber'
+        : 'bg-term-red'
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.8, duration: 0.3 }}
+      className="terminal-card terminal-card-glow"
+    >
+      <div className="terminal-card-header">
+        <TrafficLights />
+        <span className="terminal-title">ai_pricing.log</span>
+        <Bot className="w-3.5 h-3.5 text-term-green" />
+      </div>
+      <div className="p-4 bg-[#1E1E1E]">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="prompt-prefix text-sm">$</span>
+          <span className="text-term-green text-xs font-terminal glow-green">./ai-pricing-engine</span>
+          <span className="text-term-dim text-[10px] font-terminal">--query --rarity --type</span>
+          <span className="ml-auto text-[9px] font-terminal text-term-dim border border-term-dim/40 px-1">
+            z-ai-web-dev-sdk
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-4">
+          {/* LEFT: Form + Result */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-term-dim text-[10px] font-terminal mb-1 block">ASSET NAME</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Neon Blade"
+                  className="terminal-input"
+                  disabled={loading}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !loading) handleGetPrice()
+                  }}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-term-dim text-[10px] font-terminal mb-1 block">RARITY</label>
+                  <select
+                    value={rarity}
+                    onChange={(e) => setRarity(e.target.value as 'common' | 'rare' | 'epic' | 'legendary')}
+                    className="terminal-input"
+                    disabled={loading}
+                  >
+                    <option value="common">Common</option>
+                    <option value="rare">Rare</option>
+                    <option value="epic">Epic</option>
+                    <option value="legendary">Legendary</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-term-dim text-[10px] font-terminal mb-1 block">TYPE</label>
+                  <select
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
+                    className="terminal-input"
+                    disabled={loading}
+                  >
+                    <option value="weapon">Weapon</option>
+                    <option value="character">Character</option>
+                    <option value="accessory">Accessory</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="text-term-dim text-[10px] font-terminal mb-1 block">DESCRIPTION (optional)</label>
+              <input
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="e.g. plasma-infused blade forged in the digital crucible"
+                className="terminal-input"
+                disabled={loading}
+              />
+            </div>
+
+            <button
+              onClick={handleGetPrice}
+              disabled={loading || !name.trim()}
+              className="terminal-btn terminal-btn-primary flex items-center gap-2 disabled:opacity-50"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Querying Oracle...</span>
+                </>
+              ) : (
+                <>
+                  <Bot className="w-3.5 h-3.5" />
+                  <span>Get Price</span>
+                </>
+              )}
+            </button>
+
+            {/* Results Panel */}
+            <div className="border border-[#333] bg-[#181818] p-3 space-y-2 min-h-[140px]">
+              <div className="text-term-dim text-[10px] font-terminal mb-1 flex items-center gap-2">
+                <span>&gt; result.log</span>
+                {loading && <span className="blink-cursor" />}
+              </div>
+              {loading && (
+                <div className="flex items-center gap-2 text-term-amber text-[11px] font-terminal">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>querying AI oracle...</span>
+                </div>
+              )}
+              {error && !loading && (
+                <div className="text-term-red text-[11px] font-terminal">{`> ERR: ${error}`}</div>
+              )}
+              {result && !loading && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-term-dim text-[10px] font-terminal">PRICE</span>
+                      <span className="text-term-green text-lg font-terminal font-bold glow-green">
+                        ◆ {result.price} ALGO
+                      </span>
+                      <TrendIcon trend={result.trend} className="w-4 h-4" />
+                    </div>
+                    <span
+                      className={`text-[9px] font-terminal border px-1 ${
+                        result.source === 'ai'
+                          ? 'text-term-green border-term-green/40'
+                          : 'text-term-amber border-term-amber/40'
+                      }`}
+                    >
+                      {result.source || 'ai'}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-term-dim text-[10px] font-terminal">CONFIDENCE</span>
+                      <span className="text-term-green text-[10px] font-terminal">{result.confidence}%</span>
+                    </div>
+                    <div className="flex-1 h-2 bg-[#2D2D2D] border border-[#444444] overflow-hidden">
+                      <div
+                        className={`h-full transition-all ${confidenceColor}`}
+                        style={{ width: `${result.confidence}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-term-dim text-[10px] font-terminal mb-0.5">REASONING</div>
+                    <div className="text-term-text text-[10px] font-terminal leading-relaxed border-l-2 border-term-green/30 pl-2">
+                      {result.reasoning}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+              {!result && !loading && !error && (
+                <div className="text-term-dim text-[10px] font-terminal">
+                  &gt; awaiting query... enter an asset name and click Get Price
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT: History */}
+          <div className="border border-[#333] bg-[#181818] flex flex-col">
+            <div className="px-3 py-2 border-b border-[#333] flex items-center gap-2">
+              <Clock className="w-3 h-3 text-term-dim" />
+              <span className="text-term-dim text-[10px] font-terminal">last 5 queries</span>
+            </div>
+            <div className="flex-1 p-2 space-y-1.5 max-h-80 overflow-y-auto">
+              {history.length === 0 && (
+                <div className="text-term-dim text-[10px] font-terminal text-center py-4">
+                  no queries yet
+                </div>
+              )}
+              {history.map((entry) => (
+                <motion.div
+                  key={entry.id}
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="border border-[#2a2a2a] p-2 bg-[#1E1E1E] hover:border-term-green/30 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-term-green text-[10px] font-terminal truncate flex-1">
+                      {entry.name}
+                    </span>
+                    <TrendIcon trend={entry.trend} className="w-2.5 h-2.5 flex-shrink-0" />
+                  </div>
+                  <div className="flex items-center justify-between text-[9px] font-terminal">
+                    <span className="text-term-dim">{entry.rarity}</span>
+                    <span className="text-term-amber">◆ {entry.price}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[9px] font-terminal text-term-dim">
+                    <span>{entry.source}</span>
+                    <span>{entry.confidence}%</span>
+                  </div>
+                  <div className="text-[8px] font-terminal text-term-dim mt-0.5">{entry.timestamp}</div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
 /* ===== QUICK ACTIONS ===== */
 
 function QuickActions() {
@@ -623,6 +927,120 @@ function QuickActions() {
           </button>
         )
       })}
+    </motion.div>
+  )
+}
+
+/* ===== REALTIME STATS CARD (Task 11-d) ===== */
+
+function RealtimeStatBox({
+  label,
+  value,
+  color,
+  title,
+}: {
+  label: string
+  value: string | number
+  color: string
+  title?: string
+}) {
+  return (
+    <div
+      className="border border-[#444444] p-2 bg-[#1E1E1E] flex flex-col justify-center min-h-[56px]"
+      title={title}
+    >
+      <div className="text-term-dim text-[9px] font-terminal mb-0.5 tracking-wide">{label}</div>
+      <div className={`text-base font-terminal font-bold tabular-nums ${color}`}>{value}</div>
+    </div>
+  )
+}
+
+function RealtimeStatsCard() {
+  const { isConnected, stats, events } = useRealtimeEvents()
+
+  // Local EPM fallback: count events received in the last 60 s
+  const localEpm = useMemo(() => {
+    const cutoff = Date.now() - 60000
+    return events.filter((e) => e.timestamp >= cutoff).length
+  }, [events])
+
+  const epm = stats?.eventsPerMinute ?? localEpm
+  const totalToday = stats?.totalEvents ?? events.length
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.55, duration: 0.3 }}
+      className="terminal-card terminal-card-cyan-glow"
+    >
+      <div className="terminal-card-header">
+        <TrafficLights />
+        <span className="terminal-title">realtime_stats.log</span>
+        <Activity className="w-3.5 h-3.5 text-term-cyan" />
+        <span
+          className={`ml-auto text-[10px] font-terminal font-bold ${
+            isConnected ? 'text-term-green' : 'text-term-red'
+          }`}
+        >
+          {isConnected ? '● LIVE' : '● OFFLINE'}
+        </span>
+      </div>
+      <div className="terminal-card-body">
+        <div className="text-term-dim text-[10px] font-terminal mb-2 flex items-center gap-2">
+          <span className="prompt-prefix">$</span>
+          <span className="text-term-cyan">tail -f /var/log/de-shop/realtime.log</span>
+          <span className="blink-cursor" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <RealtimeStatBox
+            label="ONLINE CLIENTS"
+            value={stats?.onlineClients ?? '—'}
+            color="text-term-green"
+            title="Currently connected socket.io clients"
+          />
+          <RealtimeStatBox
+            label="EVENTS/MIN"
+            value={epm}
+            color="text-term-amber"
+            title="Marketplace events per minute"
+          />
+          <RealtimeStatBox
+            label="TOTAL EVENTS"
+            value={totalToday.toLocaleString()}
+            color="text-term-cyan"
+            title="Total events emitted by the realtime service"
+          />
+          <RealtimeStatBox
+            label="24H VOLUME"
+            value={stats ? `${(stats.volume24h / 1000).toFixed(1)}K` : '—'}
+            color="text-term-amber"
+            title="Simulated 24-hour trade volume in ALGO"
+          />
+          <RealtimeStatBox
+            label="ACTIVE WALLETS"
+            value={stats?.activeWallets?.toLocaleString() ?? '—'}
+            color="text-term-magenta"
+            title="Distinct wallets active in the last 24 h"
+          />
+          <RealtimeStatBox
+            label="GAS PRICE"
+            value={stats ? stats.gasPrice.toFixed(6) : '—'}
+            color="text-term-cyan"
+            title="Current Algorand gas price in ALGO"
+          />
+        </div>
+        <div className="mt-2 flex items-center gap-2 text-[10px] font-terminal">
+          <span
+            className={`status-dot ${isConnected ? 'status-dot-online' : 'status-dot-offline'}`}
+          />
+          <span className={isConnected ? 'text-term-green' : 'text-term-red'}>
+            {isConnected
+              ? 'streaming live marketplace events via socket.io'
+              : 'disconnected — showing last-known values'}
+          </span>
+        </div>
+      </div>
     </motion.div>
   )
 }
@@ -733,6 +1151,9 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Realtime stats (Task 11-d) — always visible, updates live */}
+      <RealtimeStatsCard />
+
       {/* Charts Row - skeletons while loading */}
       {loading ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -780,6 +1201,9 @@ export default function DashboardPage() {
 
       {/* Quick Actions */}
       <QuickActions />
+
+      {/* AI Pricing Engine */}
+      <AIPricingEngine />
     </div>
   )
 }
