@@ -38,47 +38,54 @@ export default function SkinCard({ asset, isActive, onEquip, onList, onBuy, onWi
           ? `linear-gradient(135deg, ${colors.bg}, ${colors.glow})`
           : undefined,
         borderColor: isActive ? colors.text : undefined,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+        padding: '12px',
         '--rarity-color': colors.text,
       } as React.CSSProperties}
     >
-      {/* Icon slot */}
-      <div className="skin-card__icon" style={{ borderColor: colors.border }}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style={{ imageRendering: 'pixelated' }}>
-          <path d="M12 2L13.5 8.5H20L15 12.5L17 19L12 15L7 19L9 12.5L4 8.5H10.5L12 2Z" fill={colors.text} opacity="0.8"/>
-        </svg>
-      </div>
+      {/* Top Row: Icon + Info */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', minWidth: 0 }}>
+        {/* Icon slot */}
+        <div className="skin-card__icon" style={{ borderColor: colors.border }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L13.5 8.5H20L15 12.5L17 19L12 15L7 19L9 12.5L4 8.5H10.5L12 2Z" fill={colors.text} opacity="0.8"/>
+          </svg>
+        </div>
 
-      {/* Info */}
-      <div className="skin-card__info">
-        <div className="skin-card__name" style={{ color: colors.text }}>{asset.name}</div>
-        <div className="skin-card__meta">
-          <span className="premium-badge" style={{
-            background: colors.glow,
-            color: colors.text,
-            border: `1px solid ${colors.border}`,
-            fontSize: '7px',
-            padding: '1px 5px',
-            fontWeight: 700,
-            letterSpacing: '0.06em',
-          }}>
-            {rarity.toUpperCase()}
-          </span>
-          {asset.list_price && (
-            <span style={{ color: 'var(--mc-emerald)', fontSize: '10px', fontWeight: 600 }}>
-              {asset.list_price} μA
+        {/* Info */}
+        <div className="skin-card__info" style={{ flex: 1, minWidth: 0 }}>
+          <div className="skin-card__name" style={{ color: colors.text }}>{asset.name}</div>
+          <div className="skin-card__meta">
+            <span className="premium-badge" style={{
+              background: colors.glow,
+              color: colors.text,
+              border: `1px solid ${colors.border}`,
+              fontSize: '7px',
+              padding: '1px 5px',
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+            }}>
+              {rarity.toUpperCase()}
             </span>
-          )}
-          {asset.asa_id && <span className="skin-card__asa">ASA #{asset.asa_id}</span>}
+            {asset.list_price && (
+              <span style={{ color: '#10b981', fontSize: '10px', fontWeight: 600 }}>
+                {asset.list_price} μA
+              </span>
+            )}
+            {asset.asa_id && <span className="skin-card__asa">ASA #{asset.asa_id}</span>}
+          </div>
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="skin-card__actions">
+      {/* Bottom Row: Actions */}
+      <div className="skin-card__actions" style={{ display: 'flex', gap: '6px', width: '100%', marginTop: '4px' }}>
         {mode === 'inventory' && (
           <>
             <button
               className={`premium-btn premium-btn--xs ${isActive ? 'premium-btn--active' : ''}`}
-              style={{ borderColor: colors.border, color: colors.text }}
+              style={{ borderColor: colors.border, color: colors.text, flex: 1, justifyContent: 'center' }}
               onClick={() => onEquip(asset)}
             >
               <Zap className="h-3 w-3" />
@@ -87,6 +94,7 @@ export default function SkinCard({ asset, isActive, onEquip, onList, onBuy, onWi
             {onList && !asset.listed && (
               <button
                 className="premium-btn premium-btn--xs premium-btn--cyan"
+                style={{ flex: 1, justifyContent: 'center' }}
                 onClick={() => onList(asset)}
               >
                 <ShoppingBag className="h-3 w-3" />
@@ -96,7 +104,7 @@ export default function SkinCard({ asset, isActive, onEquip, onList, onBuy, onWi
             {onWithdraw && !asset.listed && (
               <button
                 className="premium-btn premium-btn--xs"
-                style={{ background: '#1A1A1A', borderColor: '#555 #222 #222 #555', color: 'var(--mc-diamond)' }}
+                style={{ background: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255, 255, 255, 0.1)', color: '#00f2fe', flex: 1, justifyContent: 'center' }}
                 onClick={() => onWithdraw(asset)}
                 title="Withdraw to Steam Portal"
               >
@@ -109,6 +117,7 @@ export default function SkinCard({ asset, isActive, onEquip, onList, onBuy, onWi
         {mode === 'market' && (
           <button
             className="premium-btn premium-btn--xs premium-btn--green"
+            style={{ width: '100%', justifyContent: 'center' }}
             onClick={() => onBuy?.(asset)}
           >
             <ArrowUpFromLine className="h-3 w-3" />

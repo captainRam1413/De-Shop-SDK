@@ -6,7 +6,7 @@ import TerminalConsole from './components/TerminalConsole'
 import WalletModal from './components/WalletModal.premium'
 import DashboardPremium from './components/Dashboard.premium'
 import ProfilePage from './components/ProfilePage.premium'
-import MinecraftVoxelGame from './components/MinecraftVoxelGame'
+
 import ParticleBackground from './components/ParticleBackground'
 import ConfettiEffect from './components/ConfettiEffect'
 import AnimatedBorder from './components/AnimatedBorder'
@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 import {
   BarChart3,
-  Swords,
+
   Gamepad2,
   Store,
   Backpack,
@@ -71,13 +71,12 @@ function GithubIcon({ className }: { className?: string }) {
 }
 
 const navItems: { id: ActivePage; label: string; icon: React.ReactNode; color: string }[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 className="h-4 w-4" />, color: 'var(--mc-diamond)' },
-  { id: 'minecraft', label: '3D Sandbox', icon: <Swords className="h-4 w-4" />, color: 'var(--mc-emerald)' },
-  { id: 'game', label: 'Arena Demo', icon: <Gamepad2 className="h-4 w-4" />, color: 'var(--mc-emerald)' },
-  { id: 'market', label: 'P2P Market', icon: <Store className="h-4 w-4" />, color: 'var(--mc-gold)' },
-  { id: 'inventory', label: 'NFT Assets', icon: <Backpack className="h-4 w-4" />, color: 'var(--mc-lapis)' },
-  { id: 'terminal', label: 'SDK Console', icon: <Terminal className="h-4 w-4" />, color: 'var(--mc-redstone)' },
-  { id: 'profile', label: 'Developer ID', icon: <User className="h-4 w-4" />, color: 'var(--mc-gold)' },
+  { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 className="h-4 w-4" />, color: '#3b82f6' },
+
+  { id: 'game', label: 'Arena Demo', icon: <Gamepad2 className="h-4 w-4" />, color: '#8b5cf6' },
+  { id: 'market', label: 'P2P Market', icon: <Store className="h-4 w-4" />, color: '#fbbf24' },
+  { id: 'terminal', label: 'SDK Console', icon: <Terminal className="h-4 w-4" />, color: '#ec4899' },
+  { id: 'profile', label: 'Developer ID', icon: <User className="h-4 w-4" />, color: '#14b8a6' },
   { id: 'docs', label: 'Docs Portal', icon: <BookOpen className="h-4 w-4" />, color: 'var(--purple-bright)' },
   { id: 'plugins', label: 'Plugins Hub', icon: <Pickaxe className="h-4 w-4" />, color: 'var(--cyan-bright)' },
 ]
@@ -150,7 +149,7 @@ function Sidebar() {
               onClick={() => setActivePage(item.id)}
               title={item.label}
             >
-              <span style={{ color: isActive ? item.color : 'var(--mc-stone, var(--green-dim))' }}>
+              <span style={{ color: isActive ? item.color : 'rgba(255, 255, 255, 0.35)' }}>
                 {item.icon}
               </span>
               {!sidebarCollapsed && (
@@ -183,7 +182,7 @@ function Sidebar() {
             {!sidebarCollapsed && (
               <span
                 className="premium-sidebar__status-text mc-sidebar__status-text"
-                style={{ color: activeAddress ? 'var(--mc-emerald, #22c55e)' : 'var(--mc-redstone, #ef4444)' }}
+                style={{ color: activeAddress ? '#10b981' : '#ef4444' }}
               >
                 {activeAddress ? 'Online' : 'Offline'}
               </span>
@@ -208,7 +207,7 @@ function Header() {
 
   const pageLabels: Record<ActivePage, string> = {
     dashboard: 'Dashboard Overview',
-    minecraft: '3D Voxel Sandbox',
+
     game: '3D Voxel Arena',
     market: 'P2P Marketplace',
     inventory: 'My NFT Inventory',
@@ -265,7 +264,7 @@ function Header() {
               alt="Player"
               style={{ width: 22, height: 22, imageRendering: 'pixelated' }}
             />
-            <span style={{ color: 'var(--mc-gold, #fbbf24)', fontSize: 11, fontWeight: 600 }}>{steamProfile.personaname}</span>
+            <span style={{ color: '#fbbf24', fontSize: 11, fontWeight: 600 }}>{steamProfile.personaname}</span>
           </div>
         )}
         {activeAddress ? (
@@ -327,7 +326,7 @@ function Footer() {
 
 const pageComponents: Record<ActivePage, React.ComponentType> = {
   dashboard: DashboardPremium,
-  minecraft: MinecraftVoxelGame,
+
   game: GameShowcase,
   market: MarketplaceV2, // Trading Hall — Enhanced Marketplace V2 with advanced filtering & views
   inventory: GameShowcase, // Will use same component with inventory tab active
@@ -337,13 +336,13 @@ const pageComponents: Record<ActivePage, React.ComponentType> = {
   plugins: PluginsPage,
 }
 
-// Minecraft palette for animated border: emerald → diamond → gold → redstone → emerald
-const mcBorderColors = [
-  'var(--mc-emerald, #22c55e)',
-  'var(--mc-diamond, #4da6ff)',
-  'var(--mc-gold, #fbbf24)',
-  'var(--mc-redstone, #ef4444)',
-  'var(--mc-emerald, #22c55e)',
+// macOS palette for animated border: Electric Cyan → Cobalt Blue → Emerald Green → Indigo → Electric Cyan
+const macosBorderColors = [
+  'rgba(0, 242, 254, 0.8)',   // Electric Cyan
+  'rgba(59, 130, 246, 0.8)',   // Cobalt Blue
+  'rgba(16, 185, 129, 0.8)',  // Emerald Green
+  'rgba(99, 102, 241, 0.8)',  // Indigo
+  'rgba(0, 242, 254, 0.8)',   // Electric Cyan
 ]
 
 export default function App() {
@@ -425,7 +424,7 @@ export default function App() {
         </div>
       ) : (
         <div className="macos-window-container">
-          <AnimatedBorder borderRadius={12} borderWidth={1.5} colors={mcBorderColors}>
+          <AnimatedBorder borderRadius={12} borderWidth={1.5} colors={macosBorderColors}>
             <div className="macos-window">
               {/* macOS Title Bar */}
               <div className="macos-window__titlebar">

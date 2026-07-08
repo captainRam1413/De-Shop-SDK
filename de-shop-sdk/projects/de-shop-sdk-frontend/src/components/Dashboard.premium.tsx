@@ -89,12 +89,12 @@ const rarityData = [
   { name: 'Netherite', count: 9, color: '#3C3C4E' },
 ]
 
-// ─── Stats Card Data — Web3 + Minecraft Hybrid ───────────────────────────────
+// ─── Stats Card Data — macOS Web3 Metrics ───────────────────────────────
 
 const statsCards = [
   {
     label: 'TOTAL VALUE LOCKED',
-    emoji: '💎',
+    emoji: '📈',
     value: '$2.4M',
     subtext: '12,847 ALGO',
     change: +14.2,
@@ -105,7 +105,7 @@ const statsCards = [
   },
   {
     label: 'ACTIVE WALLETS',
-    emoji: '🔗',
+    emoji: '👥',
     value: '1,847',
     subtext: '+128 today',
     change: +8.7,
@@ -116,7 +116,7 @@ const statsCards = [
   },
   {
     label: 'GAS FEES (24H)',
-    emoji: '⛽',
+    emoji: '⚡',
     value: '342 ALGO',
     subtext: 'Avg 0.028/tx',
     change: -3.1,
@@ -141,18 +141,18 @@ const statsCards = [
 // ─── Quick Actions ────────────────────────────────────────────────────────────
 
 const quickActions = [
-  { label: 'Mint NFT', desc: 'Forge new item', icon: <Sparkles className="h-4 w-4" />, color: '#2ECC71', action: 'Mint NFT' },
-  { label: 'List Item', desc: 'Place in chest', icon: <Package className="h-4 w-4" />, color: '#4AEDD9', action: 'List Item' },
-  { label: 'Connect Wallet', desc: 'Link account', icon: <Link2 className="h-4 w-4" />, color: '#c084fc', action: 'Connect Wallet' },
-  { label: 'View Docs', desc: 'SDK reference', icon: <BookOpen className="h-4 w-4" />, color: '#FFD700', action: 'View Docs' },
+  { label: 'Mint NFT', desc: 'Mint new asset', icon: <Sparkles className="h-4 w-4" />, color: '#2ECC71', action: 'Mint NFT' },
+  { label: 'List Item', desc: 'List in catalog', icon: <Package className="h-4 w-4" />, color: '#4AEDD9', action: 'List Item' },
+  { label: 'Connect Wallet', desc: 'Connect wallet', icon: <Link2 className="h-4 w-4" />, color: '#c084fc', action: 'Connect Wallet' },
+  { label: 'View Docs', desc: 'Developer guide', icon: <BookOpen className="h-4 w-4" />, color: '#FFD700', action: 'View Docs' },
 ]
 
 // ─── Activity Icon Map ────────────────────────────────────────────────────────
 
 const activityIconMap: Record<ActivityType, { icon: React.ReactNode; color: string; label: string }> = {
-  mint: { icon: <Sparkles className="h-3.5 w-3.5" />, color: '#2ECC71', label: 'FORGE' },
-  buy: { icon: <Zap className="h-3.5 w-3.5" />, color: '#4AEDD9', label: 'TRADE' },
-  list: { icon: <Tag className="h-3.5 w-3.5" />, color: '#c084fc', label: 'DISPLAY' },
+  mint: { icon: <Sparkles className="h-3.5 w-3.5" />, color: '#2ECC71', label: 'MINT' },
+  buy: { icon: <Zap className="h-3.5 w-3.5" />, color: '#4AEDD9', label: 'BUY' },
+  list: { icon: <Tag className="h-3.5 w-3.5" />, color: '#c084fc', label: 'LIST' },
   cancel: { icon: <Flame className="h-3.5 w-3.5" />, color: '#E74C3C', label: 'CANCEL' },
 }
 
@@ -169,20 +169,20 @@ function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
   return (
     <div
-      className="mc-card"
+      className="premium-card"
       style={{
-        background: 'rgba(20, 16, 12, 0.95)',
-        backdropFilter: 'blur(8px)',
-        border: '2px solid rgba(46, 204, 113, 0.4)',
-        boxShadow: '0 0 16px rgba(46, 204, 113, 0.15)',
+        background: 'rgba(15, 17, 28, 0.85)',
+        backdropFilter: 'blur(16px)',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)',
         padding: '10px 14px',
-        imageRendering: 'pixelated',
+        borderRadius: '10px',
       }}
     >
-      <p style={{ color: '#8B7355', fontSize: 11, marginBottom: 4, fontWeight: 700, textTransform: 'uppercase' }}>{label}</p>
+      <p style={{ color: '#94a3b8', fontSize: 10, marginBottom: 6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</p>
       {payload.map((entry: any, idx: number) => (
-        <p key={idx} style={{ color: entry.color, fontSize: 13, fontWeight: 700 }}>
-          {entry.name === 'price' ? '💎 Price' : '📦 Volume'}: {entry.name === 'price' ? `${entry.value} ALGO` : entry.value}
+        <p key={idx} style={{ color: entry.color, fontSize: 12, fontWeight: 600, margin: '2px 0' }}>
+          {entry.name === 'price' ? 'Price' : 'Volume'}: {entry.name === 'price' ? `${entry.value} ALGO` : entry.value}
         </p>
       ))}
     </div>
@@ -260,25 +260,23 @@ export default function DashboardPremium() {
       >
         <div>
           <h2
-            className="mc-title"
             style={{
-              fontSize: 22,
-              fontWeight: 800,
-              color: '#2ECC71',
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
+              fontSize: 20,
+              fontWeight: 700,
+              color: '#ffffff',
+              fontFamily: 'Outfit, sans-serif',
+              letterSpacing: '-0.01em',
               margin: 0,
-              textShadow: '2px 2px 0px rgba(0,0,0,0.6), 0 0 20px rgba(46, 204, 113, 0.3)',
             }}
           >
-            ⛏ VILLAGE LEDGER
+            📊 Developer Dashboard
           </h2>
-          <p style={{ fontSize: 11, color: '#8B7355', marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            🧱 Live trading post analytics &amp; web3 insights
+          <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 4, fontWeight: 500, fontFamily: 'Inter, sans-serif' }}>
+            Real-time contract metrics, transaction latency, and marketplace telemetry
           </p>
         </div>
         <div
-          className="mc-card"
+          className="premium-card"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -286,12 +284,12 @@ export default function DashboardPremium() {
             padding: '4px 12px',
             background: 'rgba(46, 204, 113, 0.08)',
             backdropFilter: 'blur(8px)',
-            border: '2px solid rgba(46, 204, 113, 0.3)',
-            boxShadow: '0 0 12px rgba(46, 204, 113, 0.1)',
+            border: '1px solid rgba(46, 204, 113, 0.25)',
+            borderRadius: 999,
             fontSize: 10,
             color: '#2ECC71',
             fontWeight: 700,
-            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
           }}
         >
           <span
@@ -299,8 +297,9 @@ export default function DashboardPremium() {
               width: 6,
               height: 6,
               background: '#2ECC71',
-              boxShadow: '0 0 6px #2ECC71',
-              animation: 'mc-pulse 2s infinite',
+              borderRadius: '50%',
+              boxShadow: '0 0 8px #2ECC71',
+              animation: 'macos-pulse 2s infinite',
             }}
           />
           LIVE
@@ -313,18 +312,23 @@ export default function DashboardPremium() {
           <motion.div
             key={card.label}
             variants={itemVariants}
-            className="premium-card dash-stat-card mc-card dash-stat-glow"
+            className="premium-card dash-stat-card"
             style={{
-              padding: 14,
+              padding: 16,
               cursor: 'default',
               display: 'flex',
               flexDirection: 'column',
-              gap: 8,
-              boxShadow: `0 0 20px ${card.glowColor}, inset 0 1px 0 rgba(255,255,255,0.05)`,
-              transition: 'box-shadow 0.3s ease, transform 0.2s ease',
+              gap: 12,
+              borderRadius: 14,
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'rgba(255, 255, 255, 0.02)',
+              backdropFilter: 'blur(20px)',
+              boxShadow: `0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05)`,
+              transition: 'all 0.3s ease',
             }}
             whileHover={{
-              boxShadow: `0 0 30px ${card.glowColor.replace('0.15', '0.3')}, 0 4px 12px rgba(0,0,0,0.3)`,
+              boxShadow: `0 12px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)`,
+              borderColor: 'rgba(255, 255, 255, 0.15)',
               y: -2,
             }}
           >
@@ -334,12 +338,12 @@ export default function DashboardPremium() {
                   width: 36,
                   height: 36,
                   background: card.bgColor,
-                  border: `2px solid ${card.color}33`,
+                  border: `1px solid ${card.color}33`,
+                  borderRadius: 10,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: card.color,
-                  boxShadow: `0 0 10px ${card.glowColor}`,
                 }}
               >
                 {card.icon}
@@ -355,31 +359,30 @@ export default function DashboardPremium() {
                 }}
               >
                 {card.change >= 0 ? (
-                  <ArrowUpRight className="h-3 w-3" />
+                  <ArrowUpRight className="h-3.5 w-3.5" />
                 ) : (
-                  <ArrowDownRight className="h-3 w-3" />
+                  <ArrowDownRight className="h-3.5 w-3.5" />
                 )}
                 {Math.abs(card.change)}%
               </div>
             </div>
             <div>
-              <p style={{ fontSize: 10, color: '#8B7355', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                {card.emoji} {card.label}
+              <p style={{ fontSize: 9.5, color: '#94a3b8', fontWeight: 600, fontFamily: 'Inter, sans-serif', letterSpacing: '0.05em' }}>
+                {card.label}
               </p>
-              <p style={{ fontSize: 20, fontWeight: 800, color: card.color, marginTop: 2, textShadow: `0 0 12px ${card.glowColor}` }}>
+              <p style={{ fontSize: 22, fontWeight: 700, color: '#ffffff', fontFamily: 'Outfit, sans-serif', marginTop: 4, letterSpacing: '-0.02em' }}>
                 {card.value}
               </p>
-              <p style={{ fontSize: 9, color: '#6B5B3E', marginTop: 1 }}>{card.subtext}</p>
+              <p style={{ fontSize: 10, color: '#64748b', fontFamily: 'Inter, sans-serif', marginTop: 2 }}>{card.subtext}</p>
             </div>
-            {/* XP bar style progress with glow */}
-            <div style={{ width: '100%', height: 3, background: 'rgba(0,0,0,0.3)', overflow: 'hidden', borderRadius: 2 }}>
+            {/* macOS Style Progress Bar */}
+            <div style={{ width: '100%', height: 5, background: 'rgba(255, 255, 255, 0.08)', overflow: 'hidden', borderRadius: 999 }}>
               <div
                 style={{
                   width: `${Math.min(100, Math.abs(card.change) * 3)}%`,
                   height: '100%',
-                  background: `linear-gradient(90deg, ${card.color}80, ${card.color})`,
-                  boxShadow: `0 0 6px ${card.color}80`,
-                  borderRadius: 2,
+                  background: `linear-gradient(90deg, ${card.color}cc, ${card.color})`,
+                  borderRadius: 999,
                 }}
               />
             </div>
@@ -393,31 +396,34 @@ export default function DashboardPremium() {
           {quickActions.map((action) => (
             <motion.button
               key={action.label}
-              whileHover={{ scale: 1.03, y: -2 }}
-              whileTap={{ scale: 0.97 }}
-              className="premium-card mc-card quick-action-btn"
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className="premium-card quick-action-btn"
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 10,
-                padding: '10px 14px',
+                gap: 12,
+                padding: '12px 16px',
                 cursor: 'pointer',
-                background: 'rgba(13, 13, 31, 0.8)',
-                backdropFilter: 'blur(8px)',
-                border: `2px solid ${action.color}25`,
-                boxShadow: `0 0 12px ${action.color}10`,
+                background: 'rgba(255, 255, 255, 0.02)',
+                backdropFilter: 'blur(16px)',
+                borderRadius: 12,
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
                 transition: 'all 0.25s ease',
               }}
               onClick={() => handleQuickAction(action.action)}
               onMouseEnter={(e) => {
                 const el = e.currentTarget as HTMLButtonElement
-                el.style.borderColor = `${action.color}50`
-                el.style.boxShadow = `0 0 20px ${action.color}20, 0 4px 12px rgba(0,0,0,0.2)`
+                el.style.borderColor = 'rgba(255, 255, 255, 0.16)'
+                el.style.background = 'rgba(255, 255, 255, 0.04)'
+                el.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.25)'
               }}
               onMouseLeave={(e) => {
                 const el = e.currentTarget as HTMLButtonElement
-                el.style.borderColor = `${action.color}25`
-                el.style.boxShadow = `0 0 12px ${action.color}10`
+                el.style.borderColor = 'rgba(255, 255, 255, 0.08)'
+                el.style.background = 'rgba(255, 255, 255, 0.02)'
+                el.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.15)'
               }}
             >
               <div
@@ -425,7 +431,8 @@ export default function DashboardPremium() {
                   width: 32,
                   height: 32,
                   background: `${action.color}15`,
-                  border: `2px solid ${action.color}30`,
+                  border: `1px solid ${action.color}30`,
+                  borderRadius: 8,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -436,12 +443,12 @@ export default function DashboardPremium() {
                 {action.icon}
               </div>
               <div style={{ textAlign: 'left', minWidth: 0 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: action.color, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                  {action.label}
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#ffffff', fontFamily: 'Outfit, sans-serif', letterSpacing: '0.04em' }}>
+                  {action.label.toUpperCase()}
                 </div>
-                <div style={{ fontSize: 9, color: '#6B5B3E', marginTop: 1 }}>{action.desc}</div>
+                <div style={{ fontSize: 9.5, color: '#94a3b8', fontFamily: 'Inter, sans-serif', marginTop: 2 }}>{action.desc}</div>
               </div>
-              <ExternalLink className="h-3 w-3" style={{ marginLeft: 'auto', color: '#6B5B3E', opacity: 0.5, flexShrink: 0 }} />
+              <ExternalLink className="h-3.5 w-3.5" style={{ marginLeft: 'auto', color: '#64748b', opacity: 0.6, flexShrink: 0 }} />
             </motion.button>
           ))}
         </div>
@@ -450,7 +457,7 @@ export default function DashboardPremium() {
       {/* ─── Main Content: Chart + Activity Feed ─────────────────────────── */}
       <div className="dashboard-main-grid">
         {/* Price Chart — Trading Post */}
-        <motion.div variants={itemVariants} className="premium-card mc-card dash-chart dashboard-chart-container" style={{ padding: 20, boxShadow: '0 0 16px rgba(46, 204, 113, 0.06)' }}>
+        <motion.div variants={itemVariants} className="premium-card dash-chart dashboard-chart-container" style={{ padding: 20, boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)', borderRadius: 14, border: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(255, 255, 255, 0.02)', height: '100%', display: 'flex', flexDirection: 'column' }}>
           <div
             style={{
               display: 'flex',
@@ -462,98 +469,99 @@ export default function DashboardPremium() {
             <div>
               <h3
                 style={{
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: 700,
-                  color: '#2ECC71',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
+                  color: '#ffffff',
+                  fontFamily: 'Outfit, sans-serif',
+                  letterSpacing: '0.02em',
                   margin: 0,
-                  textShadow: '1px 1px 0px rgba(0,0,0,0.5), 0 0 12px rgba(46, 204, 113, 0.2)',
                 }}
               >
-                ⛏ TRADING POST
+                📈 Market Trends
               </h3>
-              <p style={{ fontSize: 10, color: '#8B7355', marginTop: 2, fontWeight: 600 }}>7-DAY EMERALD EXCHANGE RATE</p>
+              <p style={{ fontSize: 10, color: '#94a3b8', marginTop: 2, fontWeight: 500, fontFamily: 'Inter, sans-serif' }}>7-DAY EXCHANGE RATE AND VOLUME HISTORY</p>
             </div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 10, height: 3, background: '#2ECC71', boxShadow: '0 0 4px rgba(46, 204, 113, 0.4)' }} />
-                <span style={{ fontSize: 9, color: '#8B7355', fontWeight: 600, textTransform: 'uppercase' }}>💎 Price</span>
+                <span style={{ width: 10, height: 3, background: '#2ECC71', borderRadius: 99 }} />
+                <span style={{ fontSize: 9.5, color: '#94a3b8', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>Price</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 10, height: 3, background: '#4AEDD9', opacity: 0.6 }} />
-                <span style={{ fontSize: 9, color: '#8B7355', fontWeight: 600, textTransform: 'uppercase' }}>📦 Volume</span>
+                <span style={{ width: 10, height: 3, background: '#4AEDD9', opacity: 0.6, borderRadius: 99 }} />
+                <span style={{ fontSize: 9.5, color: '#94a3b8', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>Volume</span>
               </div>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={priceData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-              <defs>
-                <linearGradient id="mcEmeraldGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#2ECC71" stopOpacity={0.35} />
-                  <stop offset="50%" stopColor="#2ECC71" stopOpacity={0.1} />
-                  <stop offset="100%" stopColor="#2ECC71" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="mcVolumeGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#4AEDD9" stopOpacity={0.15} />
-                  <stop offset="100%" stopColor="#4AEDD9" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                strokeDasharray="4 4"
-                stroke="rgba(139, 115, 85, 0.12)"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="day"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: isLightTheme ? '#334155' : '#8B7355', fontSize: 10, fontWeight: 700 }}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: isLightTheme ? '#334155' : '#8B7355', fontSize: 10, fontWeight: 700 }}
-                domain={['auto', 'auto']}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Area
-                type="monotone"
-                dataKey="price"
-                stroke="#2ECC71"
-                strokeWidth={2.5}
-                fill="url(#mcEmeraldGradient)"
-                dot={false}
-                activeDot={{
-                  r: 5,
-                  fill: '#2ECC71',
-                  stroke: '#1a1a1a',
-                  strokeWidth: 3,
-                }}
-                name="price"
-              />
-              <Area
-                type="monotone"
-                dataKey="volume"
-                stroke="#4AEDD9"
-                strokeWidth={1.5}
-                strokeDasharray="4 3"
-                fill="url(#mcVolumeGradient)"
-                dot={false}
-                name="volume"
-                yAxisId={0}
-                opacity={0.4}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div style={{ flex: 1, width: '100%', position: 'relative', minHeight: 0 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={priceData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="mcEmeraldGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#2ECC71" stopOpacity={0.25} />
+                    <stop offset="50%" stopColor="#2ECC71" stopOpacity={0.05} />
+                    <stop offset="100%" stopColor="#2ECC71" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="mcVolumeGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#4AEDD9" stopOpacity={0.1} />
+                    <stop offset="100%" stopColor="#4AEDD9" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="4 4"
+                  stroke="rgba(255, 255, 255, 0.05)"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="day"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: isLightTheme ? '#475569' : '#94a3b8', fontSize: 10, fontWeight: 600, fontFamily: 'Inter, sans-serif' }}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: isLightTheme ? '#475569' : '#94a3b8', fontSize: 10, fontWeight: 600, fontFamily: 'Inter, sans-serif' }}
+                  domain={['auto', 'auto']}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Area
+                  type="monotone"
+                  dataKey="price"
+                  stroke="#2ECC71"
+                  strokeWidth={2}
+                  fill="url(#mcEmeraldGradient)"
+                  dot={false}
+                  activeDot={{
+                    r: 5,
+                    fill: '#2ECC71',
+                    stroke: '#11131c',
+                    strokeWidth: 2,
+                  }}
+                  name="price"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="volume"
+                  stroke="#4AEDD9"
+                  strokeWidth={1.5}
+                  strokeDasharray="4 3"
+                  fill="url(#mcVolumeGradient)"
+                  dot={false}
+                  name="volume"
+                  yAxisId={0}
+                  opacity={0.4}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </motion.div>
 
-        {/* Activity Feed — Village Crier with Tx Hashes */}
-        <motion.div variants={slideInRight} className="premium-card mc-card dash-activity" style={{ padding: 0, display: 'flex', flexDirection: 'column', boxShadow: '0 0 16px rgba(74, 237, 217, 0.06)' }}>
+        {/* Activity Feed — Telemetry Stream with Tx Hashes */}
+        <motion.div variants={slideInRight} className="premium-card dash-activity" style={{ padding: 0, display: 'flex', flexDirection: 'column', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)', borderRadius: 14, border: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(255, 255, 255, 0.02)', overflow: 'hidden', height: '100%' }}>
           <div
             style={{
               padding: '14px 18px 12px',
-              borderBottom: '2px solid rgba(46, 204, 113, 0.15)',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -563,26 +571,26 @@ export default function DashboardPremium() {
               style={{
                 fontSize: 13,
                 fontWeight: 700,
-                color: '#4AEDD9',
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
+                color: '#ffffff',
+                fontFamily: 'Outfit, sans-serif',
+                letterSpacing: '0.02em',
                 margin: 0,
-                textShadow: '1px 1px 0px rgba(0,0,0,0.5), 0 0 12px rgba(74, 237, 217, 0.2)',
               }}
             >
-              📢 VILLAGE CRIER
+              🔔 Telemetry Stream
             </h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span
                 style={{
-                  width: 5,
-                  height: 5,
+                  width: 6,
+                  height: 6,
                   background: '#2ECC71',
-                  boxShadow: '0 0 6px #2ECC71',
-                  animation: 'mc-pulse 2s infinite',
+                  borderRadius: '50%',
+                  boxShadow: '0 0 8px #2ECC71',
+                  animation: 'macos-pulse 2s infinite',
                 }}
               />
-              <span style={{ fontSize: 9, color: '#8B7355', fontWeight: 700, textTransform: 'uppercase' }}>LIVE</span>
+              <span style={{ fontSize: 9, color: '#94a3b8', fontWeight: 700, letterSpacing: '0.05em' }}>LIVE</span>
             </div>
           </div>
           <div
@@ -590,7 +598,6 @@ export default function DashboardPremium() {
               flex: 1,
               overflowY: 'auto',
               padding: '8px 0',
-              maxHeight: 268,
             }}
           >
             {activityItems.map((item, i) => {
@@ -604,14 +611,14 @@ export default function DashboardPremium() {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 10,
-                    padding: '8px 18px',
-                    borderBottom: '1px solid rgba(139, 115, 85, 0.08)',
+                    gap: 12,
+                    padding: '10px 18px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
                     transition: 'background 0.2s ease',
                     cursor: 'default',
                   }}
                   onMouseEnter={(e) => {
-                    ;(e.currentTarget as HTMLDivElement).style.background = 'rgba(46, 204, 113, 0.04)'
+                    ;(e.currentTarget as HTMLDivElement).style.background = 'rgba(255, 255, 255, 0.03)'
                   }}
                   onMouseLeave={(e) => {
                     ;(e.currentTarget as HTMLDivElement).style.background = 'transparent'
@@ -623,13 +630,13 @@ export default function DashboardPremium() {
                       width: 28,
                       height: 28,
                       background: `${meta.color}15`,
-                      border: `2px solid ${meta.color}30`,
+                      border: `1px solid ${meta.color}30`,
+                      borderRadius: 6,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: meta.color,
                       flexShrink: 0,
-                      boxShadow: `0 0 8px ${meta.color}10`,
                     }}
                   >
                     {meta.icon}
@@ -642,16 +649,18 @@ export default function DashboardPremium() {
                           fontSize: 9,
                           fontWeight: 800,
                           color: meta.color,
-                          letterSpacing: '0.06em',
+                          fontFamily: 'Inter, sans-serif',
+                          letterSpacing: '0.04em',
                         }}
                       >
                         {meta.label}
                       </span>
                       <span
                         style={{
-                          fontSize: 11,
+                          fontSize: 11.5,
                           fontWeight: 600,
-                          color: '#D4C5A9',
+                          color: '#ffffff',
+                          fontFamily: 'Inter, sans-serif',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
@@ -662,23 +671,23 @@ export default function DashboardPremium() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
                       {item.price > 0 && (
-                        <span style={{ fontSize: 10, fontWeight: 700, color: rarityColorMap[item.rarity] || '#8B7355' }}>
-                          💎 {item.price} ALGO
+                        <span style={{ fontSize: 10, fontWeight: 700, color: rarityColorMap[item.rarity] || '#ffffff', fontFamily: 'JetBrains Mono, monospace' }}>
+                          {item.price} ALGO
                         </span>
                       )}
                       {item.price === 0 && (
-                        <span style={{ fontSize: 10, fontWeight: 600, color: '#8B7355', fontStyle: 'italic' }}>
-                          ⛏ freshly forged
+                        <span style={{ fontSize: 10, fontWeight: 500, color: '#94a3b8', fontStyle: 'italic', fontFamily: 'Inter, sans-serif' }}>
+                          ✨ newly minted
                         </span>
                       )}
-                      <span style={{ fontSize: 9, color: '#6B5B3E', display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Clock className="h-2.5 w-2.5" />
+                      <span style={{ fontSize: 9.5, color: '#64748b', display: 'flex', alignItems: 'center', gap: 3, fontFamily: 'Inter, sans-serif' }}>
+                        <Clock className="h-3 w-3" />
                         {item.timeAgo}
                       </span>
                     </div>
                     {/* Transaction hash */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                      <span style={{ fontSize: 8, color: '#4AEDD9', opacity: 0.6, fontFamily: 'monospace', letterSpacing: '0.02em' }}>
+                      <span style={{ fontSize: 8.5, color: '#4AEDD9', opacity: 0.6, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.02em' }}>
                         {item.txHash}
                       </span>
                     </div>
@@ -690,77 +699,78 @@ export default function DashboardPremium() {
         </motion.div>
       </div>
 
-      {/* ─── Bottom Row: Ore Distribution + SDK Stats ──────────────────── */}
+      {/* ─── Bottom Row: Asset Distribution + SDK Stats ──────────────────── */}
       <div className="dashboard-bottom-grid">
-        {/* Ore Distribution */}
-        <motion.div variants={itemVariants} className="premium-card mc-card dashboard-chart-container" style={{ padding: 20, boxShadow: '0 0 16px rgba(255, 215, 0, 0.06)' }}>
+        {/* Asset Distribution */}
+        <motion.div variants={itemVariants} className="premium-card dashboard-chart-container" style={{ padding: 20, boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)', borderRadius: 14, border: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(255, 255, 255, 0.02)', height: '100%', display: 'flex', flexDirection: 'column' }}>
           <h3
             style={{
               fontSize: 13,
               fontWeight: 700,
-              color: '#FFD700',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
+              color: '#ffffff',
+              fontFamily: 'Outfit, sans-serif',
+              letterSpacing: '0.02em',
               margin: '0 0 16px 0',
-              textShadow: '1px 1px 0px rgba(0,0,0,0.5), 0 0 12px rgba(255, 215, 0, 0.2)',
             }}
           >
-            ⛏ ORE DISTRIBUTION
+            📊 Rarity Distribution
           </h3>
           <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
             <div style={{ flex: 1 }}>
-              <ResponsiveContainer width="100%" height={140}>
-                <BarChart
-                  data={rarityData}
-                  layout="vertical"
-                  margin={{ top: 0, right: 20, left: 70, bottom: 0 }}
-                  barCategoryGap={12}
-                >
-                  <CartesianGrid strokeDasharray="4 4" stroke="rgba(139, 115, 85, 0.08)" horizontal={false} />
-                  <XAxis
-                    type="number"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: isLightTheme ? '#334155' : '#8B7355', fontSize: 10, fontWeight: 700 }}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: isLightTheme ? '#475569' : '#D4C5A9', fontSize: 11, fontWeight: 700 }}
-                    width={65}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="count" barSize={18}>
-                    {rarityData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={entry.color}
-                        fillOpacity={0.8}
-                        stroke={entry.color}
-                        strokeWidth={1}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <div style={{ height: 140, width: '100%', position: 'relative' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={rarityData}
+                    layout="vertical"
+                    margin={{ top: 0, right: 20, left: 70, bottom: 0 }}
+                    barCategoryGap={12}
+                  >
+                    <CartesianGrid strokeDasharray="4 4" stroke="rgba(255, 255, 255, 0.04)" horizontal={false} />
+                    <XAxis
+                      type="number"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: isLightTheme ? '#475569' : '#94a3b8', fontSize: 10, fontWeight: 600, fontFamily: 'Inter, sans-serif' }}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: isLightTheme ? '#334155' : '#e2e8f0', fontSize: 11, fontWeight: 600, fontFamily: 'Inter, sans-serif' }}
+                      width={65}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="count" barSize={18} radius={[0, 6, 6, 0]}>
+                      {rarityData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.color}
+                          fillOpacity={0.8}
+                          stroke={entry.color}
+                          strokeWidth={1}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-            {/* Ore legend */}
+            {/* Asset legend */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 110 }}>
               {rarityData.map((r) => (
                 <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span
                     style={{
-                      width: 12,
-                      height: 12,
+                      width: 10,
+                      height: 10,
                       background: r.color,
-                      border: '2px solid rgba(0,0,0,0.3)',
-                      boxShadow: r.name === 'Diamond' ? `0 0 8px ${r.color}80` : r.name === 'Netherite' ? `0 0 12px rgba(200,200,200,0.3)` : 'none',
+                      borderRadius: '50%',
+                      boxShadow: r.name === 'Diamond' ? `0 0 8px ${r.color}80` : 'none',
                     }}
                   />
-                  <span style={{ fontSize: 10, color: '#8B7355', fontWeight: 700, textTransform: 'uppercase' }}>{r.name}</span>
-                  <span style={{ fontSize: 11, color: r.color, fontWeight: 800, marginLeft: 'auto' }}>{r.count}</span>
+                  <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>{r.name}</span>
+                  <span style={{ fontSize: 11, color: r.color, fontWeight: 700, marginLeft: 'auto', fontFamily: 'JetBrains Mono, monospace' }}>{r.count}</span>
                 </div>
               ))}
             </div>
@@ -768,31 +778,31 @@ export default function DashboardPremium() {
         </motion.div>
 
         {/* SDK Quick Reference */}
-        <motion.div variants={slideInRight} className="premium-card mc-card" style={{ padding: 20, boxShadow: '0 0 16px rgba(192, 132, 252, 0.06)' }}>
+        <motion.div variants={slideInRight} className="premium-card" style={{ padding: 20, boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)', borderRadius: 14, border: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(255, 255, 255, 0.02)', height: '100%', display: 'flex', flexDirection: 'column' }}>
           <h3
             style={{
               fontSize: 13,
               fontWeight: 700,
-              color: '#c084fc',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
+              color: '#ffffff',
+              fontFamily: 'Outfit, sans-serif',
+              letterSpacing: '0.02em',
               margin: '0 0 16px 0',
-              textShadow: '1px 1px 0px rgba(0,0,0,0.5), 0 0 12px rgba(192, 132, 252, 0.2)',
             }}
           >
-            📜 SDK REFERENCE
+            💻 SDK Integration
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {/* Code snippet preview */}
             <div
               style={{
-                background: 'rgba(0,0,0,0.4)',
-                border: '2px solid rgba(192, 132, 252, 0.2)',
+                background: 'rgba(0, 0, 0, 0.3)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '8px',
                 padding: '10px 12px',
-                fontFamily: 'monospace',
-                fontSize: 10,
+                fontFamily: 'JetBrains Mono, Menlo, Monaco, Consolas, monospace',
+                fontSize: 10.5,
                 lineHeight: 1.6,
-                color: '#D4C5A9',
+                color: '#e2e8f0',
                 overflow: 'hidden',
               }}
             >
@@ -819,17 +829,18 @@ export default function DashboardPremium() {
                   width: '100%',
                   justifyContent: 'flex-start',
                   padding: '6px 14px',
-                  borderColor: `${ref.color}30`,
+                  borderColor: `${ref.color}20`,
                   color: ref.color,
                   background: `${ref.color}08`,
+                  borderRadius: 8,
                   transition: 'all 0.2s ease',
                 }}
                 onClick={() => handleQuickAction(ref.label)}
               >
                 {ref.icon}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: 9, fontWeight: 700 }}>{ref.label.toUpperCase()}</span>
-                  <span style={{ fontSize: 7, color: '#6B5B3E', fontWeight: 400 }}>{ref.desc}</span>
+                  <span style={{ fontSize: 9, fontWeight: 700, fontFamily: 'Inter, sans-serif' }}>{ref.label.toUpperCase()}</span>
+                  <span style={{ fontSize: 7.5, color: '#94a3b8', fontWeight: 500, fontFamily: 'Inter, sans-serif' }}>{ref.desc}</span>
                 </div>
                 <span style={{ marginLeft: 'auto', fontSize: 9, opacity: 0.5 }}>→</span>
               </motion.button>
@@ -838,11 +849,11 @@ export default function DashboardPremium() {
         </motion.div>
       </div>
 
-      {/* ─── Minecraft Pulse Animation Keyframe ──────────────────────────── */}
+      {/* ─── macOS Pulse Animation Keyframe ──────────────────────────── */}
       <style>{`
-        @keyframes mc-pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
+        @keyframes macos-pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(1.05); }
         }
       `}</style>
     </motion.div>

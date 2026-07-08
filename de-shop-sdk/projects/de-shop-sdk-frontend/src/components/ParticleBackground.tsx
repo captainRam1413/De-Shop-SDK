@@ -19,13 +19,13 @@ const WOBBLE_AMPLITUDE = 0.2
 const WOBBLE_SPEED = 0.002
 const FADE_MAX = 0.18
 
-// macOS desktop ambient colors
+// macOS theme ambient colors: Cyan, Emerald, Blue, Indigo, Slate
 const COLORS = [
-  { r: 74, g: 237, b: 217 },   // Cyan
-  { r: 168, g: 85, b: 247 },   // Purple
-  { r: 79, g: 172, b: 254 },   // Light Blue
+  { r: 0, g: 242, b: 254 },    // Cyan
+  { r: 16, g: 185, b: 129 },   // Emerald
+  { r: 59, g: 130, b: 246 },   // Blue
   { r: 99, g: 102, b: 241 },   // Indigo
-  { r: 244, g: 63, b: 94 },    // Rose
+  { r: 148, g: 163, b: 184 },  // Slate
 ]
 
 // ─── Particle Type ────────────────────────────────────────────────────────────

@@ -190,11 +190,11 @@ export default function GameShowcase() {
         {/* Left: Game Arena */}
         <div className="showcase__arena-col">
           <div className="showcase__arena-header">
-            <span>⛏ OVERWORLD</span>
+            <span>🎮 3D Arena</span>
             <span className="showcase__arena-hint">
               {analysis
-                ? `${analysis.type === 'gun_skin' ? '⚔ WEAPON SKIN' : analysis.type === 'character_skin' ? '🧑 CHARACTER SKIN' : '✨ ACCESSORY'} EQUIPPED`
-                : 'Click to play — WASD + Mouse'}
+                ? `${analysis.type === 'gun_skin' ? '⚔ Weapon Equipped' : analysis.type === 'character_skin' ? '🧑 Character Equipped' : '✨ Accessory Equipped'}`
+                : 'WASD to move — click to attack'}
             </span>
           </div>
           <div className="showcase__arena-wrap">
@@ -293,38 +293,42 @@ export default function GameShowcase() {
 
           {/* Mint Bar */}
           {activeAddress && tab === 'inventory' && (
-            <div className="showcase__mint-bar">
+            <div className="showcase__mint-bar" style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'stretch' }}>
               <input
                 className="premium-input"
                 placeholder="e.g. Dragon Flame AK"
                 value={store.mintName}
                 onChange={(e) => store.setMintName(e.target.value)}
-                style={{ flex: 1, fontSize: 11, minWidth: 80 }}
+                style={{ fontSize: 11, width: '100%' }}
               />
-              <select className="premium-select" value={store.mintRarity} onChange={(e) => store.setMintRarity(e.target.value)} style={{ fontSize: 11 }}>
-                <option value="common">Common</option>
-                <option value="rare">Rare</option>
-                <option value="epic">Epic</option>
-                <option value="legendary">Legendary</option>
-              </select>
-              <select className="premium-select" value={store.mintType} onChange={(e) => store.setMintType(e.target.value as any)} style={{ fontSize: 11 }}>
-                <option value="weapon">Weapon</option>
-                <option value="character">Character</option>
-              </select>
-              <button className="premium-btn premium-btn--sm premium-btn--green" onClick={handleMint} disabled={store.isMinting} style={{ flexShrink: 0 }}>
-                {store.isMinting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                Mint
-              </button>
-              <button className="premium-btn premium-btn--sm premium-btn--cyan" onClick={handleBatchMint} disabled={store.isMinting} title="Batch Mint 3 Skins" style={{ flexShrink: 0 }}>
-                <Package className="h-3 w-3" />
-                Batch
-              </button>
+              <div style={{ display: 'flex', gap: 6, width: '100%' }}>
+                <select className="premium-select" value={store.mintRarity} onChange={(e) => store.setMintRarity(e.target.value)} style={{ flex: 1, fontSize: 11 }}>
+                  <option value="common">Common</option>
+                  <option value="rare">Rare</option>
+                  <option value="epic">Epic</option>
+                  <option value="legendary">Legendary</option>
+                </select>
+                <select className="premium-select" value={store.mintType} onChange={(e) => store.setMintType(e.target.value as any)} style={{ flex: 1, fontSize: 11 }}>
+                  <option value="weapon">Weapon</option>
+                  <option value="character">Character</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: 6, width: '100%' }}>
+                <button className="premium-btn premium-btn--sm premium-btn--green" onClick={handleMint} disabled={store.isMinting} style={{ flex: 1, justifyContent: 'center' }}>
+                  {store.isMinting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  Mint
+                </button>
+                <button className="premium-btn premium-btn--sm premium-btn--cyan" onClick={handleBatchMint} disabled={store.isMinting} title="Batch Mint 3 Skins" style={{ flex: 1, justifyContent: 'center' }}>
+                  <Package className="h-3 w-3" />
+                  Batch
+                </button>
+              </div>
             </div>
           )}
 
           {/* Market Filter */}
           {activeAddress && tab === 'market' && (
-            <div className="showcase__mint-bar">
+            <div className="showcase__mint-bar" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <Search className="h-3 w-3" style={{ color: 'var(--cyan-bright)', flexShrink: 0 }} />
               <select className="premium-select" value={store.marketFilter} onChange={(e) => store.setMarketFilter(e.target.value)} style={{ flex: 1, fontSize: 11 }}>
                 <option value="">Any Rarity</option>

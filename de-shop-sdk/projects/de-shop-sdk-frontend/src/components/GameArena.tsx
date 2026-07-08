@@ -935,7 +935,7 @@ export default function GameArena({ activeGunSkin, activeCharSkin }: GameArenaPr
       <div className="game-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span>⚔️ 3D WEAPON ARENA</span>
         {gameStarted && (
-          <span style={{ color: 'var(--mc-emerald)', fontSize: 10 }}>LEVEL {level}</span>
+          <span style={{ color: '#10b981', fontSize: 10 }}>LEVEL {level}</span>
         )}
       </div>
 
@@ -1002,7 +1002,7 @@ export default function GameArena({ activeGunSkin, activeCharSkin }: GameArenaPr
             <div style={{
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: 11,
-              color: 'var(--mc-gold)',
+              color: '#fbbf24',
               fontWeight: 700,
               background: 'rgba(0,0,0,0.5)',
               padding: '2px 8px',
@@ -1093,7 +1093,7 @@ export default function GameArena({ activeGunSkin, activeCharSkin }: GameArenaPr
               borderRadius: '6px',
               color: '#d1d5db'
             }}>
-              🧑 Avatar: <span style={{ color: 'var(--mc-emerald)', fontWeight: 700 }}>{activeCharSkin?.name || 'Steve'}</span>
+              🧑 Avatar: <span style={{ color: '#10b981', fontWeight: 700 }}>{activeCharSkin?.name || 'Steve'}</span>
             </div>
             <div style={{
               background: 'rgba(255,255,255,0.05)',
@@ -1102,7 +1102,7 @@ export default function GameArena({ activeGunSkin, activeCharSkin }: GameArenaPr
               borderRadius: '6px',
               color: '#d1d5db'
             }}>
-              ⚔️ Sword: <span style={{ color: 'var(--mc-gold)', fontWeight: 700 }}>{activeGunSkin?.name || 'Standard'}</span>
+              ⚔️ Sword: <span style={{ color: '#fbbf24', fontWeight: 700 }}>{activeGunSkin?.name || 'Standard'}</span>
             </div>
           </div>
 

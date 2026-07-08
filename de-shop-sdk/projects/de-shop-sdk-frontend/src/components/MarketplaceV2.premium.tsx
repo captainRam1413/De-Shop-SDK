@@ -1,8 +1,8 @@
 /**
- * De-Shop SDK — Marketplace V2 (Premium) — Minecraft Theme
- * ═══════════════════════════════════════════════════════════
- * Minecraft Trading Hall with inventory-style grid, chest-style list,
- * tooltip-style detail modal, and enchantment-themed analysis.
+ * De-Shop SDK — Marketplace V2 (Premium) — macOS Glassmorphism Theme
+ * ═════════════════════════════════════════════════════════════════════
+ * Premium, modern trading interface featuring glassmorphic design systems,
+ * fluid layout grids, clean typographic hierarchy, and responsive data charts.
  */
 
 import { useState, useMemo, useCallback } from 'react'
@@ -23,7 +23,6 @@ import {
   ShoppingBag,
   BarChart3,
   Clock,
-  ArrowUpRight,
   Activity,
 } from 'lucide-react'
 import {
@@ -67,7 +66,7 @@ interface MarketplaceListing {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// RARITY CONFIG — Minecraft Ore Colors
+// RARITY CONFIG — Premium macOS Colors
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const RARITY_CONFIG: Record<Rarity, {
@@ -80,40 +79,40 @@ const RARITY_CONFIG: Record<Rarity, {
   icon: string
 }> = {
   common: {
-    color: '#D4D4D4',
-    bg: 'rgba(212,212,212,0.1)',
-    border: 'rgba(212,212,212,0.3)',
-    glow: 'rgba(212,212,212,0.15)',
-    badge: '#D4D4D4',
-    gradient: 'linear-gradient(135deg, rgba(212,212,212,0.1), rgba(212,212,212,0.03))',
-    icon: '⬜',
+    color: '#94a3b8',
+    bg: 'rgba(148, 163, 184, 0.04)',
+    border: 'rgba(148, 163, 184, 0.12)',
+    glow: 'rgba(148, 163, 184, 0.1)',
+    badge: '#94a3b8',
+    gradient: 'linear-gradient(135deg, rgba(148, 163, 184, 0.06), rgba(148, 163, 184, 0.01))',
+    icon: '✨',
   },
   rare: {
-    color: '#4AEDD9',
-    bg: 'rgba(74,237,217,0.1)',
-    border: 'rgba(74,237,217,0.3)',
-    glow: 'rgba(74,237,217,0.15)',
-    badge: '#4AEDD9',
-    gradient: 'linear-gradient(135deg, rgba(74,237,217,0.1), rgba(74,237,217,0.03))',
-    icon: '💠',
+    color: '#00f2fe',
+    bg: 'rgba(0, 242, 254, 0.04)',
+    border: 'rgba(0, 242, 254, 0.15)',
+    glow: 'rgba(0, 242, 254, 0.12)',
+    badge: '#00f2fe',
+    gradient: 'linear-gradient(135deg, rgba(0, 242, 254, 0.06), rgba(0, 242, 254, 0.01))',
+    icon: '⚡',
   },
   epic: {
     color: '#c084fc',
-    bg: 'rgba(168,85,247,0.1)',
-    border: 'rgba(168,85,247,0.3)',
-    glow: 'rgba(168,85,247,0.15)',
-    badge: '#a855f7',
-    gradient: 'linear-gradient(135deg, rgba(168,85,247,0.1), rgba(168,85,247,0.03))',
-    icon: '🟣',
+    bg: 'rgba(192, 132, 252, 0.04)',
+    border: 'rgba(192, 132, 252, 0.15)',
+    glow: 'rgba(192, 132, 252, 0.12)',
+    badge: '#c084fc',
+    gradient: 'linear-gradient(135deg, rgba(192, 132, 252, 0.06), rgba(192, 132, 252, 0.01))',
+    icon: '🔮',
   },
   legendary: {
-    color: '#FFD700',
-    bg: 'rgba(255,215,0,0.1)',
-    border: 'rgba(255,215,0,0.3)',
-    glow: 'rgba(255,215,0,0.15)',
-    badge: '#FFD700',
-    gradient: 'linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,215,0,0.03))',
-    icon: '🟡',
+    color: '#fbbf24',
+    bg: 'rgba(251, 191, 36, 0.04)',
+    border: 'rgba(251, 191, 36, 0.15)',
+    glow: 'rgba(251, 191, 36, 0.12)',
+    badge: '#fbbf24',
+    gradient: 'linear-gradient(135deg, rgba(251, 191, 36, 0.08), rgba(251, 191, 36, 0.01))',
+    icon: '👑',
   },
 }
 
@@ -125,7 +124,7 @@ const RARITY_ORDER: Record<Rarity, number> = {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MOCK DATA GENERATOR — Minecraft Items
+// MOCK DATA GENERATOR — Assets
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function generatePriceHistory(basePrice: number, volatility: number = 0.15): PricePoint[] {
@@ -458,48 +457,48 @@ const containerVariants = {
 }
 
 const cardVariants = {
-  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  hidden: { opacity: 0, y: 15, scale: 0.98 },
   visible: {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { duration: 0.35, ease: 'easeOut' as const },
+    transition: { duration: 0.3, ease: 'easeOut' as const },
   },
 }
 
 const listVariants = {
-  hidden: { opacity: 0, x: -15 },
+  hidden: { opacity: 0, x: -10 },
   visible: {
     opacity: 1,
     x: 0,
-    transition: { duration: 0.25, ease: 'easeOut' as const },
+    transition: { duration: 0.2, ease: 'easeOut' as const },
   },
 }
 
 const modalVariants = {
-  hidden: { opacity: 0, scale: 0.92, y: 20 },
+  hidden: { opacity: 0, scale: 0.95, y: 15 },
   visible: {
     opacity: 1,
     scale: 1,
     y: 0,
-    transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
+    transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
   },
   exit: {
     opacity: 0,
-    scale: 0.95,
+    scale: 0.97,
     y: 10,
-    transition: { duration: 0.2, ease: 'easeIn' as const },
+    transition: { duration: 0.15, ease: 'easeIn' as const },
   },
 }
 
 const backdropVariants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.2 } },
-  exit: { opacity: 0, transition: { duration: 0.15 } },
+  visible: { opacity: 1, transition: { duration: 0.18 } },
+  exit: { opacity: 0, transition: { duration: 0.12 } },
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CUSTOM TOOLTIP FOR PRICE CHART — Minecraft Style
+// CUSTOM TOOLTIP FOR PRICE CHART — macOS Glassmorphism Style
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function ChartTooltip({ active, payload, label }: any) {
@@ -507,24 +506,24 @@ function ChartTooltip({ active, payload, label }: any) {
   return (
     <div
       style={{
-        background: 'rgba(26, 10, 46, 0.95)',
-        border: '2px solid #5000AA',
-        borderRadius: 0,
+        background: 'rgba(15, 17, 28, 0.85)',
+        backdropFilter: 'blur(16px)',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        borderRadius: '10px',
         padding: '8px 12px',
-        imageRendering: 'pixelated',
-        boxShadow: '0 4px 16px rgba(80, 0, 170, 0.4)',
+        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)',
       }}
     >
-      <p style={{ color: '#9f7aea', fontSize: 10, marginBottom: 2, fontFamily: "'Press Start 2P', 'Courier New', monospace", imageRendering: 'pixelated' }}>{label}</p>
-      <p style={{ color: '#4AEDD9', fontSize: 12, fontWeight: 700, fontFamily: "'Press Start 2P', 'Courier New', monospace", imageRendering: 'pixelated' }}>
-        {payload[0].value.toLocaleString()} <span style={{ fontSize: 8, color: '#4AEDD9' }}>μA</span>
+      <p style={{ color: '#94a3b8', fontSize: 10, marginBottom: 2, fontFamily: 'Outfit, sans-serif' }}>{label}</p>
+      <p style={{ color: '#4AEDD9', fontSize: 12, fontWeight: 700, fontFamily: 'Outfit, sans-serif' }}>
+        {payload[0].value.toLocaleString()} <span style={{ fontSize: 8, color: '#94a3b8' }}>ALGO</span>
       </p>
     </div>
   )
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// RARITY BADGE COMPONENT — Minecraft Style
+// RARITY BADGE COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function RarityBadge({ rarity }: { rarity: Rarity }) {
@@ -532,16 +531,15 @@ function RarityBadge({ rarity }: { rarity: Rarity }) {
   return (
     <span
       style={{
-        background: config.glow,
+        background: config.bg,
         color: config.color,
         fontSize: 9,
         padding: '2px 8px',
-        borderRadius: 0,
+        borderRadius: 999,
         fontWeight: 700,
-        letterSpacing: '0.08em',
+        letterSpacing: '0.04em',
         textTransform: 'uppercase' as const,
-        border: `2px solid ${config.border}`,
-        imageRendering: 'pixelated',
+        border: `1px solid ${config.border}`,
       }}
     >
       {rarity}
@@ -549,13 +547,8 @@ function RarityBadge({ rarity }: { rarity: Rarity }) {
   )
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// PIXEL FONT HELPER
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const pixelFont = {
-  fontFamily: "'Press Start 2P', 'Courier New', monospace",
-  imageRendering: 'pixelated' as const,
+const premiumFont = {
+  fontFamily: "'Outfit', 'Inter', -apple-system, sans-serif",
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -655,7 +648,7 @@ export default function MarketplaceV2() {
 
   // ── Buy handler (Trade) ──────────────────────────────────────────────────
   const handleBuy = (item: MarketplaceListing) => {
-    addNotification('success', `Trade initiated for "${item.name}" at ${item.price.toLocaleString()} μA`)
+    addNotification('success', `Purchase initiated for "${item.name}" at ${item.price.toLocaleString()} ALGO`)
     setSelectedItem(null)
   }
 
@@ -669,67 +662,43 @@ export default function MarketplaceV2() {
       <div
         style={{
           padding: '16px 20px',
-          borderBottom: '2px solid rgba(80, 0, 170, 0.4)',
-          background: 'rgba(26, 10, 46, 0.9)',
-          imageRendering: 'pixelated',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          background: 'rgba(255, 255, 255, 0.01)',
+          backdropFilter: 'blur(8px)',
         }}
       >
-        {/* Minecraft Banner */}
-        <div
-          style={{
-            width: '100%',
-            height: 48,
-            marginBottom: 12,
-            background: 'linear-gradient(135deg, rgba(80,0,170,0.3) 0%, rgba(74,237,217,0.15) 50%, rgba(255,215,0,0.2) 100%)',
-            border: '2px solid rgba(80, 0, 170, 0.5)',
-            borderRadius: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            imageRendering: 'pixelated',
-          }}
-        >
-          <span style={{ fontSize: 20, ...pixelFont }}>⛏</span>
-          <span style={{ fontSize: 14, color: '#FFD700', fontWeight: 700, letterSpacing: '0.08em', ...pixelFont }}>
-            TRADING HALL
-          </span>
-          <span style={{ fontSize: 20, ...pixelFont }}>⛏</span>
-        </div>
-
         {/* Title row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <ShoppingBag className="h-5 w-5" style={{ color: '#4AEDD9' }} />
+            <ShoppingBag className="h-5 w-5" style={{ color: '#00f2fe' }} />
             <h2
               style={{
                 fontSize: 16,
                 fontWeight: 700,
-                color: '#FFD700',
-                letterSpacing: '0.06em',
+                color: '#ffffff',
+                letterSpacing: '-0.01em',
                 margin: 0,
-                ...pixelFont,
+                ...premiumFont,
               }}
             >
-              ⛏ TRADING HALL
+              P2P Marketplace
             </h2>
             <span
               style={{
                 fontSize: 9,
-                color: '#4AEDD9',
-                background: 'rgba(74,237,217,0.1)',
+                color: '#00f2fe',
+                background: 'rgba(0, 242, 254, 0.1)',
                 padding: '2px 8px',
-                borderRadius: 0,
+                borderRadius: 999,
                 fontWeight: 600,
-                border: '2px solid rgba(74,237,217,0.3)',
-                imageRendering: 'pixelated',
+                border: '1px solid rgba(0, 242, 254, 0.3)',
               }}
             >
               V2
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 11, color: '#9f7aea', ...pixelFont }}>
+            <span style={{ fontSize: 11, color: '#94a3b8', ...premiumFont }}>
               {filteredListings.length} item{filteredListings.length !== 1 ? 's' : ''}
             </span>
             {wishlist.size > 0 && (
@@ -739,13 +708,12 @@ export default function MarketplaceV2() {
                   color: '#f87171',
                   background: 'rgba(248, 113, 113, 0.1)',
                   padding: '2px 8px',
-                  borderRadius: 0,
+                  borderRadius: 999,
                   fontWeight: 600,
                   display: 'flex',
                   alignItems: 'center',
                   gap: 4,
-                  border: '2px solid rgba(248,113,113,0.3)',
-                  imageRendering: 'pixelated',
+                  border: '1px solid rgba(248, 113, 113, 0.3)',
                 }}
               >
                 <Heart className="h-3 w-3" style={{ fill: '#f87171' }} /> {wishlist.size}
@@ -771,12 +739,12 @@ export default function MarketplaceV2() {
                 left: 10,
                 top: '50%',
                 transform: 'translateY(-50%)',
-                color: '#9f7aea',
+                color: '#94a3b8',
               }}
             />
             <input
               className="premium-input"
-              placeholder="Search items..."
+              placeholder="Search assets..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
@@ -784,16 +752,17 @@ export default function MarketplaceV2() {
                 fontSize: 11,
                 paddingLeft: 30,
                 paddingRight: 8,
-                borderRadius: 0,
-                border: '2px solid rgba(80,0,170,0.4)',
-                background: 'rgba(26,10,46,0.6)',
-                color: '#e2d5f3',
-                ...pixelFont,
+                borderRadius: 8,
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'rgba(255, 255, 255, 0.03)',
+                color: '#ffffff',
+                height: 32,
+                ...premiumFont,
               }}
             />
           </div>
 
-          {/* Rarity filter — "Filter by Ore Quality" */}
+          {/* Rarity filter */}
           <div style={{ position: 'relative' }}>
             <select
               className="premium-select"
@@ -802,18 +771,20 @@ export default function MarketplaceV2() {
               style={{
                 fontSize: 11,
                 minWidth: 120,
-                borderRadius: 0,
-                border: '2px solid rgba(80,0,170,0.4)',
-                background: 'rgba(26,10,46,0.6)',
-                color: '#e2d5f3',
-                ...pixelFont,
+                borderRadius: 8,
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'rgba(255, 255, 255, 0.03)',
+                color: '#ffffff',
+                height: 32,
+                padding: '0 8px',
+                ...premiumFont,
               }}
             >
-              <option value="all">All Ore Quality</option>
-              <option value="common">Common (Iron)</option>
-              <option value="rare">Rare (Diamond)</option>
-              <option value="epic">Epic (Netherite)</option>
-              <option value="legendary">Legendary (Gold)</option>
+              <option value="all">All Rarities</option>
+              <option value="common">Common</option>
+              <option value="rare">Rare</option>
+              <option value="epic">Epic</option>
+              <option value="legendary">Legendary</option>
             </select>
           </div>
 
@@ -825,11 +796,13 @@ export default function MarketplaceV2() {
             style={{
               fontSize: 11,
               minWidth: 140,
-              borderRadius: 0,
-              border: '2px solid rgba(80,0,170,0.4)',
-              background: 'rgba(26,10,46,0.6)',
-              color: '#e2d5f3',
-              ...pixelFont,
+              borderRadius: 8,
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'rgba(255, 255, 255, 0.03)',
+              color: '#ffffff',
+              height: 32,
+              padding: '0 8px',
+              ...premiumFont,
             }}
           >
             <option value="newest">Newest First</option>
@@ -843,11 +816,15 @@ export default function MarketplaceV2() {
             className="premium-btn premium-btn--sm"
             onClick={() => setShowFilters(!showFilters)}
             style={{
-              background: showFilters ? 'rgba(74,237,217,0.1)' : 'rgba(26,10,46,0.6)',
-              borderColor: showFilters ? 'rgba(74,237,217,0.4)' : 'rgba(80,0,170,0.4)',
-              color: showFilters ? '#4AEDD9' : '#9f7aea',
-              borderRadius: 0,
-              ...pixelFont,
+              background: showFilters ? 'rgba(0, 242, 254, 0.1)' : 'rgba(255, 255, 255, 0.03)',
+              borderColor: showFilters ? 'rgba(0, 242, 254, 0.3)' : 'rgba(255, 255, 255, 0.08)',
+              color: showFilters ? '#00f2fe' : '#94a3b8',
+              borderRadius: 8,
+              height: 32,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              ...premiumFont,
             }}
           >
             <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -858,20 +835,21 @@ export default function MarketplaceV2() {
           <div
             style={{
               display: 'flex',
-              border: '2px solid rgba(80,0,170,0.4)',
-              borderRadius: 0,
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: 8,
               overflow: 'hidden',
-              imageRendering: 'pixelated',
+              background: 'rgba(255, 255, 255, 0.03)',
+              height: 32,
             }}
           >
             <button
               onClick={() => setViewMode('grid')}
               style={{
-                padding: '5px 10px',
-                background: viewMode === 'grid' ? 'rgba(74,237,217,0.12)' : 'transparent',
+                padding: '0 10px',
+                background: viewMode === 'grid' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
                 border: 'none',
-                borderRight: '2px solid rgba(80,0,170,0.4)',
-                color: viewMode === 'grid' ? '#4AEDD9' : '#9f7aea',
+                borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+                color: viewMode === 'grid' ? '#00f2fe' : '#94a3b8',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -883,10 +861,10 @@ export default function MarketplaceV2() {
             <button
               onClick={() => setViewMode('list')}
               style={{
-                padding: '5px 10px',
-                background: viewMode === 'list' ? 'rgba(74,237,217,0.12)' : 'transparent',
+                padding: '0 10px',
+                background: viewMode === 'list' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
                 border: 'none',
-                color: viewMode === 'list' ? '#4AEDD9' : '#9f7aea',
+                color: viewMode === 'list' ? '#00f2fe' : '#94a3b8',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -915,44 +893,46 @@ export default function MarketplaceV2() {
                   gap: 10,
                   marginTop: 12,
                   paddingTop: 12,
-                  borderTop: '2px solid rgba(80,0,170,0.2)',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                   flexWrap: 'wrap',
                 }}
               >
-                <span style={{ fontSize: 10, color: '#9f7aea', fontWeight: 600, letterSpacing: '0.05em', ...pixelFont }}>
+                <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, letterSpacing: '0.05em', ...premiumFont }}>
                   PRICE RANGE
                 </span>
                 <input
                   className="premium-input"
-                  placeholder="Min μA"
+                  placeholder="Min ALGO"
                   value={priceMin}
                   onChange={(e) => setPriceMin(e.target.value)}
                   type="number"
                   style={{
                     width: 100,
                     fontSize: 11,
-                    borderRadius: 0,
-                    border: '2px solid rgba(80,0,170,0.4)',
-                    background: 'rgba(26,10,46,0.6)',
-                    color: '#e2d5f3',
-                    ...pixelFont,
+                    borderRadius: 8,
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    color: '#ffffff',
+                    height: 28,
+                    ...premiumFont,
                   }}
                 />
-                <span style={{ color: '#9f7aea', fontSize: 11 }}>—</span>
+                <span style={{ color: '#94a3b8', fontSize: 11 }}>—</span>
                 <input
                   className="premium-input"
-                  placeholder="Max μA"
+                  placeholder="Max ALGO"
                   value={priceMax}
                   onChange={(e) => setPriceMax(e.target.value)}
                   type="number"
                   style={{
                     width: 100,
                     fontSize: 11,
-                    borderRadius: 0,
-                    border: '2px solid rgba(80,0,170,0.4)',
-                    background: 'rgba(26,10,46,0.6)',
-                    color: '#e2d5f3',
-                    ...pixelFont,
+                    borderRadius: 8,
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    color: '#ffffff',
+                    height: 28,
+                    ...premiumFont,
                   }}
                 />
                 {(priceMin || priceMax) && (
@@ -961,7 +941,7 @@ export default function MarketplaceV2() {
                     style={{
                       background: 'none',
                       border: 'none',
-                      color: '#9f7aea',
+                      color: '#94a3b8',
                       cursor: 'pointer',
                       padding: '2px 6px',
                       fontSize: 10,
@@ -971,8 +951,8 @@ export default function MarketplaceV2() {
                   </button>
                 )}
                 <div style={{ flex: 1 }} />
-                <span style={{ fontSize: 9, color: '#7c5eaa', ...pixelFont }}>
-                  15 — 10,000 μA
+                <span style={{ fontSize: 9, color: '#94a3b8', ...premiumFont }}>
+                  15 — 10,000 ALGO
                 </span>
               </div>
             </motion.div>
@@ -985,10 +965,10 @@ export default function MarketplaceV2() {
         style={{
           padding: '8px 20px',
           display: 'flex',
-          gap: 6,
+          gap: 8,
           overflowX: 'auto',
-          background: 'rgba(26, 10, 46, 0.6)',
-          borderBottom: '2px solid rgba(80, 0, 170, 0.2)',
+          background: 'rgba(255, 255, 255, 0.005)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
         }}
       >
         {(Object.keys(floorPriceData) as Rarity[]).map((rarity) => {
@@ -997,29 +977,29 @@ export default function MarketplaceV2() {
           return (
             <motion.div
               key={rarity}
-              whileHover={{ y: -2, boxShadow: `0 0 16px ${rc.glow}` }}
+              whileHover={{ y: -2, background: 'rgba(255, 255, 255, 0.03)' }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
                 padding: '6px 12px',
-                background: rc.gradient,
-                border: `2px solid ${rc.border}`,
+                background: 'rgba(255, 255, 255, 0.015)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: 8,
                 cursor: 'pointer',
                 flexShrink: 0,
-                imageRendering: 'pixelated',
-                transition: 'box-shadow 0.2s ease',
+                transition: 'all 0.2s ease',
               }}
             >
-              <span style={{ fontSize: 8, color: rc.color, fontWeight: 700, ...pixelFont, textTransform: 'uppercase' }}>
+              <span style={{ fontSize: 8, color: rc.color, fontWeight: 700, ...premiumFont, textTransform: 'uppercase' }}>
                 {rarity}
               </span>
-              <span style={{ fontSize: 10, color: '#4AEDD9', fontWeight: 700, ...pixelFont }}>
-                {fp.price.toLocaleString()} <span style={{ fontSize: 7 }}>μA</span>
+              <span style={{ fontSize: 10, color: '#4AEDD9', fontWeight: 700, ...premiumFont }}>
+                {fp.price.toLocaleString()} <span style={{ fontSize: 7, color: '#94a3b8' }}>ALGO</span>
               </span>
               <span style={{
                 fontSize: 8,
-                color: fp.change24h >= 0 ? '#22c55e' : '#ef4444',
+                color: fp.change24h >= 0 ? '#2ECC71' : '#ef4444',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 2,
@@ -1028,7 +1008,7 @@ export default function MarketplaceV2() {
                 {fp.change24h >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
                 {Math.abs(fp.change24h)}%
               </span>
-              <span style={{ fontSize: 7, color: '#7c5eaa', ...pixelFont }}>{fp.listCount} listed</span>
+              <span style={{ fontSize: 7, color: '#94a3b8', ...premiumFont }}>{fp.listCount} listed</span>
             </motion.div>
           )
         })}
@@ -1038,55 +1018,55 @@ export default function MarketplaceV2() {
       <div
         style={{
           padding: '10px 20px',
-          background: 'rgba(26, 10, 46, 0.4)',
-          borderBottom: '2px solid rgba(80, 0, 170, 0.15)',
+          background: 'rgba(255, 255, 255, 0.002)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-          <Activity className="h-3.5 w-3.5" style={{ color: '#22c55e' }} />
-          <span style={{ fontSize: 9, color: '#22c55e', fontWeight: 700, letterSpacing: '0.06em', ...pixelFont }}>
+          <Activity className="h-3.5 w-3.5" style={{ color: '#2ECC71' }} />
+          <span style={{ fontSize: 9, color: '#2ECC71', fontWeight: 700, letterSpacing: '0.06em', ...premiumFont }}>
             RECENTLY SOLD
           </span>
           <span
             style={{
               width: 5,
               height: 5,
-              background: '#22c55e',
-              boxShadow: '0 0 4px #22c55e',
-              animation: 'mc-pulse 2s infinite',
+              background: '#2ECC71',
+              borderRadius: '50%',
+              boxShadow: '0 0 4px #2ECC71',
             }}
           />
         </div>
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
           {recentSales.map((sale) => {
             const rc = RARITY_CONFIG[sale.rarity]
             return (
               <motion.div
                 key={sale.id}
-                whileHover={{ y: -2, boxShadow: `0 0 12px ${rc.glow}` }}
+                whileHover={{ y: -2, background: 'rgba(255, 255, 255, 0.03)' }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: 8,
-                  padding: '6px 10px',
-                  background: rc.gradient,
-                  border: `2px solid ${rc.border}`,
+                  padding: '6px 12px',
+                  background: 'rgba(255, 255, 255, 0.015)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: 8,
                   flexShrink: 0,
                   cursor: 'pointer',
-                  imageRendering: 'pixelated',
                   transition: 'all 0.2s ease',
                 }}
               >
                 <span style={{ fontSize: 16 }}>{sale.icon}</span>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ fontSize: 9, color: rc.color, fontWeight: 700, ...pixelFont }}>{sale.name}</span>
+                    <span style={{ fontSize: 9, color: rc.color, fontWeight: 700, ...premiumFont }}>{sale.name}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 1 }}>
-                    <span style={{ fontSize: 9, color: '#4AEDD9', fontWeight: 700, ...pixelFont }}>
-                      {sale.salePrice.toLocaleString()} μA
+                    <span style={{ fontSize: 9, color: '#4AEDD9', fontWeight: 700, ...premiumFont }}>
+                      {sale.salePrice.toLocaleString()} ALGO
                     </span>
-                    <span style={{ fontSize: 7, color: '#7c5eaa', display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <span style={{ fontSize: 7, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 2 }}>
                       <Clock className="h-2 w-2" />
                       {sale.soldAt}
                     </span>
@@ -1118,37 +1098,36 @@ export default function MarketplaceV2() {
               style={{
                 width: 100,
                 height: 100,
-                borderRadius: 0,
-                background: 'rgba(80,0,170,0.15)',
-                border: '3px solid rgba(80,0,170,0.4)',
+                borderRadius: 14,
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: 24,
-                imageRendering: 'pixelated',
-                boxShadow: '0 0 30px rgba(80,0,170,0.15)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
               }}
             >
-              <ShoppingBag className="h-10 w-10" style={{ color: '#9f7aea', opacity: 0.5 }} />
+              <ShoppingBag className="h-10 w-10" style={{ color: '#94a3b8', opacity: 0.5 }} />
             </div>
             <h3
               style={{
-                color: '#FFD700',
+                color: '#ffffff',
                 fontSize: 16,
                 fontWeight: 700,
                 marginBottom: 8,
-                letterSpacing: '0.04em',
-                ...pixelFont,
+                letterSpacing: '-0.01em',
+                ...premiumFont,
               }}
             >
               No Items Found
             </h3>
-            <p style={{ color: '#9f7aea', fontSize: 12, maxWidth: 320, lineHeight: 1.6, marginBottom: 4 }}>
-              No trading hall items match your current filters. Try adjusting your search or clearing all filters.
+            <p style={{ color: '#94a3b8', fontSize: 12, maxWidth: 320, lineHeight: 1.6, marginBottom: 4 }}>
+              No marketplace items match your current filters. Try adjusting your search or clearing all filters.
             </p>
             <button
               className="premium-btn premium-btn--sm premium-btn--green"
-              style={{ marginTop: 20, borderRadius: 0, ...pixelFont }}
+              style={{ marginTop: 20, borderRadius: 8, ...premiumFont }}
               onClick={() => {
                 setSearchQuery('')
                 setRarityFilter('all')
@@ -1161,7 +1140,7 @@ export default function MarketplaceV2() {
             </button>
           </motion.div>
         ) : viewMode === 'grid' ? (
-          /* ═══ GRID VIEW — Inventory Style ═══ */
+          /* ═══ GRID VIEW ═══ */
           <motion.div
             variants={containerVariants}
             initial="hidden"
@@ -1170,8 +1149,8 @@ export default function MarketplaceV2() {
             className="marketplace-grid"
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-              gap: 8,
+              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+              gap: 12,
               gridAutoRows: 'auto',
             }}
           >
@@ -1186,50 +1165,26 @@ export default function MarketplaceV2() {
                   layout
                   whileHover={{
                     y: -4,
-                    boxShadow: `0 8px 24px ${rc.glow}, 0 0 0 2px ${rc.border}, 0 0 32px ${rc.glow.replace('0.15', '0.08')}`,
+                    boxShadow: '0 12px 30px rgba(0, 0, 0, 0.2)',
+                    borderColor: 'rgba(255, 255, 255, 0.15)',
                   }}
                   style={{
-                    background: rc.gradient,
-                    border: `3px solid ${rc.border}`,
-                    borderRadius: 0,
+                    background: 'rgba(255, 255, 255, 0.015)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: 12,
                     overflow: 'hidden',
                     cursor: 'pointer',
                     position: 'relative',
-                    transition: 'box-shadow 0.25s ease, transform 0.2s ease',
-                    imageRendering: 'pixelated',
+                    transition: 'all 0.25s ease',
                     display: 'flex',
                     flexDirection: 'column',
                     backdropFilter: 'blur(4px)',
                   }}
                   onClick={() => setSelectedItem(item)}
                 >
-                  {/* Rarity shimmer bar with glow */}
-                  <div
-                    style={{
-                      height: 2,
-                      background: `linear-gradient(90deg, transparent, ${rc.color}, transparent)`,
-                      opacity: 0.7,
-                      boxShadow: `0 0 6px ${rc.glow}`,
-                    }}
-                  />
-                  {/* Rarity corner indicator */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 4,
-                      right: 4,
-                      width: 8,
-                      height: 8,
-                      background: rc.color,
-                      border: '1px solid rgba(0,0,0,0.3)',
-                      boxShadow: `0 0 8px ${rc.glow}`,
-                      zIndex: 2,
-                    }}
-                  />
-
                   {/* Card content */}
-                  <div style={{ padding: '10px 10px 8px', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    {/* Item icon — Minecraft inventory slot */}
+                  <div style={{ padding: 14, flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    {/* Item icon — slots */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 6 }}>
                       <button
                         onClick={(e) => {
@@ -1241,7 +1196,7 @@ export default function MarketplaceV2() {
                           border: 'none',
                           cursor: 'pointer',
                           padding: 4,
-                          color: isWished ? '#f87171' : '#7c5eaa',
+                          color: isWished ? '#f87171' : '#94a3b8',
                           transition: 'all 0.15s',
                         }}
                       >
@@ -1251,28 +1206,23 @@ export default function MarketplaceV2() {
                         />
                       </button>
                       {/* Rarity dot */}
-                      <span style={{ fontSize: 8 }}>{rc.icon}</span>
+                      <span style={{ fontSize: 10 }}>{rc.icon}</span>
                     </div>
 
-                    {/* Icon slot — square inventory style */}
+                    {/* Icon slot — premium glass container */}
                     <div
                       style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 0,
-                        background: 'rgba(0,0,0,0.3)',
-                        border: '3px solid rgba(255,255,255,0.15)',
-                        borderTopColor: 'rgba(255,255,255,0.3)',
-                        borderLeftColor: 'rgba(255,255,255,0.25)',
-                        borderBottomColor: 'rgba(0,0,0,0.4)',
-                        borderRightColor: 'rgba(0,0,0,0.35)',
+                        width: 56,
+                        height: 56,
+                        borderRadius: 12,
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontSize: 24,
-                        marginBottom: 8,
-                        imageRendering: 'pixelated',
-                        boxShadow: `inset 0 0 8px rgba(0,0,0,0.3), 0 0 8px ${rc.glow}`,
+                        marginBottom: 10,
+                        boxShadow: 'inset 0 0 10px rgba(0, 0, 0, 0.2)',
                       }}
                     >
                       {item.icon}
@@ -1282,7 +1232,7 @@ export default function MarketplaceV2() {
                     <div
                       style={{
                         color: rc.color,
-                        fontSize: 10,
+                        fontSize: 12,
                         fontWeight: 700,
                         marginBottom: 4,
                         textAlign: 'center',
@@ -1290,29 +1240,29 @@ export default function MarketplaceV2() {
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         width: '100%',
-                        ...pixelFont,
+                        ...premiumFont,
                       }}
                     >
                       {item.name}
                     </div>
 
                     {/* Rarity badge */}
-                    <div style={{ marginBottom: 6 }}>
+                    <div style={{ marginBottom: 8 }}>
                       <RarityBadge rarity={item.rarity} />
                     </div>
 
-                    {/* Price in emerald color */}
-                    <div style={{ textAlign: 'center', marginBottom: 4 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#4AEDD9', ...pixelFont }}>
-                        {item.price.toLocaleString()} <span style={{ fontSize: 8, color: '#4AEDD9' }}>μA</span>
+                    {/* Price */}
+                    <div style={{ textAlign: 'center', marginBottom: 10 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#4AEDD9', ...premiumFont }}>
+                        {item.price.toLocaleString()} <span style={{ fontSize: 8, color: '#94a3b8' }}>ALGO</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'center', marginTop: 2 }}>
-                        {trend.direction === 'up' && <TrendingUp className="h-3 w-3" style={{ color: '#22c55e' }} />}
+                        {trend.direction === 'up' && <TrendingUp className="h-3 w-3" style={{ color: '#2ECC71' }} />}
                         {trend.direction === 'down' && <TrendingDown className="h-3 w-3" style={{ color: '#ef4444' }} />}
                         <span
                           style={{
                             fontSize: 8,
-                            color: trend.direction === 'up' ? '#22c55e' : trend.direction === 'down' ? '#ef4444' : '#9f7aea',
+                            color: trend.direction === 'up' ? '#2ECC71' : trend.direction === 'down' ? '#ef4444' : '#94a3b8',
                             fontWeight: 600,
                           }}
                         >
@@ -1329,34 +1279,41 @@ export default function MarketplaceV2() {
                         handleBuy(item)
                       }}
                       style={{
-                        borderRadius: 0,
-                        background: 'rgba(74,237,217,0.15)',
-                        border: '2px solid rgba(74,237,217,0.4)',
-                        color: '#4AEDD9',
+                        borderRadius: 8,
+                        background: 'rgba(0, 242, 254, 0.1)',
+                        border: '1px solid rgba(0, 242, 254, 0.3)',
+                        color: '#00f2fe',
                         width: '100%',
-                        ...pixelFont,
+                        height: 28,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 4,
+                        ...premiumFont,
                       }}
                     >
                       <Zap className="h-3 w-3" />
-                      TRADE
+                      Buy Asset
                     </button>
 
                     {/* Seller */}
                     <div
                       style={{
-                        marginTop: 6,
+                        marginTop: 10,
                         width: '100%',
-                        paddingTop: 4,
-                        borderTop: '1px solid rgba(255,255,255,0.05)',
+                        paddingTop: 8,
+                        borderTop: '1px solid rgba(255, 255, 255, 0.05)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                       }}
                     >
-                      <span style={{ fontSize: 8, color: '#7c5eaa' }}>
+                      <span style={{ fontSize: 8, color: '#94a3b8' }}>
                         {item.seller}
                       </span>
-                      <span style={{ fontSize: 8, color: '#7c5eaa' }}>
+                      <span style={{ fontSize: 8, color: '#94a3b8' }}>
                         {item.listedAt}
                       </span>
                     </div>
@@ -1366,37 +1323,38 @@ export default function MarketplaceV2() {
             })}
           </motion.div>
         ) : (
-          /* ═══ LIST VIEW — Chest Inventory Style ═══ */
+          /* ═══ LIST VIEW ═══ */
           <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
             key="list"
-            style={{ display: 'flex', flexDirection: 'column', gap: 0 }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 6 }}
           >
             {/* Header row */}
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: '48px 1fr 90px 100px 120px 100px',
+                gridTemplateColumns: '48px 1fr 100px 100px 120px 120px',
                 gap: 12,
                 padding: '10px 16px',
-                borderBottom: '2px solid rgba(80,0,170,0.4)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                 fontSize: 8,
-                color: '#9f7aea',
+                color: '#94a3b8',
                 fontWeight: 700,
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase' as const,
-                background: 'rgba(26,10,46,0.6)',
-                ...pixelFont,
+                background: 'rgba(255, 255, 255, 0.015)',
+                borderRadius: 8,
+                ...premiumFont,
               }}
             >
               <span></span>
-              <span>Item</span>
+              <span>Asset</span>
               <span>Quality</span>
               <span>Price</span>
               <span>Trend / Seller</span>
-              <span></span>
+              <span style={{ textAlign: 'right' }}>Actions</span>
             </div>
 
             {filteredListings.map((item, idx) => {
@@ -1408,39 +1366,35 @@ export default function MarketplaceV2() {
                   key={item.id}
                   variants={listVariants}
                   whileHover={{
-                    background: 'rgba(74,237,217,0.06)',
+                    background: 'rgba(255, 255, 255, 0.02)',
                   }}
                   className="marketplace-list-row"
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '48px 1fr 90px 100px 120px 100px',
+                    gridTemplateColumns: '48px 1fr 100px 100px 120px 120px',
                     gap: 12,
                     padding: '12px 16px',
                     alignItems: 'center',
-                    background: idx % 2 === 0 ? 'rgba(26,10,46,0.3)' : 'rgba(13,21,32,0.3)',
-                    borderBottom: '1px solid rgba(80,0,170,0.1)',
+                    background: 'rgba(255, 255, 255, 0.005)',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                    borderRadius: 8,
                     cursor: 'pointer',
                     transition: 'background 0.15s',
                   }}
                   onClick={() => setSelectedItem(item)}
                 >
-                  {/* Icon — inventory slot style */}
+                  {/* Icon */}
                   <div
                     style={{
                       width: 36,
                       height: 36,
-                      borderRadius: 0,
-                      background: 'rgba(0,0,0,0.3)',
-                      border: '2px solid rgba(255,255,255,0.15)',
-                      borderTopColor: 'rgba(255,255,255,0.25)',
-                      borderLeftColor: 'rgba(255,255,255,0.2)',
-                      borderBottomColor: 'rgba(0,0,0,0.35)',
-                      borderRightColor: 'rgba(0,0,0,0.3)',
+                      borderRadius: 8,
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: 16,
-                      imageRendering: 'pixelated',
                     }}
                   >
                     {item.icon}
@@ -1448,38 +1402,40 @@ export default function MarketplaceV2() {
 
                   {/* Name */}
                   <div>
-                    <div style={{ color: rc.color, fontSize: 11, fontWeight: 600, ...pixelFont }}>{item.name}</div>
-                    <div style={{ fontSize: 8, color: '#7c5eaa', marginTop: 1 }}>{item.type} • {item.listedAt}</div>
+                    <div style={{ color: rc.color, fontSize: 11, fontWeight: 600, ...premiumFont }}>{item.name}</div>
+                    <div style={{ fontSize: 8, color: '#94a3b8', marginTop: 1 }}>{item.type} • {item.listedAt}</div>
                   </div>
 
                   {/* Rarity */}
-                  <RarityBadge rarity={item.rarity} />
+                  <div>
+                    <RarityBadge rarity={item.rarity} />
+                  </div>
 
-                  {/* Price — emerald color */}
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#4AEDD9', ...pixelFont }}>
-                    {item.price.toLocaleString()} <span style={{ fontSize: 8 }}>μA</span>
+                  {/* Price */}
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#4AEDD9', ...premiumFont }}>
+                    {item.price.toLocaleString()} <span style={{ fontSize: 8, color: '#94a3b8' }}>ALGO</span>
                   </div>
 
                   {/* Trend + Seller */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      {trend.direction === 'up' && <TrendingUp className="h-3 w-3" style={{ color: '#22c55e' }} />}
+                      {trend.direction === 'up' && <TrendingUp className="h-3 w-3" style={{ color: '#2ECC71' }} />}
                       {trend.direction === 'down' && <TrendingDown className="h-3 w-3" style={{ color: '#ef4444' }} />}
                       <span
                         style={{
                           fontSize: 9,
-                          color: trend.direction === 'up' ? '#22c55e' : trend.direction === 'down' ? '#ef4444' : '#9f7aea',
+                          color: trend.direction === 'up' ? '#2ECC71' : trend.direction === 'down' ? '#ef4444' : '#94a3b8',
                           fontWeight: 600,
                         }}
                       >
                         {trend.direction !== 'flat' ? `${trend.pct.toFixed(1)}%` : '—'}
                       </span>
                     </div>
-                    <span style={{ fontSize: 8, color: '#7c5eaa' }}>{item.seller}</span>
+                    <span style={{ fontSize: 8, color: '#94a3b8' }}>{item.seller}</span>
                   </div>
 
                   {/* Actions */}
-                  <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
@@ -1490,7 +1446,7 @@ export default function MarketplaceV2() {
                         border: 'none',
                         cursor: 'pointer',
                         padding: 6,
-                        color: isWished ? '#f87171' : '#7c5eaa',
+                        color: isWished ? '#f87171' : '#94a3b8',
                       }}
                     >
                       <Heart className="h-3.5 w-3.5" style={isWished ? { fill: '#f87171' } : {}} />
@@ -1502,14 +1458,18 @@ export default function MarketplaceV2() {
                         handleBuy(item)
                       }}
                       style={{
-                        borderRadius: 0,
-                        background: 'rgba(74,237,217,0.15)',
-                        border: '2px solid rgba(74,237,217,0.4)',
-                        color: '#4AEDD9',
-                        ...pixelFont,
+                        borderRadius: 8,
+                        background: 'rgba(0, 242, 254, 0.1)',
+                        border: '1px solid rgba(0, 242, 254, 0.3)',
+                        color: '#00f2fe',
+                        height: 24,
+                        fontSize: 9,
+                        fontWeight: 700,
+                        padding: '0 8px',
+                        ...premiumFont,
                       }}
                     >
-                      TRADE
+                      Buy
                     </button>
                   </div>
                 </motion.div>
@@ -1519,7 +1479,7 @@ export default function MarketplaceV2() {
         )}
       </div>
 
-      {/* ═══ ITEM DETAIL MODAL — Minecraft Tooltip Style ═══ */}
+      {/* ═══ ITEM DETAIL MODAL ═══ */}
       <AnimatePresence>
         {selectedItem && (
           <>
@@ -1539,7 +1499,7 @@ export default function MarketplaceV2() {
               }}
             />
 
-            {/* Modal — Minecraft tooltip style */}
+            {/* Modal — premium glass style */}
             <motion.div
               variants={modalVariants}
               initial="hidden"
@@ -1552,14 +1512,14 @@ export default function MarketplaceV2() {
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
                 width: 'min(560px, 90%)',
-                maxHeight: '90vh',
+                maxHeight: '85vh',
                 overflowY: 'auto',
-                background: 'rgba(26, 10, 46, 0.95)',
-                border: '3px solid #5000AA',
-                borderRadius: 0,
+                background: 'rgba(15, 17, 28, 0.85)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                borderRadius: 16,
                 zIndex: 1001,
-                boxShadow: `0 0 40px ${RARITY_CONFIG[selectedItem.rarity].glow}, 0 24px 48px rgba(0,0,0,0.6)`,
-                imageRendering: 'pixelated',
+                boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
               }}
             >
               {(() => {
@@ -1575,54 +1535,41 @@ export default function MarketplaceV2() {
                       onClick={() => setSelectedItem(null)}
                       style={{
                         position: 'absolute',
-                        top: 10,
-                        right: 10,
-                        background: 'rgba(26, 10, 46, 0.8)',
-                        border: '2px solid #5000AA',
-                        borderRadius: 0,
-                        color: '#9f7aea',
+                        top: 14,
+                        right: 14,
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '50%',
+                        color: '#94a3b8',
                         cursor: 'pointer',
-                        padding: 4,
+                        padding: 6,
                         zIndex: 10,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        imageRendering: 'pixelated',
+                        transition: 'all 0.2s',
                       }}
                     >
                       <X className="h-4 w-4" />
                     </button>
 
-                    {/* Rarity top bar */}
-                    <div
-                      style={{
-                        height: 3,
-                        background: `linear-gradient(90deg, transparent, ${rc.color}, transparent)`,
-                      }}
-                    />
-
-                    <div style={{ padding: '20px 24px 24px' }}>
+                    <div style={{ padding: '24px' }}>
                       {/* Header */}
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 16 }}>
-                        {/* Large icon — inventory slot */}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 20 }}>
+                        {/* Large icon — slot */}
                         <div
                           style={{
                             width: 72,
                             height: 72,
-                            borderRadius: 0,
-                            background: rc.gradient,
-                            border: `3px solid ${rc.border}`,
-                            borderTopColor: rc.color,
-                            borderLeftColor: rc.border,
-                            borderBottomColor: 'rgba(0,0,0,0.5)',
-                            borderRightColor: 'rgba(0,0,0,0.45)',
+                            borderRadius: 14,
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             fontSize: 36,
                             flexShrink: 0,
-                            imageRendering: 'pixelated',
-                            boxShadow: `0 0 24px ${rc.glow}`,
+                            boxShadow: `0 0 20px ${rc.glow}`,
                           }}
                         >
                           {item.icon}
@@ -1633,11 +1580,11 @@ export default function MarketplaceV2() {
                             <h3
                               style={{
                                 color: rc.color,
-                                fontSize: 16,
+                                fontSize: 18,
                                 fontWeight: 700,
                                 margin: 0,
-                                letterSpacing: '0.02em',
-                                ...pixelFont,
+                                letterSpacing: '-0.01em',
+                                ...premiumFont,
                               }}
                             >
                               {item.name}
@@ -1645,11 +1592,11 @@ export default function MarketplaceV2() {
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
                             <RarityBadge rarity={item.rarity} />
-                            <span style={{ fontSize: 9, color: '#9f7aea', ...pixelFont }}>{item.type}</span>
-                            <span style={{ fontSize: 9, color: '#7c5eaa' }}>•</span>
-                            <span style={{ fontSize: 9, color: '#7c5ea' }}>Listed {item.listedAt}</span>
+                            <span style={{ fontSize: 9, color: '#94a3b8', ...premiumFont }}>{item.type}</span>
+                            <span style={{ fontSize: 9, color: 'rgba(255, 255, 255, 0.2)' }}>•</span>
+                            <span style={{ fontSize: 9, color: '#94a3b8' }}>Listed {item.listedAt}</span>
                           </div>
-                          <div style={{ fontSize: 10, color: '#c4b5e0', lineHeight: 1.5, ...pixelFont }}>
+                          <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5, ...premiumFont }}>
                             {item.description}
                           </div>
                         </div>
@@ -1661,30 +1608,29 @@ export default function MarketplaceV2() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          padding: '12px 14px',
-                          background: 'rgba(26, 10, 46, 0.7)',
-                          borderRadius: 0,
-                          border: '2px solid rgba(80,0,170,0.3)',
-                          marginBottom: 16,
-                          imageRendering: 'pixelated',
+                          padding: '14px 18px',
+                          background: 'rgba(255, 255, 255, 0.02)',
+                          borderRadius: 12,
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          marginBottom: 20,
                         }}
                       >
                         <div>
-                          <div style={{ fontSize: 9, color: '#9f7aea', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 2, ...pixelFont }}>
+                          <div style={{ fontSize: 9, color: '#94a3b8', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 2, ...premiumFont }}>
                             CURRENT PRICE
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                            <span style={{ fontSize: 20, fontWeight: 700, color: '#4AEDD9', ...pixelFont }}>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                            <span style={{ fontSize: 20, fontWeight: 700, color: '#4AEDD9', ...premiumFont }}>
                               {item.price.toLocaleString()}
                             </span>
-                            <span style={{ fontSize: 9, color: '#4AEDD9', ...pixelFont }}>μA</span>
+                            <span style={{ fontSize: 9, color: '#94a3b8', ...premiumFont }}>ALGO</span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginLeft: 6 }}>
-                              {trend.direction === 'up' && <TrendingUp className="h-3 w-3" style={{ color: '#22c55e' }} />}
+                              {trend.direction === 'up' && <TrendingUp className="h-3 w-3" style={{ color: '#2ECC71' }} />}
                               {trend.direction === 'down' && <TrendingDown className="h-3 w-3" style={{ color: '#ef4444' }} />}
                               <span
                                 style={{
                                   fontSize: 9,
-                                  color: trend.direction === 'up' ? '#22c55e' : trend.direction === 'down' ? '#ef4444' : '#9f7aea',
+                                  color: trend.direction === 'up' ? '#2ECC71' : trend.direction === 'down' ? '#ef4444' : '#94a3b8',
                                   fontWeight: 600,
                                 }}
                               >
@@ -1698,11 +1644,12 @@ export default function MarketplaceV2() {
                             onClick={() => toggleWishlist(item.id, item.name)}
                             className="premium-btn premium-btn--sm"
                             style={{
-                              borderColor: isWished ? '#f87171' : 'rgba(80,0,170,0.4)',
-                              color: isWished ? '#f87171' : '#9f7aea',
-                              background: isWished ? 'rgba(248,113,113,0.08)' : 'rgba(26,10,46,0.5)',
-                              borderRadius: 0,
-                              ...pixelFont,
+                              borderColor: isWished ? '#f87171' : 'rgba(255, 255, 255, 0.08)',
+                              color: isWished ? '#f87171' : '#94a3b8',
+                              background: isWished ? 'rgba(248,113,113,0.08)' : 'rgba(255, 255, 255, 0.03)',
+                              borderRadius: 8,
+                              height: 32,
+                              ...premiumFont,
                             }}
                           >
                             <Heart className="h-3.5 w-3.5" style={isWished ? { fill: '#f87171' } : {}} />
@@ -1712,79 +1659,79 @@ export default function MarketplaceV2() {
                             className="premium-btn premium-btn--sm"
                             onClick={() => handleBuy(item)}
                             style={{
-                              borderRadius: 0,
-                              background: 'rgba(74,237,217,0.2)',
-                              border: '2px solid rgba(74,237,217,0.5)',
-                              color: '#4AEDD9',
-                              ...pixelFont,
+                              borderRadius: 8,
+                              background: 'rgba(0, 242, 254, 0.15)',
+                              border: '1px solid rgba(0, 242, 254, 0.3)',
+                              color: '#00f2fe',
+                              height: 32,
+                              ...premiumFont,
                             }}
                           >
                             <Zap className="h-3.5 w-3.5" />
-                            TRADE
+                            Buy Asset
                           </button>
                         </div>
                       </div>
 
-                      {/* Trading History Chart (was Price History) */}
-                      <div style={{ marginBottom: 16 }}>
+                      {/* Trading History Chart */}
+                      <div style={{ marginBottom: 20 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                          <BarChart3 className="h-3.5 w-3.5" style={{ color: '#4AEDD9' }} />
-                          <span style={{ fontSize: 10, fontWeight: 700, color: '#FFD700', letterSpacing: '0.04em', ...pixelFont }}>
+                          <BarChart3 className="h-3.5 w-3.5" style={{ color: '#00f2fe' }} />
+                          <span style={{ fontSize: 11, fontWeight: 700, color: '#ffffff', letterSpacing: '-0.01em', ...premiumFont }}>
                             TRADING HISTORY — 7 DAYS
                           </span>
                         </div>
                         <div
                           style={{
-                            background: 'rgba(26, 10, 46, 0.5)',
-                            borderRadius: 0,
-                            border: '2px solid rgba(80,0,170,0.3)',
+                            background: 'rgba(255, 255, 255, 0.01)',
+                            borderRadius: 12,
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
                             padding: '12px 8px 4px',
-                            imageRendering: 'pixelated',
                           }}
                         >
                           <ResponsiveContainer width="100%" height={120}>
                             <AreaChart data={item.priceHistory}>
                               <defs>
                                 <linearGradient id={`grad-${item.id}`} x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="0%" stopColor={rc.color} stopOpacity={0.3} />
-                                  <stop offset="100%" stopColor={rc.color} stopOpacity={0.02} />
+                                  <stop offset="0%" stopColor={rc.color} stopOpacity={0.2} />
+                                  <stop offset="100%" stopColor={rc.color} stopOpacity={0.01} />
                                 </linearGradient>
                               </defs>
-                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(80,0,170,0.15)" />
+                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
                               <XAxis
                                 dataKey="day"
-                                tick={{ fill: '#9f7aea', fontSize: 8 }}
-                                axisLine={{ stroke: 'rgba(80,0,170,0.2)' }}
+                                tick={{ fill: '#94a3b8', fontSize: 8 }}
+                                axisLine={{ stroke: 'rgba(255, 255, 255, 0.08)' }}
                                 tickLine={false}
                               />
                               <YAxis
-                                tick={{ fill: '#9f7aea', fontSize: 8 }}
-                                axisLine={{ stroke: 'rgba(80,0,170,0.2)' }}
+                                tick={{ fill: '#94a3b8', fontSize: 8 }}
+                                axisLine={{ stroke: 'rgba(255, 255, 255, 0.08)' }}
                                 tickLine={false}
                                 width={50}
-                                tickFormatter={(v: number) => `${(v / 1000).toFixed(1)}k`}
+                                tickFormatter={(v: number) => `${v.toLocaleString()}`}
                               />
                               <Tooltip content={<ChartTooltip />} />
                               <Area
                                 type="monotone"
                                 dataKey="price"
                                 stroke={rc.color}
-                                strokeWidth={2}
+                                strokeWidth={1.5}
                                 fill={`url(#grad-${item.id})`}
                                 dot={false}
-                                activeDot={{ r: 4, fill: rc.color, stroke: '#FFD700', strokeWidth: 1.5 }}
+                                activeDot={{ r: 4, fill: rc.color, stroke: '#ffffff', strokeWidth: 1 }}
                               />
                             </AreaChart>
                           </ResponsiveContainer>
                         </div>
                       </div>
 
-                      {/* Enchantment Analysis (was AI Price Analysis) */}
-                      <div style={{ marginBottom: 16 }}>
+                      {/* Appraisal & Rarity Stats */}
+                      <div style={{ marginBottom: 20 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
                           <Sparkles className="h-3.5 w-3.5" style={{ color: '#c084fc' }} />
-                          <span style={{ fontSize: 10, fontWeight: 700, color: '#FFD700', letterSpacing: '0.04em', ...pixelFont }}>
-                            ENCHANTMENT ANALYSIS
+                          <span style={{ fontSize: 11, fontWeight: 700, color: '#ffffff', letterSpacing: '-0.01em', ...premiumFont }}>
+                            MARKET INTELLIGENCE
                           </span>
                         </div>
                         <div
@@ -1794,28 +1741,27 @@ export default function MarketplaceV2() {
                             gap: 8,
                           }}
                         >
-                          {/* Enchantment Power (was Confidence) */}
+                          {/* Confidence Score */}
                           <div
                             style={{
-                              background: 'rgba(74,237,217,0.04)',
-                              border: '2px solid rgba(74,237,217,0.2)',
-                              borderRadius: 0,
-                              padding: '10px 10px',
-                              imageRendering: 'pixelated',
+                              background: 'rgba(255, 255, 255, 0.015)',
+                              border: '1px solid rgba(255, 255, 255, 0.08)',
+                              borderRadius: 12,
+                              padding: '10px',
                             }}
                           >
-                            <div style={{ fontSize: 7, color: '#9f7aea', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4, ...pixelFont }}>
-                              ENCHANTMENT POWER
+                            <div style={{ fontSize: 8, color: '#94a3b8', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4, ...premiumFont }}>
+                              CONFIDENCE SCORE
                             </div>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: '#4AEDD9', ...pixelFont }}>
+                            <div style={{ fontSize: 16, fontWeight: 700, color: '#4AEDD9', ...premiumFont }}>
                               {item.confidence}%
                             </div>
                             <div
                               style={{
                                 marginTop: 6,
                                 height: 3,
-                                borderRadius: 0,
-                                background: 'rgba(80,0,170,0.2)',
+                                borderRadius: 999,
+                                background: 'rgba(255, 255, 255, 0.05)',
                                 overflow: 'hidden',
                               }}
                             >
@@ -1824,56 +1770,64 @@ export default function MarketplaceV2() {
                                   height: '100%',
                                   width: `${item.confidence}%`,
                                   background: '#4AEDD9',
-                                  borderRadius: 0,
-                                  imageRendering: 'pixelated',
+                                  borderRadius: 999,
                                 }}
                               />
                             </div>
                           </div>
 
-                          {/* Villager Appraisal (was Suggested Price) */}
+                          {/* Suggested Price / Appraisal */}
                           <div
                             style={{
-                              background: 'rgba(168,85,247,0.04)',
-                              border: '2px solid rgba(168,85,247,0.2)',
-                              borderRadius: 0,
-                              padding: '10px 10px',
-                              imageRendering: 'pixelated',
+                              background: 'rgba(255, 255, 255, 0.015)',
+                              border: '1px solid rgba(255, 255, 255, 0.08)',
+                              borderRadius: 12,
+                              padding: '10px',
                             }}
                           >
-                            <div style={{ fontSize: 7, color: '#9f7aea', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4, ...pixelFont }}>
-                              VILLAGER APPRAISAL
+                            <div style={{ fontSize: 8, color: '#94a3b8', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4, ...premiumFont }}>
+                              APPRAISAL VALUE
                             </div>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: '#c084fc', ...pixelFont }}>
+                            <div style={{ fontSize: 16, fontWeight: 700, color: '#c084fc', ...premiumFont }}>
                               {item.suggestedPrice.toLocaleString()}
                             </div>
-                            <div style={{ fontSize: 8, color: '#7c5eaa', marginTop: 4, ...pixelFont }}>
-                              μA
+                            <div style={{ fontSize: 8, color: '#94a3b8', marginTop: 4, ...premiumFont }}>
+                              ALGO
                             </div>
                           </div>
 
-                          {/* Enchantment Level (was Rarity Score) */}
+                          {/* Rarity Level */}
                           <div
                             style={{
-                              background: rc.bg,
-                              border: `2px solid ${rc.border}`,
-                              borderRadius: 0,
-                              padding: '10px 10px',
-                              imageRendering: 'pixelated',
+                              background: 'rgba(255, 255, 255, 0.015)',
+                              border: '1px solid rgba(255, 255, 255, 0.08)',
+                              borderRadius: 12,
+                              padding: '10px',
                             }}
                           >
-                            <div style={{ fontSize: 7, color: '#9f7aea', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4, ...pixelFont }}>
-                              ENCHANTMENT LEVEL
+                            <div style={{ fontSize: 8, color: '#94a3b8', fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4, ...premiumFont }}>
+                              RARITY SCORE
                             </div>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: rc.color, ...pixelFont }}>
-                              {item.rarityScore}
+                            <div style={{ fontSize: 16, fontWeight: 700, color: rc.color, ...premiumFont }}>
+                              {item.rarityScore}/10
                             </div>
-                            <div style={{ fontSize: 8, color: '#7c5eaa', marginTop: 4, ...pixelFont }}>
-                              <span>
-                                {'█'.repeat(Math.round(item.rarityScore))}
-                                {'░'.repeat(10 - Math.round(item.rarityScore))}
-                              </span>
-                              <span style={{ marginLeft: 2 }}>{item.rarityScore}/10</span>
+                            <div
+                              style={{
+                                marginTop: 6,
+                                height: 3,
+                                borderRadius: 999,
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  height: '100%',
+                                  width: `${item.rarityScore * 10}%`,
+                                  background: rc.color,
+                                  borderRadius: 999,
+                                }}
+                              />
                             </div>
                           </div>
                         </div>
@@ -1886,15 +1840,14 @@ export default function MarketplaceV2() {
                           alignItems: 'center',
                           justifyContent: 'space-between',
                           padding: '10px 14px',
-                          background: 'rgba(26, 10, 46, 0.5)',
-                          borderRadius: 0,
-                          border: '2px solid rgba(80,0,170,0.2)',
-                          imageRendering: 'pixelated',
+                          background: 'rgba(255, 255, 255, 0.01)',
+                          borderRadius: 12,
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <Shield className="h-3.5 w-3.5" style={{ color: '#9f7aea' }} />
-                          <span style={{ fontSize: 9, color: '#9f7aea', ...pixelFont }}>
+                          <Shield className="h-3.5 w-3.5" style={{ color: '#94a3b8' }} />
+                          <span style={{ fontSize: 9, color: '#94a3b8', ...premiumFont }}>
                             Seller
                           </span>
                           <span
@@ -1902,15 +1855,15 @@ export default function MarketplaceV2() {
                               fontSize: 10,
                               fontWeight: 600,
                               color: '#4AEDD9',
-                              ...pixelFont,
+                              ...premiumFont,
                             }}
                           >
                             {item.seller}
                           </span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <Eye className="h-3 w-3" style={{ color: '#7c5eaa' }} />
-                          <span style={{ fontSize: 8, color: '#7c5eaa', ...pixelFont }}>
+                          <Eye className="h-3 w-3" style={{ color: '#94a3b8' }} />
+                          <span style={{ fontSize: 8, color: '#94a3b8', ...premiumFont }}>
                             {Math.floor(Math.random() * 200 + 50)} views
                           </span>
                         </div>
